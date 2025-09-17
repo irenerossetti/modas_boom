@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Fondo suave para páginas públicas (login/registro) */
+.auth-bg{
+  background:
+    radial-gradient(900px 500px at 80% -10%, #FAC58933, transparent 60%),
+    radial-gradient(800px 500px at 5% 110%, #FC6A8033, transparent 60%),
+    linear-gradient(180deg, #FCEDCF, #FCE4D7 40%, #F9D9C9 100%);
+}
+
+/* Tarjeta tipo glass */
+.card-glass{
+  background: #FFF6F4CC;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 25px 60px rgba(0,0,0,.12);
+  border: 1px solid rgba(255,255,255,.7);
+}
+
+/* Inputs más suaves */
+input[type="Email"],
+input[type="Contraseña:"],
+input[type="Texto"]{
+  background-color:#FFF;
+}
+
+/* Botón principal rojo vino */
+.btn-primary{
+  @apply w-full inline-flex justify-center items-center rounded-lg px-4 py-3 font-semibold text-white
+         bg-brand-crimson hover:bg-[#97131F] active:bg-[#8D111C]
+         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-sand transition;
+}
