@@ -27,8 +27,12 @@
                     <a href="#" class="flex items-center p-2 text-boom-text-dark bg-boom-rose-light rounded-lg font-semibold">
                         <span class="ml-3">Dashboard</span>
                     </a>
-                    <a href="#" class="flex items-center p-2 text-boom-text-medium hover:bg-boom-cream-200 rounded-lg">
+                    <a href="{{ route('users.index') }}" class="flex items-center p-2 text-boom-text-medium hover:bg-boom-cream-200 rounded-lg">
                         <span class="ml-3">Usuarios</span>
+                    
+                    <a href="{{ route('clientes.index') }}" class="flex items-center p-2 text-boom-text-medium hover:bg-boom-cream-200 rounded-lg">
+                        <span class="ml-3">Clientes</span>
+                        
                     </a>
                     <a href="#" class="flex items-center p-2 text-boom-text-medium hover:bg-boom-cream-200 rounded-lg">
                         <span class="ml-3">Trabajadores</span>
