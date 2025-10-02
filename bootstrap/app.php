@@ -11,7 +11,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'login.throttle' => \App\Http\Middleware\LoginAttemptThrottle::class,
+            'user.enabled' => \App\Http\Middleware\CheckUserEnabled::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

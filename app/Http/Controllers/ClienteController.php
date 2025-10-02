@@ -7,10 +7,23 @@ use Illuminate\Http\Request;
 
 class ClienteController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $clientes = Cliente::with('usuario')->get(); // Carga también la info del usuario
-        return view('clientes.index', ['clientes' => $clientes]);
+        $query = Cliente::with('usuario');
+
+        // Búsqueda por nombre, apellido o CI/NIT
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nombre', 'LIKE', "%{$search}%")
+                  ->orWhere('apellido', 'LIKE', "%{$search}%")
+                  ->orWhere('ci_nit', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $clientes = $query->paginate(10); // Paginación para mejor rendimiento
+
+        return view('clientes.index', compact('clientes'));
     }
 
     /**
@@ -35,7 +48,10 @@ class ClienteController extends Controller
             'direccion' => 'nullable|string',
         ]);
 
-        Cliente::create($request->validated());
+        $data = $request->validated();
+        $data['id_usuario'] = auth()->id();
+
+        Cliente::create($data);
 
         return redirect()->route('clientes.index')->with('success', 'Cliente creado exitosamente.');
     }
@@ -53,13 +69,14 @@ class ClienteController extends Controller
      */
     public function edit(string $id)
     {
+        $cliente = Cliente::findOrFail($id);
         return view('clientes.edit', compact('cliente'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, sCliente $cliente)
+    public function update(Request $request, Cliente $cliente)
     {
         $request->validate([
             'nombre' => 'required|string|max:255',
@@ -80,6 +97,7 @@ class ClienteController extends Controller
      */
     public function destroy(string $id)
     {
+        $cliente = Cliente::findOrFail($id);
         $cliente->delete();
 
         return redirect()->route('clientes.index')

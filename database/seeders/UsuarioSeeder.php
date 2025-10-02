@@ -12,11 +12,12 @@ class UsuarioSeeder extends Seeder
      */
     public function run(): void
     {
-    \App\Models\Usuario::create([
+    \App\Models\User::create([
         'id_rol' => 1, // ID del rol Administrador
         'nombre' => 'Irene Rossetti', // O tu nombre
         'email' => 'admin@boom.com',
         'password' => bcrypt('password123'), // Contraseña temporal
+        'habilitado' => true,
     ]);
     }
 }
