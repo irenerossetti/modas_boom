@@ -2,9 +2,11 @@
     <div class="p-4 sm:p-6 lg:p-8">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-3xl font-bold text-boom-text-dark">Gestión de Clientes</h1>
-            <a href="{{ route('clientes.create') }}" class="bg-boom-primary hover:bg-boom-primary-dark text-white font-bold py-2 px-4 rounded">
-                Nuevo Cliente
-            </a>
+            @if(Auth::user()->id_rol == 1)
+                <a href="{{ route('clientes.create') }}" class="bg-boom-primary hover:bg-boom-primary-dark text-white font-bold py-2 px-4 rounded">
+                    Nuevo Cliente
+                </a>
+            @endif
         </div>
 
         @if(session('success'))
@@ -39,7 +41,7 @@
             <table class="w-full text-left">
                 <thead class="text-boom-text-medium">
                     <tr>
-                        <th class="p-3">ID</th>
+                        <th class="p-3">Num</th>
                         <th class="p-3">Nombre Completo</th>
                         <th class="p-3">CI/NIT</th>
                         <th class="p-3">Email</th>
@@ -50,18 +52,22 @@
                 <tbody class="divide-y divide-boom-cream-200">
                     @forelse ($clientes as $cliente)
                     <tr class="text-boom-text-dark">
-                        <td class="p-3">{{ $cliente->id }}</td>
+                        <td class="p-3">{{ ($clientes->currentPage() - 1) * $clientes->perPage() + $loop->iteration }}</td>
                         <td class="p-3 font-bold">{{ $cliente->nombre }} {{ $cliente->apellido }}</td>
                         <td class="p-3">{{ $cliente->ci_nit }}</td>
                         <td class="p-3">{{ $cliente->email ?? 'N/A' }}</td>
                         <td class="p-3">{{ $cliente->telefono ?? 'N/A' }}</td>
                         <td class="p-3">
-                            <a href="{{ route('clientes.edit', $cliente) }}" class="text-blue-500 hover:underline">Editar</a>
-                            <form action="{{ route('clientes.destroy', $cliente) }}" method="POST" class="inline ml-4" onsubmit="return confirm('¿Está seguro de que desea eliminar este cliente?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-red-500 hover:underline">Eliminar</button>
-                            </form>
+                            @if(Auth::user()->id_rol == 1)
+                                <a href="{{ route('clientes.edit', $cliente) }}" class="text-blue-500 hover:underline">Editar</a>
+                                <form action="{{ route('clientes.destroy', $cliente) }}" method="POST" class="inline ml-4" onsubmit="return confirm('¿Está seguro de que desea eliminar este cliente?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-500 hover:underline">Eliminar</button>
+                                </form>
+                            @else
+                                <span class="text-gray-400">Solo lectura</span>
+                            @endif
                         </td>
                     </tr>
                     @empty

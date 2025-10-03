@@ -12,15 +12,23 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified', 'user.enabled'])->name('dashboard');
+    ->middleware(['auth', 'verified', 'user.enabled', 'admin.role'])->name('dashboard');
 
 Route::middleware(['auth', 'user.enabled'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    Route::resource('clientes', ClienteController::class);
+    Route::get('clientes', [ClienteController::class, 'index'])->name('clientes.index');
+});
+
+Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
+    Route::resource('clientes', ClienteController::class)->except(['index']);
     Route::resource('users', UserController::class);
     Route::resource('roles', RolController::class);
 });
+
+Route::get('/empleado-dashboard', function () {
+    return view('empleado-dashboard');
+})->middleware(['auth', 'verified', 'user.enabled'])->name('empleado.dashboard');
 
 require __DIR__.'/auth.php';

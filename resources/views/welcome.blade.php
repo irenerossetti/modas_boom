@@ -1,18 +1,33 @@
-@if(auth()->check())
-    <!DOCTYPE html>
-    <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-        <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>Modas Boom - Redirigiendo...</title>
-        </head>
-        <body>
-            <script>
-                window.location.href = '{{ route("dashboard") }}';
-            </script>
-            <p>Redirigiendo al dashboard...</p>
-        </body>
-    </html>
+@php
+if (auth()->check()) {
+    $user = auth()->user();
+    if ($user->id_rol == 1) {
+        $redirectUrl = route('dashboard');
+    } elseif ($user->id_rol == 2) {
+        $redirectUrl = '/empleado-dashboard';
+    } else {
+        $redirectUrl = null; // Clients stay on landing
+    }
+} else {
+    $redirectUrl = null;
+}
+@endphp
+
+@if($redirectUrl)
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Modas Boom - Redirigiendo...</title>
+    </head>
+    <body>
+        <script>
+            window.location.href = '{{ $redirectUrl }}';
+        </script>
+        <p>Redirigiendo...</p>
+    </body>
+</html>
 @else
     <!DOCTYPE html>
     <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -47,6 +62,13 @@
                     <!-- Botones de autenticación a la derecha -->
                     <div class="flex items-center gap-4">
                         @auth
+                            <span class="text-boom-text-dark font-medium">Hola, {{ auth()->user()->nombre }}</span>
+                            <form method="POST" action="{{ route('logout') }}" class="inline">
+                                @csrf
+                                <button type="submit" class="inline-block px-5 py-2 bg-boom-red-report hover:bg-boom-red-title text-white rounded-lg text-sm leading-normal transition-colors font-medium">
+                                    Cerrar Sesión
+                                </button>
+                            </form>
                         @else
                             <a
                                 href="{{ route('login') }}"

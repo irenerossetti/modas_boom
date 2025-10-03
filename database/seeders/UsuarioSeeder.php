@@ -12,12 +12,18 @@ class UsuarioSeeder extends Seeder
      */
     public function run(): void
     {
-    \App\Models\User::create([
-        'id_rol' => 1, // ID del rol Administrador
-        'nombre' => 'Irene Rossetti', // O tu nombre
-        'email' => 'admin@boom.com',
-        'password' => bcrypt('password123'), // Contraseña temporal
-        'habilitado' => true,
-    ]);
+        // Crear usuario admin solo si no existe, leyendo credenciales de .env para mayor seguridad
+        $adminEmail = env('ADMIN_EMAIL', 'super@boom.com');
+        $adminPassword = env('ADMIN_PASSWORD', 'clave123');
+
+        \App\Models\User::firstOrCreate(
+            ['email' => $adminEmail],
+            [
+                'id_rol' => 1,
+                'nombre' => 'Super Admin',
+                'password' => bcrypt($adminPassword),
+                'habilitado' => true,
+            ]
+        );
     }
 }

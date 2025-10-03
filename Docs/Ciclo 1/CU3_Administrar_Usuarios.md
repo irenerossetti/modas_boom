@@ -54,12 +54,17 @@ Este caso de uso permite a usuarios autorizados (administradores) gestionar las 
 1. El administrador hace clic en "Nuevo Usuario"
 2. El sistema muestra formulario de creación
 3. El administrador completa los campos:
-   - Nombre, Email, Rol, Estado
+   - Nombre, Teléfono, Dirección, Email, Rol, Estado, Contraseña
 4. El administrador hace clic en "Crear"
-5. El sistema valida los datos
-6. El sistema crea la cuenta con contraseña temporal
-7. El sistema envía email de activación
-8. El sistema redirige a la lista con mensaje de éxito
+5. El sistema valida los datos:
+   - Email único en usuarios
+   - Teléfono único en usuarios
+   - Rol válido
+   - Contraseña segura
+6. El sistema crea la cuenta
+7. Si el rol es Cliente, se crea automáticamente perfil de cliente
+8. El sistema envía email de activación
+9. El sistema redirige a la lista con mensaje de éxito
 
 ## Flujo Principal - Editar Usuario
 1. El administrador selecciona "Editar" en un usuario
@@ -137,8 +142,8 @@ Este caso de uso permite a usuarios autorizados (administradores) gestionar las 
 
 ### Modelo
 - **Archivo**: `app/Models/User.php`
-- **Relaciones**: belongsTo con Rol
-- **Campos**: nombre, email, password, id_rol, habilitado, timestamps
+- **Relaciones**: belongsTo con Rol, hasOne con Cliente
+- **Campos**: id_rol, nombre, telefono, direccion, email, password, habilitado, timestamps
 
 ### Vistas
 - **Archivos**:
@@ -156,16 +161,21 @@ Route::resource('users', UserController::class);
 ### Validaciones
 ```php
 // Creación
-'name' => 'required|string|max:255',
-'email' => 'required|string|email|max:255|unique:usuario',
-'password' => 'required|string|min:8',
 'id_rol' => 'required|exists:rol,id_rol',
+'nombre' => 'required|string|max:255',
+'telefono' => 'nullable|string|max:15|unique:usuario',
+'direccion' => 'nullable|string',
+'email' => 'required|string|email|max:255|unique:usuario',
+'password' => 'required|string|min:8|confirmed',
 'habilitado' => 'boolean'
 
 // Edición
-'name' => 'required|string|max:255',
-'email' => 'required|string|email|max:255|unique:usuario,email,'.$id.',id_usuario',
 'id_rol' => 'required|exists:rol,id_rol',
+'nombre' => 'required|string|max:255',
+'telefono' => 'nullable|string|max:15|unique:usuario,telefono,'.$id.',id_usuario',
+'direccion' => 'nullable|string',
+'email' => 'required|string|email|max:255|unique:usuario,email,'.$id.',id_usuario',
+'password' => 'nullable|string|min:8|confirmed',
 'habilitado' => 'boolean'
 ```
 
@@ -214,5 +224,8 @@ Route::resource('users', UserController::class);
 - **v1.0** - Implementación básica CRUD (02/10/2025)
 - **v1.1** - Agregado soft delete y auditoría (02/10/2025)
 - **v1.2** - Implementado control de permisos (02/10/2025)
-- **v1.3** - Agregado validaciones de negocio (02/10/2025)</content>
+- **v1.3** - Agregado validaciones de negocio (02/10/2025)
+- **v1.4** - Agregados campos teléfono y dirección (03/10/2025)
+- **v1.5** - Implementadas validaciones de unicidad para teléfono (03/10/2025)
+- **v1.6** - Agregada creación automática de cliente para rol Cliente (03/10/2025)</content>
 <parameter name="filePath">c:\Users\PG\Desktop\Materias\Sistemas de Informacion 1\Grupo SC\proyecto_confeccion\modas_boom\Docs\Ciclo 1\CU3_Administrar_Usuarios.md

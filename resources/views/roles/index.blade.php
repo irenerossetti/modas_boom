@@ -23,7 +23,7 @@
             <table class="w-full text-left">
                 <thead class="text-boom-text-medium">
                     <tr>
-                        <th class="p-3">ID</th>
+                        <th class="p-3">Num</th>
                         <th class="p-3">Nombre</th>
                         <th class="p-3">Descripción</th>
                         <th class="p-3">Estado</th>
@@ -34,7 +34,7 @@
                 <tbody class="divide-y divide-boom-cream-200">
                     @foreach ($roles as $rol)
                     <tr class="text-boom-text-dark">
-                        <td class="p-3">{{ $rol->id_rol }}</td>
+                        <td class="p-3">{{ $loop->iteration }}</td>
                         <td class="p-3 font-bold">{{ $rol->nombre }}</td>
                         <td class="p-3">{{ $rol->descripcion ?? 'Sin descripción' }}</td>
                         <td class="p-3">

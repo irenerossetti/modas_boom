@@ -24,7 +24,10 @@ Este caso de uso permite a un usuario registrado autenticarse en el sistema Moda
 ### Éxito
 1. El usuario queda autenticado en el sistema
 2. Se crea una nueva sesión segura
-3. El usuario es redirigido al dashboard
+3. El usuario es redirigido según su rol:
+   - **Administrador**: Dashboard principal (`/dashboard`)
+   - **Empleado**: Dashboard de empleado (`/empleado-dashboard`)
+   - **Cliente**: Página de inicio (`/`)
 4. Se registra el login exitoso en logs de auditoría
 
 ### Fallo
@@ -49,7 +52,10 @@ Este caso de uso permite a un usuario registrado autenticarse en el sistema Moda
 8. El sistema verifica que el email esté confirmado
 9. El sistema crea una nueva sesión segura
 10. El sistema regenera el token CSRF
-11. El sistema redirige al usuario al dashboard o página solicitada
+11. El sistema determina el rol del usuario y redirige apropiadamente:
+    - Si rol = Administrador (id_rol = 1): redirige a `/dashboard`
+    - Si rol = Empleado (id_rol = 2): redirige a `/empleado-dashboard`
+    - Si rol = Cliente (id_rol = 3): redirige a `/`
 
 ## Flujos Alternativos
 
@@ -104,7 +110,19 @@ Este caso de uso permite a un usuario registrado autenticarse en el sistema Moda
 - **Archivo**: `app/Http/Controllers/Auth/AuthenticatedSessionController.php`
 - **Métodos**:
   - `create()`: Muestra formulario de login
-  - `store()`: Procesa la autenticación
+  - `store()`: Procesa la autenticación y redirección basada en roles
+
+### Lógica de Redirección por Roles
+```php
+$user = Auth::user();
+if ($user->id_rol == 1) { // Admin
+    return redirect(route('dashboard', absolute: false));
+} elseif ($user->id_rol == 2) { // Empleado
+    return redirect('/empleado-dashboard');
+} else { // Cliente
+    return redirect('/');
+}
+```
 
 ### Request Class
 - **Archivo**: `app/Http/Requests/Auth/LoginRequest.php`
@@ -170,5 +188,6 @@ Route::post('login', [AuthenticatedSessionController::class, 'store'])
 - **v1.0** - Implementación básica de login (02/10/2025)
 - **v1.1** - Agregado rate limiting (02/10/2025)
 - **v1.2** - Implementado middleware de verificación de usuario (02/10/2025)
-- **v1.3** - Agregado logging de auditoría (02/10/2025)</content>
+- **v1.3** - Agregado logging de auditoría (02/10/2025)
+- **v1.4** - Implementado redirección basada en roles después del login (03/10/2025)</content>
 <parameter name="filePath">c:\Users\PG\Desktop\Materias\Sistemas de Informacion 1\Grupo SC\proyecto_confeccion\modas_boom\Docs\Ciclo 1\CU2_Iniciar_Sesion.md

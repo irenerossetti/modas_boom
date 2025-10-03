@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'login.throttle' => \App\Http\Middleware\LoginAttemptThrottle::class,
             'user.enabled' => \App\Http\Middleware\CheckUserEnabled::class,
+            'admin.role' => \App\Http\Middleware\CheckAdminRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -15,13 +15,14 @@ Este caso de uso permite a usuarios autorizados realizar operaciones CRUD comple
 - **Actor Secundario**:
   - Sistema de Base de Datos
   - Sistema de Validación
-  - Sistema de Auditoría
+  - Sistema de Control de Acceso
 
 ## Precondiciones
 1. El usuario debe estar autenticado
-2. El usuario debe tener permisos para gestionar clientes
-3. Debe existir al menos un cliente registrado
-4. El sistema debe estar operativo
+2. El usuario debe tener permisos para gestionar clientes (todos los roles)
+3. Para operaciones de escritura: usuario debe ser Administrador
+4. Debe existir al menos un cliente registrado (para operaciones de lectura)
+5. El sistema debe estar operativo
 
 ## Postcondiciones
 ### Éxito - Operación CRUD
@@ -38,19 +39,21 @@ Este caso de uso permite a usuarios autorizados realizar operaciones CRUD comple
 
 ## Flujo Principal - Listar Clientes
 1. Usuario accede a gestión de clientes (`/clientes`)
-2. Sistema verifica permisos de acceso
+2. Sistema verifica permisos de acceso (todos los roles autenticados)
 3. Sistema recupera lista de clientes con paginación
 4. Sistema muestra tabla con información resumida:
-   - ID, Nombre completo, CI/NIT, Email, Teléfono, Acciones
-5. Usuario puede navegar entre páginas
-6. Usuario puede usar búsqueda/filtros
+   - Num, Nombre completo, CI/NIT, Email, Teléfono, Acciones
+5. **Empleados**: Solo ven opción "Solo lectura" en acciones
+6. **Administradores**: Ven opciones "Editar" y "Eliminar"
+7. Usuario puede navegar entre páginas y usar búsqueda/filtros
 
 ## Flujo Principal - Crear Cliente
-1. Usuario hace clic en "Nuevo Cliente"
+**Nota**: Esta operación solo está disponible para usuarios con rol Administrador
+1. Administrador hace clic en "Nuevo Cliente"
 2. Sistema muestra formulario de creación
-3. Usuario completa campos requeridos y opcionales
-4. Usuario hace clic en "Crear"
-5. Sistema valida todos los datos
+3. Administrador completa campos requeridos y opcionales
+4. Administrador hace clic en "Crear"
+5. Sistema valida todos los datos (incluyendo unicidad)
 6. Sistema crea cliente con asignación automática de usuario
 7. Sistema redirige con mensaje de éxito
 
@@ -61,18 +64,20 @@ Este caso de uso permite a usuarios autorizados realizar operaciones CRUD comple
 4. Usuario puede navegar a edición o eliminación
 
 ## Flujo Principal - Editar Cliente
-1. Usuario selecciona "Editar" en un cliente
+**Nota**: Esta operación solo está disponible para usuarios con rol Administrador
+1. Administrador selecciona "Editar" en un cliente
 2. Sistema carga datos actuales del cliente
-3. Usuario modifica campos necesarios
-4. Usuario hace clic en "Actualizar"
-5. Sistema valida cambios (especialmente unicidad de CI/NIT)
+3. Administrador modifica campos necesarios
+4. Administrador hace clic en "Actualizar"
+5. Sistema valida cambios (unicidad de CI/NIT, email, teléfono)
 6. Sistema actualiza información
 7. Sistema redirige con confirmación
 
 ## Flujo Principal - Eliminar Cliente
-1. Usuario selecciona "Eliminar" en un cliente
+**Nota**: Esta operación solo está disponible para usuarios con rol Administrador
+1. Administrador selecciona "Eliminar" en un cliente
 2. Sistema muestra confirmación de eliminación
-3. Usuario confirma la acción
+3. Administrador confirma la acción
 4. Sistema verifica restricciones de integridad
 5. Sistema elimina cliente (soft delete)
 6. Sistema redirige con mensaje de éxito
@@ -156,7 +161,11 @@ Este caso de uso permite a usuarios autorizados realizar operaciones CRUD comple
 ### Rutas y Middleware
 ```php
 Route::middleware(['auth', 'user.enabled'])->group(function () {
-    Route::resource('clientes', ClienteController::class);
+    Route::get('clientes', [ClienteController::class, 'index'])->name('clientes.index');
+});
+
+Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
+    Route::resource('clientes', ClienteController::class)->except(['index']);
 });
 ```
 
@@ -166,16 +175,16 @@ Route::middleware(['auth', 'user.enabled'])->group(function () {
 'nombre' => 'required|string|max:255',
 'apellido' => 'required|string|max:255',
 'ci_nit' => 'required|string|max:20|unique:clientes',
-'telefono' => 'nullable|string|max:15',
-'email' => 'nullable|email|max:255',
+'telefono' => 'nullable|string|max:15|unique:clientes',
+'email' => 'nullable|email|max:255|unique:clientes',
 'direccion' => 'nullable|string',
 
 // Edición
 'nombre' => 'required|string|max:255',
 'apellido' => 'required|string|max:255',
 'ci_nit' => 'required|string|max:20|unique:clientes,ci_nit,'.$cliente->id,
-'telefono' => 'nullable|string|max:15',
-'email' => 'nullable|email|max:255',
+'telefono' => 'nullable|string|max:15|unique:clientes,telefono,'.$cliente->id,
+'email' => 'nullable|email|max:255|unique:clientes,email,'.$cliente->id,
 'direccion' => 'nullable|string',
 ```
 
@@ -233,5 +242,7 @@ Route::middleware(['auth', 'user.enabled'])->group(function () {
 - **v1.1** - Agregado sistema de búsqueda (02/10/2025)
 - **v1.2** - Implementado soft delete y auditoría (02/10/2025)
 - **v1.3** - Agregado importación/exportación masiva (02/10/2025)
-- **v1.4** - Implementado filtros avanzados y paginación (02/10/2025)</content>
+- **v1.4** - Implementado filtros avanzados y paginación (02/10/2025)
+- **v1.5** - Implementado control de acceso basado en roles (03/10/2025)
+- **v1.6** - Agregadas validaciones de unicidad para email y teléfono (03/10/2025)</content>
 <parameter name="filePath">c:\Users\PG\Desktop\Materias\Sistemas de Informacion 1\Grupo SC\proyecto_confeccion\modas_boom\Docs\Ciclo 1\CU8_Gestionar_Clientes.md

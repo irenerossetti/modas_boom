@@ -43,8 +43,8 @@ class ClienteController extends Controller
             'nombre' => 'required|string|max:255',
             'apellido' => 'required|string|max:255',
             'ci_nit' => 'required|string|max:20|unique:clientes',
-            'telefono' => 'nullable|string|max:15',
-            'email' => 'nullable|email|max:255',
+            'telefono' => 'nullable|string|max:15|unique:clientes',
+            'email' => 'nullable|email|max:255|unique:clientes',
             'direccion' => 'nullable|string',
         ]);
 
@@ -82,8 +82,8 @@ class ClienteController extends Controller
             'nombre' => 'required|string|max:255',
             'apellido' => 'required|string|max:255',
             'ci_nit' => 'required|string|max:20|unique:clientes,ci_nit,' . $cliente->id,
-            'telefono' => 'nullable|string|max:15',
-            'email' => 'nullable|email|max:255',
+            'telefono' => 'nullable|string|max:15|unique:clientes,telefono,' . $cliente->id,
+            'email' => 'nullable|email|max:255|unique:clientes,email,' . $cliente->id,
             'direccion' => 'nullable|string',
         ]);
 

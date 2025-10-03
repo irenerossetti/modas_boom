@@ -8,7 +8,7 @@
 - **Estado**: ✅ Implementado
 
 ## Descripción
-Este caso de uso permite a un usuario potencial registrarse en el sistema Modas Boom creando una nueva cuenta de usuario. El proceso incluye la validación de datos, creación de la cuenta y envío de verificación de email.
+Este caso de uso permite a un usuario potencial registrarse en el sistema Modas Boom creando una nueva cuenta de usuario. El proceso incluye la validación de datos, creación automática de perfil de cliente, y verificación de email.
 
 ## Actores
 - **Actor Principal**: Usuario Potencial (Visitante no registrado)
@@ -18,24 +18,31 @@ Este caso de uso permite a un usuario potencial registrarse en el sistema Modas 
 1. El usuario debe tener acceso a internet y a un navegador web
 2. El sistema debe estar operativo
 3. No debe existir una cuenta con el mismo email
-4. El email proporcionado debe ser válido y accesible
+4. No debe existir un cliente con el mismo CI/NIT
+5. No debe existir un usuario con el mismo teléfono
+6. El email proporcionado debe ser válido y accesible
 
 ## Postcondiciones
 ### Éxito
-1. Se crea una nueva cuenta de usuario en el sistema
-2. Se envía un email de verificación al usuario
-3. El usuario es redirigido a la página de verificación de email
-4. La cuenta queda en estado "no verificado" hasta confirmar el email
+1. Se crea una nueva cuenta de usuario en el sistema con rol "Cliente"
+2. Se crea automáticamente un perfil de cliente asociado
+3. Se envía un email de verificación al usuario
+4. El usuario es redirigido a la página de verificación de email
+5. La cuenta queda en estado "no verificado" hasta confirmar el email
 
 ### Fallo
-1. No se crea ninguna cuenta
+1. No se crea ninguna cuenta ni perfil de cliente
 2. Se muestra mensaje de error específico
 3. El usuario permanece en la página de registro
 
 ## Flujo Principal
 1. El usuario accede a la página de registro (`/register`)
 2. El sistema muestra el formulario de registro con los campos:
-   - Nombre completo
+   - Nombre
+   - Apellido
+   - CI/NIT
+   - Teléfono
+   - Dirección
    - Email
    - Contraseña
    - Confirmación de contraseña
@@ -43,36 +50,41 @@ Este caso de uso permite a un usuario potencial registrarse en el sistema Modas 
 4. El usuario hace clic en "Registrarse"
 5. El sistema valida los datos:
    - Nombre: requerido, string, máximo 255 caracteres
-   - Email: requerido, formato válido, único en el sistema
+   - Apellido: requerido, string, máximo 255 caracteres
+   - CI/NIT: requerido, string, máximo 20 caracteres, único en clientes
+   - Teléfono: opcional, string, máximo 15 caracteres, único en usuarios y clientes
+   - Dirección: opcional, string
+   - Email: requerido, formato válido, único en usuarios
    - Contraseña: requerido, mínimo 8 caracteres, coincide con confirmación
 6. El sistema crea la cuenta de usuario con:
    - Estado: no verificado
-   - Rol: asignado por defecto (si existe)
+   - Rol: Cliente (id_rol = 3)
    - Timestamp de creación
-7. El sistema envía email de verificación
-8. El sistema redirige al usuario a la página de verificación
-9. El usuario confirma su email haciendo clic en el enlace
-10. La cuenta queda verificada y el usuario puede iniciar sesión
+7. El sistema crea automáticamente un perfil de cliente con los mismos datos
+8. El sistema envía email de verificación
+9. El sistema redirige al usuario a la página de verificación
+10. El usuario confirma su email haciendo clic en el enlace
+11. La cuenta queda verificada y el usuario puede iniciar sesión
 
 ## Flujos Alternativos
 
 ### FA1 - Email ya registrado
-1. En el paso 5 del flujo principal, el email ya existe
+1. En el paso 5 del flujo principal, el email ya existe en usuarios
 2. El sistema muestra mensaje: "El email ya está registrado"
 3. El sistema mantiene los datos del formulario (excepto contraseña)
 4. Retorna al paso 3
 
-### FA2 - Validación de contraseña débil
-1. En el paso 5, la contraseña no cumple los requisitos
-2. El sistema muestra mensaje específico sobre la contraseña
-3. Retorna al paso 3
+### FA2 - CI/NIT ya registrado
+1. En el paso 5 del flujo principal, el CI/NIT ya existe en clientes
+2. El sistema muestra mensaje: "El CI/NIT ya está registrado"
+3. El sistema mantiene los datos del formulario (excepto contraseña)
+4. Retorna al paso 3
 
-### FA3 - Error en envío de email
-1. En el paso 7, falla el envío del email de verificación
-2. El sistema registra el error en logs
-3. La cuenta se crea pero queda sin verificar
-4. El sistema informa al usuario del problema
-5. El usuario puede solicitar reenvío de verificación
+### FA3 - Teléfono ya registrado
+1. En el paso 5 del flujo principal, el teléfono ya existe en usuarios o clientes
+2. El sistema muestra mensaje: "El teléfono ya está registrado"
+3. El sistema mantiene los datos del formulario (excepto contraseña)
+4. Retorna al paso 3
 
 ## Excepciones
 
@@ -120,21 +132,29 @@ Route::post('register', [RegisteredUserController::class, 'store']);
 
 ### Validaciones
 ```php
-'request' => [
-    'name' => 'required|string|max:255',
-    'email' => 'required|string|email|max:255|unique:users',
-    'password' => 'required|string|confirmed|min:8',
-]
+$request->validate([
+    'nombre' => ['required', 'string', 'max:255'],
+    'apellido' => ['required', 'string', 'max:255'],
+    'ci_nit' => ['required', 'string', 'max:20', 'unique:clientes'],
+    'telefono' => ['nullable', 'string', 'max:15', 'unique:usuario', 'unique:clientes'],
+    'direccion' => ['nullable', 'string'],
+    'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+    'password' => ['required', 'confirmed', Rules\Password::defaults()],
+]);
 ```
 
-### Middleware
-- `guest`: Solo usuarios no autenticados pueden acceder
+### Creación automática de cliente
+Después de crear el usuario, el sistema automáticamente crea un registro en la tabla `clientes` con los mismos datos personales.
 
-## Archivos Relacionados
-- `app/Http/Requests/Auth/RegisterRequest.php` - Validaciones personalizadas
-- `resources/views/auth/verify-email.blade.php` - Página de verificación
-- `database/migrations/*_create_users_table.php` - Estructura de tabla
-- `config/auth.php` - Configuración de autenticación
+### Modelo
+- **Archivo**: `app/Models/User.php`
+- **Campos**: id_rol, nombre, telefono, direccion, email, password, habilitado, timestamps
+- **Relaciones**: belongsTo con Rol, hasOne con Cliente
+
+### Modelo Cliente
+- **Archivo**: `app/Models/Cliente.php`
+- **Campos**: id_usuario, nombre, apellido, ci_nit, telefono, email, direccion, timestamps
+- **Relaciones**: belongsTo con User
 
 ## Pruebas
 - **Archivo**: `tests/Feature/Auth/RegistrationTest.php`
@@ -161,5 +181,8 @@ Route::post('register', [RegisteredUserController::class, 'store']);
 ## Historial de Cambios
 - **v1.0** - Implementación inicial (02/10/2025)
 - **v1.1** - Agregado rate limiting (02/10/2025)
-- **v1.2** - Mejora de UX en validaciones (02/10/2025)</content>
+- **v1.2** - Mejora de UX en validaciones (02/10/2025)
+- **v1.3** - Agregado campos adicionales (nombre, apellido, CI/NIT, teléfono, dirección) (03/10/2025)
+- **v1.4** - Implementado creación automática de perfil cliente (03/10/2025)
+- **v1.5** - Agregadas validaciones de unicidad para teléfono y CI/NIT (03/10/2025)</content>
 <parameter name="filePath">c:\Users\PG\Desktop\Materias\Sistemas de Informacion 1\Grupo SC\proyecto_confeccion\modas_boom\Docs\Ciclo 1\CU1_Registrar_Usuario.md

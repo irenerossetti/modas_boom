@@ -15,18 +15,18 @@
                     </x-slot>
 
                     <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
-                        </x-dropdown-link>
+                        <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('profile.edit') }}">
+                            {{ __('Perfil') }}
+                        </a>
 
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
 
-                            <x-dropdown-link :href="route('logout')"
+                            <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-red-title hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('logout') }}"
                                     onclick="event.preventDefault();
                                                 this.closest('form').submit();">
-                                {{ __('Log Out') }}
-                            </x-dropdown-link>
+                                {{ __('Cerrar sesión') }}
+                            </a>
                         </form>
                     </x-slot>
                 </x-dropdown>

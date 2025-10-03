@@ -24,11 +24,13 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
+            'id_rol' => 2, // Asumir rol de usuario normal, ajustar si necesario
+            'nombre' => fake()->name(),
+            'telefono' => fake()->optional()->phoneNumber(),
+            'direccion' => fake()->optional()->address(),
             'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
+            'habilitado' => true,
         ];
     }
 
