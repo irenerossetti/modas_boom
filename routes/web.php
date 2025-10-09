@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RolController;
+use App\Http\Controllers\BitacoraController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -25,6 +26,11 @@ Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
     Route::resource('clientes', ClienteController::class)->except(['index']);
     Route::resource('users', UserController::class);
     Route::resource('roles', RolController::class);
+    
+    // Rutas de bitácora - solo para administradores
+    Route::get('bitacora', [BitacoraController::class, 'index'])->name('bitacora.index');
+    Route::get('bitacora/limpiar-filtros', [BitacoraController::class, 'limpiarFiltros'])->name('bitacora.limpiar-filtros');
+    Route::post('bitacora/exportar', [BitacoraController::class, 'exportar'])->name('bitacora.exportar');
 });
 
 Route::get('/empleado-dashboard', function () {
