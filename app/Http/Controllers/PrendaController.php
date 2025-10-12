@@ -52,14 +52,36 @@ class PrendaController extends Controller
             'descripcion' => 'nullable|string',
             'precio' => 'required|numeric|min:0',
             'categoria' => 'required|string|max:100',
-            'imagen' => 'nullable|string|max:500',
+            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'colores' => 'nullable|array',
+            'colores.*' => 'string|max:50',
             'tallas' => 'nullable|array',
+            'tallas.*' => 'string|max:10',
             'stock' => 'required|integer|min:0',
             'activo' => 'boolean'
         ]);
 
-        Prenda::create($request->all());
+        $data = $request->all();
+        
+        // Procesar imagen si se subió
+        if ($request->hasFile('imagen')) {
+            $imagen = $request->file('imagen');
+            $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
+            $imagen->move(public_path('images/prendas'), $nombreImagen);
+            $data['imagen'] = 'images/prendas/' . $nombreImagen;
+        }
+
+        // Filtrar colores vacíos
+        if (isset($data['colores'])) {
+            $data['colores'] = array_filter($data['colores'], function($color) {
+                return !empty(trim($color));
+            });
+        }
+
+        // Asegurar que activo sea boolean
+        $data['activo'] = $request->has('activo');
+
+        Prenda::create($data);
 
         // Limpiar cache
         Cache::forget('productos_catalogo_db');
@@ -94,14 +116,44 @@ class PrendaController extends Controller
             'descripcion' => 'nullable|string',
             'precio' => 'required|numeric|min:0',
             'categoria' => 'required|string|max:100',
-            'imagen' => 'nullable|string|max:500',
+            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'colores' => 'nullable|array',
+            'colores.*' => 'string|max:50',
             'tallas' => 'nullable|array',
+            'tallas.*' => 'string|max:10',
             'stock' => 'required|integer|min:0',
             'activo' => 'boolean'
         ]);
 
-        $prenda->update($request->all());
+        $data = $request->all();
+        
+        // Procesar imagen si se subió una nueva
+        if ($request->hasFile('imagen')) {
+            // Eliminar imagen anterior si existe
+            if ($prenda->imagen && file_exists(public_path($prenda->imagen))) {
+                unlink(public_path($prenda->imagen));
+            }
+            
+            $imagen = $request->file('imagen');
+            $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
+            $imagen->move(public_path('images/prendas'), $nombreImagen);
+            $data['imagen'] = 'images/prendas/' . $nombreImagen;
+        } else {
+            // Mantener la imagen actual
+            unset($data['imagen']);
+        }
+
+        // Filtrar colores vacíos
+        if (isset($data['colores'])) {
+            $data['colores'] = array_filter($data['colores'], function($color) {
+                return !empty(trim($color));
+            });
+        }
+
+        // Asegurar que activo sea boolean
+        $data['activo'] = $request->has('activo');
+
+        $prenda->update($data);
 
         // Limpiar cache
         Cache::forget('productos_catalogo_db');
