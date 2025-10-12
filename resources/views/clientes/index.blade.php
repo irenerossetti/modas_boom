@@ -58,16 +58,44 @@
                         <td class="p-3">{{ $cliente->email ?? 'N/A' }}</td>
                         <td class="p-3">{{ $cliente->telefono ?? 'N/A' }}</td>
                         <td class="p-3">
-                            @if(Auth::user()->id_rol == 1)
-                                <a href="{{ route('clientes.edit', $cliente) }}" class="text-blue-500 hover:underline">Editar</a>
-                                <form action="{{ route('clientes.destroy', $cliente) }}" method="POST" class="inline ml-4" onsubmit="return confirm('¿Está seguro de que desea eliminar este cliente?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-500 hover:underline">Eliminar</button>
-                                </form>
-                            @else
-                                <span class="text-gray-400">Solo lectura</span>
-                            @endif
+                            <div class="flex flex-wrap gap-2">
+                                <!-- Botón para crear pedido - disponible para todos -->
+                                <a href="{{ route('pedidos.create', ['cliente' => $cliente->id]) }}" 
+                                   class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200"
+                                   title="Crear pedido para este cliente">
+                                    <i class="fas fa-shopping-bag mr-1"></i>
+                                    Nuevo Pedido
+                                </a>
+                                
+                                <!-- Botón para ver historial de pedidos -->
+                                <a href="{{ route('pedidos.cliente-historial', $cliente->id) }}" 
+                                   class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200"
+                                   title="Ver historial de pedidos">
+                                    <i class="fas fa-history mr-1"></i>
+                                    Historial
+                                </a>
+                                
+                                @if(Auth::user()->id_rol == 1)
+                                    <!-- Botones de administrador -->
+                                    <a href="{{ route('clientes.edit', $cliente) }}" 
+                                       class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200"
+                                       title="Editar cliente">
+                                        <i class="fas fa-edit mr-1"></i>
+                                        Editar
+                                    </a>
+                                    <form action="{{ route('clientes.destroy', $cliente) }}" method="POST" class="inline" 
+                                          onsubmit="return confirm('¿Está seguro de que desea eliminar este cliente?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" 
+                                                class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200"
+                                                title="Eliminar cliente">
+                                            <i class="fas fa-trash mr-1"></i>
+                                            Eliminar
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                     @empty

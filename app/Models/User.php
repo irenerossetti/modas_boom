@@ -47,6 +47,14 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Get the route key for the model.
+     */
+    public function getRouteKeyName()
+    {
+        return 'id_usuario';
+    }
+
     // Relación con el modelo Rol
     public function rol(): BelongsTo
     {

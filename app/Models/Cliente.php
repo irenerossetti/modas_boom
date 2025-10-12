@@ -29,4 +29,10 @@ class Cliente extends Model
         // Apuntamos al modelo User y no a Usuario
         return $this->belongsTo(User::class, 'id_usuario', 'id_usuario');
     }
+
+    // Un Cliente puede tener muchos Pedidos
+    public function pedidos()
+    {
+        return $this->hasMany(Pedido::class, 'id_cliente', 'id');
+    }
 }

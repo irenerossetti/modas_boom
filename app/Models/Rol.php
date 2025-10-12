@@ -19,6 +19,14 @@ class Rol extends Model
         'habilitado',
     ];
 
+    /**
+     * Get the route key for the model.
+     */
+    public function getRouteKeyName()
+    {
+        return 'id_rol';
+    }
+
     // Un Rol puede tener muchos Usuarios
     public function usuarios()
     {
