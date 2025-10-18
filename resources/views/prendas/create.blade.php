@@ -8,7 +8,7 @@
                             <h2 class="text-2xl font-bold text-boom-text-dark">Nueva Prenda</h2>
                             <p class="text-sm text-boom-text-medium mt-1">Añade una nueva prenda al catálogo</p>
                         </div>
-                        <a href="{{ route('prendas.index') }}" class="bg-boom-cream-200 hover:bg-boom-cream-300 text-boom-text-dark font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                        <a href="{{ route('prendas.index') }}" class="secondary-btn-improved py-2 px-4 rounded-lg transition-colors duration-300">
                             <i class="fas fa-arrow-left mr-2"></i>Volver
                         </a>
                     </div>

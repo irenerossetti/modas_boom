@@ -1,17 +1,19 @@
 <x-app-layout>
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="p-6 bg-white border-b border-gray-200">
-                    <div class="flex items-center justify-between mb-6">
+    <div class="py-4 lg:py-12">
+        <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-xl rounded-lg">
+                <div class="p-3 sm:p-6 bg-white border-b border-gray-200">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 lg:mb-6 space-y-3 sm:space-y-0">
                         <div>
-                            <h2 class="text-2xl font-bold text-boom-text-dark">Mis Pedidos</h2>
+                            <h2 class="text-xl sm:text-2xl font-bold text-boom-text-dark">Mis Pedidos</h2>
                             @if(Auth::user()->id_rol == 2)
                                 <p class="text-sm text-boom-text-medium mt-1">Pedidos personales como empleado</p>
                             @endif
                         </div>
-                        <a href="{{ route('pedidos.cliente-crear') }}" class="bg-boom-rose-dark hover:bg-boom-rose-light text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
-                            <i class="fas fa-plus mr-2"></i>Hacer Nuevo Pedido
+                        <a href="{{ route('pedidos.cliente-crear') }}" class="bg-boom-rose-dark hover:bg-boom-rose-light text-white font-semibold py-2 px-3 sm:px-4 rounded-lg transition-colors duration-300 text-sm sm:text-base text-center">
+                            <i class="fas fa-plus mr-1 sm:mr-2"></i>
+                            <span class="hidden sm:inline">Hacer Nuevo Pedido</span>
+                            <span class="sm:hidden">Nuevo Pedido</span>
                         </a>
                     </div>
 
@@ -34,8 +36,8 @@
                         </div>
                     @else
                         <!-- Filtros -->
-                        <div class="bg-boom-cream-100 rounded-lg p-4 mb-6">
-                            <form method="GET" action="{{ route('pedidos.mis-pedidos') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="bg-boom-cream-100 rounded-lg p-3 sm:p-4 mb-4 lg:mb-6">
+                            <form method="GET" action="{{ route('pedidos.mis-pedidos') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                                 <div>
                                     <label for="estado" class="block text-sm font-medium text-boom-text-dark mb-1">Estado</label>
                                     <select name="estado" id="estado" class="w-full px-3 py-2 border border-boom-cream-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-boom-rose-dark">
@@ -61,7 +63,7 @@
                                     <button type="submit" class="bg-boom-rose-dark hover:bg-boom-rose-light text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
                                         <i class="fas fa-search mr-1"></i>Filtrar
                                     </button>
-                                    <a href="{{ route('pedidos.mis-pedidos') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                                    <a href="{{ route('pedidos.mis-pedidos') }}" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 shadow-sm hover:shadow-md">
                                         <i class="fas fa-times mr-1"></i>Limpiar
                                     </a>
                                 </div>

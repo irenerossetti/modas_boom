@@ -1,17 +1,18 @@
 <x-app-layout>
-    <div class="py-12">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="p-6 bg-white border-b border-gray-200">
-                    <div class="flex items-center justify-between mb-6">
+    <div class="py-4 lg:py-12">
+        <div class="max-w-4xl mx-auto px-2 sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-xl rounded-lg">
+                <div class="p-3 sm:p-6 bg-white border-b border-gray-200">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 lg:mb-6 space-y-3 sm:space-y-0">
                         <div>
-                            <h2 class="text-2xl font-bold text-boom-text-dark">Hacer Pedido</h2>
+                            <h2 class="text-xl sm:text-2xl font-bold text-boom-text-dark">Hacer Pedido</h2>
                             @if(Auth::user()->id_rol == 2)
                                 <p class="text-sm text-boom-text-medium mt-1">Pedido personal como empleado</p>
                             @endif
                         </div>
-                        <a href="{{ route('pedidos.mis-pedidos') }}" class="bg-boom-cream-200 hover:bg-boom-cream-300 text-boom-text-dark font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
-                            Ver Mis Pedidos
+                        <a href="{{ route('pedidos.mis-pedidos') }}" class="bg-white hover:bg-gray-50 text-boom-text-dark border-2 border-boom-cream-500 hover:border-boom-cream-600 font-semibold py-2 px-3 sm:px-4 rounded-lg transition-colors duration-300 text-sm sm:text-base text-center shadow-sm hover:shadow-md">
+                            <span class="hidden sm:inline">Ver Mis Pedidos</span>
+                            <span class="sm:hidden">Mis Pedidos</span>
                         </a>
                     </div>
 
@@ -29,15 +30,16 @@
                         @csrf
                         
                         <!-- Selección Múltiple de Productos -->
-                        <div class="mb-6">
-                            <div class="flex items-center justify-between mb-6">
+                        <div class="mb-4 lg:mb-6">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 lg:mb-6 space-y-2 sm:space-y-0">
                                 <h3 class="text-lg font-semibold text-boom-text-dark">Seleccionar Productos</h3>
-                                <div class="flex items-center space-x-4">
-                                    <span class="text-sm text-boom-text-medium">
+                                <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                                    <span class="text-xs sm:text-sm text-boom-text-medium">
                                         <i class="fas fa-info-circle mr-1"></i>
-                                        Puedes seleccionar múltiples productos
+                                        <span class="hidden sm:inline">Puedes seleccionar múltiples productos</span>
+                                        <span class="sm:hidden">Múltiples productos</span>
                                     </span>
-                                    <button type="button" id="limpiar-seleccion" class="text-sm text-boom-rose-dark hover:text-boom-rose-light transition-colors">
+                                    <button type="button" id="limpiar-seleccion" class="text-xs sm:text-sm text-boom-rose-dark hover:text-boom-rose-light transition-colors text-center">
                                         <i class="fas fa-times mr-1"></i>Limpiar selección
                                     </button>
                                 </div>
@@ -250,7 +252,7 @@
                         <!-- Botones -->
                         <div class="flex justify-end space-x-4">
                             <a href="{{ route('pedidos.mis-pedidos') }}" 
-                               class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded-lg transition-colors duration-300">
+                               class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-300 shadow-sm hover:shadow-md">
                                 Cancelar
                             </a>
                             <button type="submit" id="btn-crear-pedido" disabled

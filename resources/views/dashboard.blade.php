@@ -1,12 +1,37 @@
+<style>
+    .contenedor{
+        transition: transform 0.3s ease;
+        animation: fadeIn 0.1s infinite alternate-reverse;
+    }
+    .contenedor:hover{
+        transform: scale(1.05);
+        animation: none;
+    }
+    #botoncito{
+        transition: transform 0.5s ease;
+    }
+    #botoncito:hover{
+        animation: fadeIn 0.5s infinite ;
+    }
+
+    @keyframes fadeIn{
+        0% {opacity: 0.3;}
+        100% {opacity: 1;}
+    }
+
+</style>
 <x-app-layout>
     <div class="bg-boom-cream-200 min-h-screen">
         
         <main class="p-4 sm:p-6 lg:p-8">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold text-boom-text-dark">Dashboard Administrativo</h1>
-                <button class="bg-boom-red-report hover:opacity-90 text-white font-bold py-2 px-4 rounded-lg shadow">
+                <div >
+                   <button class=" bg-boom-red-report text-white font-bold py-2 px-4 rounded-lg shadow" >
                     Generar Reporte
-                </button>
+                </button> 
+                </div>
+                
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

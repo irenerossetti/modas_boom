@@ -1,41 +1,42 @@
 <x-app-layout>
-    <div class="p-4 sm:p-6 lg:p-8">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold text-boom-text-dark">
+    <div class="p-2 sm:p-4 lg:p-6">
+        <div class="flex justify-between items-center mb-4 lg:mb-6">
+            <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-boom-text-dark">
                 <i class="fas fa-tshirt mr-2"></i>
-                Catálogo de Productos
+                <span class="hidden sm:inline">Catálogo de Productos</span>
+                <span class="sm:hidden">Catálogo</span>
             </h1>
         </div>
 
         <!-- Filtros de categoría -->
-        <div class="bg-white p-4 rounded-lg shadow mb-6">
-            <div class="flex flex-wrap gap-3">
+        <div class="bg-white p-3 sm:p-4 rounded-lg shadow mb-4 lg:mb-6">
+            <div class="flex flex-wrap gap-2 sm:gap-3">
                 <button onclick="filtrarCategoria('todos')" 
-                        class="categoria-btn bg-boom-primary text-white px-4 py-2 rounded font-medium transition-colors duration-200"
+                        class="categoria-btn bg-boom-primary text-white px-3 sm:px-4 py-2 rounded font-medium transition-colors duration-200 text-sm sm:text-base"
                         data-categoria="todos">
                     <i class="fas fa-th-large mr-1"></i>
                     Todos
                 </button>
                 <button onclick="filtrarCategoria('trajes')" 
-                        class="categoria-btn bg-gray-200 text-gray-700 hover:bg-boom-primary hover:text-white px-4 py-2 rounded font-medium transition-colors duration-200"
+                        class="categoria-btn bg-gray-200 text-gray-700 hover:bg-boom-primary hover:text-white px-3 sm:px-4 py-2 rounded font-medium transition-colors duration-200 text-sm sm:text-base"
                         data-categoria="trajes">
                     <i class="fas fa-user-tie mr-1"></i>
                     Trajes
                 </button>
                 <button onclick="filtrarCategoria('vestidos')" 
-                        class="categoria-btn bg-gray-200 text-gray-700 hover:bg-boom-primary hover:text-white px-4 py-2 rounded font-medium transition-colors duration-200"
+                        class="categoria-btn bg-gray-200 text-gray-700 hover:bg-boom-primary hover:text-white px-3 sm:px-4 py-2 rounded font-medium transition-colors duration-200 text-sm sm:text-base"
                         data-categoria="vestidos">
                     <i class="fas fa-female mr-1"></i>
                     Vestidos
                 </button>
                 <button onclick="filtrarCategoria('blazers')" 
-                        class="categoria-btn bg-gray-200 text-gray-700 hover:bg-boom-primary hover:text-white px-4 py-2 rounded font-medium transition-colors duration-200"
+                        class="categoria-btn bg-gray-200 text-gray-700 hover:bg-boom-primary hover:text-white px-3 sm:px-4 py-2 rounded font-medium transition-colors duration-200 text-sm sm:text-base"
                         data-categoria="blazers">
                     <i class="fas fa-vest mr-1"></i>
                     Blazers
                 </button>
                 <button onclick="filtrarCategoria('camisas')" 
-                        class="categoria-btn bg-gray-200 text-gray-700 hover:bg-boom-primary hover:text-white px-4 py-2 rounded font-medium transition-colors duration-200"
+                        class="categoria-btn bg-gray-200 text-gray-700 hover:bg-boom-primary hover:text-white px-3 sm:px-4 py-2 rounded font-medium transition-colors duration-200 text-sm sm:text-base"
                         data-categoria="camisas">
                     <i class="fas fa-tshirt mr-1"></i>
                     Camisas
@@ -44,7 +45,7 @@
         </div>
 
         <!-- Catálogo de productos -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
             <!-- Traje Ejecutivo -->
             <div class="producto-card bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300" data-categoria="trajes">
                 <div class="relative">

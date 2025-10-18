@@ -1,26 +1,31 @@
 <x-app-layout>
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="p-6 bg-white border-b border-gray-200">
-                    <div class="flex items-center justify-between mb-6">
+    <div class="py-4 lg:py-12">
+        <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-xl rounded-lg">
+                <div class="p-3 sm:p-6 bg-white border-b border-gray-200">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4 lg:mb-6 space-y-3 lg:space-y-0">
                         <div>
-                            <h2 class="text-2xl font-bold text-boom-text-dark">
+                            <h2 class="text-xl sm:text-2xl font-bold text-boom-text-dark">
                                 <i class="fas fa-history mr-2"></i>
-                                Historial del Pedido #{{ $pedido->id_pedido }}
+                                <span class="hidden sm:inline">Historial del Pedido #{{ $pedido->id_pedido }}</span>
+                                <span class="sm:hidden">Historial #{{ $pedido->id_pedido }}</span>
                             </h2>
-                            <p class="text-boom-text-medium mt-1">
+                            <p class="text-boom-text-medium mt-1 text-sm sm:text-base">
                                 Cliente: {{ $pedido->cliente->nombre }} {{ $pedido->cliente->apellido }}
                             </p>
                         </div>
-                        <div class="flex space-x-3">
+                        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                             <a href="{{ route('pedidos.show', $pedido->id_pedido) }}" 
-                               class="bg-boom-cream-200 hover:bg-boom-cream-300 text-boom-text-dark font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
-                                <i class="fas fa-eye mr-2"></i>Ver Pedido
+                               class="bg-white hover:bg-gray-50 text-boom-text-dark border-2 border-boom-cream-500 hover:border-boom-cream-600 font-semibold py-2 px-3 sm:px-4 rounded-lg transition-colors duration-300 text-sm sm:text-base text-center shadow-sm hover:shadow-md">
+                                <i class="fas fa-eye mr-1 sm:mr-2"></i>
+                                <span class="hidden sm:inline">Ver Pedido</span>
+                                <span class="sm:hidden">Ver</span>
                             </a>
                             <a href="{{ route('pedidos.index') }}" 
-                               class="bg-boom-rose-dark hover:bg-boom-rose-light text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
-                                <i class="fas fa-arrow-left mr-2"></i>Volver a Pedidos
+                               class="bg-boom-rose-dark hover:bg-boom-rose-light text-white font-semibold py-2 px-3 sm:px-4 rounded-lg transition-colors duration-300 text-sm sm:text-base text-center">
+                                <i class="fas fa-arrow-left mr-1 sm:mr-2"></i>
+                                <span class="hidden sm:inline">Volver a Pedidos</span>
+                                <span class="sm:hidden">Volver</span>
                             </a>
                         </div>
                     </div>

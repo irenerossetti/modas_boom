@@ -14,7 +14,7 @@
                                 <i class="fas fa-edit mr-2"></i>Editar
                             </a>
                             <a href="{{ route('prendas.index') }}" 
-                               class="bg-boom-cream-200 hover:bg-boom-cream-300 text-boom-text-dark font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                               class="secondary-btn-improved py-2 px-4 rounded-lg transition-colors duration-300">
                                 <i class="fas fa-arrow-left mr-2"></i>Volver
                             </a>
                         </div>
@@ -133,7 +133,7 @@
                                 <h3 class="text-lg font-semibold text-boom-text-dark mb-3">Tallas Disponibles</h3>
                                 <div class="flex flex-wrap gap-2">
                                     @foreach($prenda->tallas as $talla)
-                                        <span class="bg-boom-cream-300 text-boom-text-dark px-3 py-1 rounded-full text-sm font-semibold">{{ $talla }}</span>
+                                        <span class="tag-improved rounded-full">{{ $talla }}</span>
                                     @endforeach
                                 </div>
                             </div>
@@ -178,7 +178,7 @@
                         </div>
 
                         <a href="{{ route('prendas.index') }}" 
-                           class="bg-boom-cream-200 hover:bg-boom-cream-300 text-boom-text-dark font-semibold py-2 px-6 rounded-lg transition-colors duration-300">
+                           class="secondary-btn-improved py-2 px-6 rounded-lg transition-colors duration-300">
                             <i class="fas fa-arrow-left mr-2"></i>Volver al Listado
                         </a>
                     </div>

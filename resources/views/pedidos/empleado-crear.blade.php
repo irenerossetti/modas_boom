@@ -255,7 +255,7 @@
                         <!-- Botones -->
                         <div class="flex justify-end space-x-4">
                             <a href="{{ route('pedidos.index') }}" 
-                               class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded-lg transition-colors duration-300">
+                               class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-300 shadow-sm hover:shadow-md">
                                 Cancelar
                             </a>
                             <button type="submit" id="btn-crear-pedido" disabled

@@ -1,43 +1,45 @@
 <x-app-layout>
-    <div class="p-4 sm:p-6 lg:p-8">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold text-boom-text-dark">
+    <div class="p-2 sm:p-4 lg:p-6">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 lg:mb-6 space-y-3 sm:space-y-0">
+            <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-boom-text-dark">
                 <i class="fas fa-shopping-bag mr-2"></i>
-                Pedido #{{ $pedido->id_pedido }}
+                <span class="hidden sm:inline">Pedido #{{ $pedido->id_pedido }}</span>
+                <span class="sm:hidden">#{{ $pedido->id_pedido }}</span>
             </h1>
-            <div class="flex space-x-2">
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                 @if($pedido->puedeSerEditado())
                     <a href="{{ route('pedidos.edit', $pedido->id_pedido) }}" 
-                       class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">
+                       class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-3 sm:px-4 rounded text-sm sm:text-base text-center">
                         <i class="fas fa-edit mr-1"></i>
                         Editar
                     </a>
                 @endif
                 
                 <a href="{{ route('pedidos.historial', $pedido->id_pedido) }}" 
-                   class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">
+                   class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-3 sm:px-4 rounded text-sm sm:text-base text-center">
                     <i class="fas fa-history mr-1"></i>
                     Historial
                 </a>
                 
                 <a href="{{ route('pedidos.index') }}" 
-                   class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                   class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-3 sm:px-4 rounded text-sm sm:text-base text-center">
                     <i class="fas fa-arrow-left mr-1"></i>
                     Volver
                 </a>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
             <!-- Información Principal del Pedido -->
             <div class="lg:col-span-2">
-                <div class="bg-white p-6 rounded-lg shadow mb-6">
-                    <h2 class="text-xl font-semibold text-boom-text-dark mb-4">
+                <div class="bg-white p-3 sm:p-6 rounded-lg shadow mb-4 lg:mb-6">
+                    <h2 class="text-lg sm:text-xl font-semibold text-boom-text-dark mb-3 sm:mb-4">
                         <i class="fas fa-info-circle mr-2"></i>
-                        Información del Pedido
+                        <span class="hidden sm:inline">Información del Pedido</span>
+                        <span class="sm:hidden">Información</span>
                     </h2>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Número de Pedido</label>
                             <div class="text-2xl font-bold text-boom-primary">

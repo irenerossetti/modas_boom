@@ -118,7 +118,7 @@
                                             <p class="text-xs text-boom-text-medium mb-1">Colores:</p>
                                             <div class="flex flex-wrap gap-1">
                                                 @foreach(array_slice($prenda->colores, 0, 3) as $color)
-                                                    <span class="text-xs bg-boom-cream-200 text-boom-text-dark px-2 py-1 rounded">{{ $color }}</span>
+                                                    <span class="text-xs bg-boom-cream-400 text-boom-text-dark border border-boom-cream-500 px-2 py-1 rounded font-medium">{{ $color }}</span>
                                                 @endforeach
                                                 @if(count($prenda->colores) > 3)
                                                     <span class="text-xs text-boom-text-medium">+{{ count($prenda->colores) - 3 }}</span>
@@ -132,7 +132,7 @@
                                             <p class="text-xs text-boom-text-medium mb-1">Tallas:</p>
                                             <div class="flex flex-wrap gap-1">
                                                 @foreach($prenda->tallas as $talla)
-                                                    <span class="text-xs bg-boom-cream-200 text-boom-text-dark px-2 py-1 rounded">{{ $talla }}</span>
+                                                    <span class="text-xs bg-boom-cream-400 text-boom-text-dark border border-boom-cream-500 px-2 py-1 rounded font-medium">{{ $talla }}</span>
                                                 @endforeach
                                             </div>
                                         </div>

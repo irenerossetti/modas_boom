@@ -45,6 +45,23 @@ Route::middleware(['auth', 'user.enabled'])->group(function () {
     
     // Ruta del catálogo de productos
     Route::get('catalogo', [CatalogoController::class, 'index'])->name('catalogo.index');
+    
+    // Rutas de solo lectura para empleados
+    Route::get('roles', [RolController::class, 'index'])->name('roles.index.readonly');
+    Route::get('roles/{rol}', [RolController::class, 'show'])->name('roles.show.readonly');
+    
+    // Ruta de debug temporal
+    Route::get('debug-roles', function() {
+        $user = auth()->user();
+        return response()->json([
+            'authenticated' => auth()->check(),
+            'user_email' => $user->email ?? null,
+            'user_role_id' => $user->id_rol ?? null,
+            'user_role_name' => $user->rol->nombre ?? null,
+            'is_admin' => $user && $user->id_rol == 1,
+            'can_edit_roles' => $user && $user->id_rol == 1
+        ]);
+    });
 });
 
 Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
@@ -57,6 +74,11 @@ Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
     Route::get('bitacora', [BitacoraController::class, 'index'])->name('bitacora.index');
     Route::get('bitacora/limpiar-filtros', [BitacoraController::class, 'limpiarFiltros'])->name('bitacora.limpiar-filtros');
     Route::post('bitacora/exportar', [BitacoraController::class, 'exportar'])->name('bitacora.exportar');
+    
+    // Rutas del sistema - solo para administradores
+    Route::get('sistema', [\App\Http\Controllers\SistemaController::class, 'index'])->name('sistema.index');
+    Route::get('sistema/diagrama', [\App\Http\Controllers\SistemaController::class, 'diagrama'])->name('sistema.diagrama');
+    Route::get('sistema/estadisticas', [\App\Http\Controllers\SistemaController::class, 'estadisticas'])->name('sistema.estadisticas');
     
     // Rutas adicionales de pedidos - solo para administradores
     Route::post('pedidos/{id}/asignar', [PedidoController::class, 'asignar'])->name('pedidos.asignar');

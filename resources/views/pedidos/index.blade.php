@@ -1,20 +1,23 @@
 <x-app-layout>
-    <div class="p-4 sm:p-6 lg:p-8">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold text-boom-text-dark">
+    <div class="p-2 sm:p-4 lg:p-6">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 lg:mb-6 space-y-3 sm:space-y-0">
+            <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-boom-text-dark">
                 <i class="fas fa-shopping-bag mr-2"></i>
-                Gestión de Pedidos
+                <span class="hidden sm:inline">Gestión de Pedidos</span>
+                <span class="sm:hidden">Pedidos</span>
             </h1>
-            <div class="flex space-x-3">
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 lg:space-x-3">
                 @if(Auth::user()->id_rol == 1 || Auth::user()->id_rol == 2)
-                    <a href="{{ route('pedidos.empleado-crear') }}" class="bg-boom-rose-dark hover:bg-boom-rose-light text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105">
-                        <i class="fas fa-plus mr-2"></i>
-                        Crear Nuevo Pedido
+                    <a href="{{ route('pedidos.empleado-crear') }}" class="bg-boom-rose-dark hover:bg-boom-rose-light text-white font-bold py-2 px-3 sm:py-3 sm:px-4 lg:px-6 rounded-lg shadow-lg transition-all duration-300 text-sm sm:text-base text-center">
+                        <i class="fas fa-plus mr-1 sm:mr-2"></i>
+                        <span class="hidden sm:inline">Crear Nuevo Pedido</span>
+                        <span class="sm:hidden">Nuevo Pedido</span>
                     </a>
                 @endif
-                <a href="{{ route('pedidos.create') }}" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
-                    <i class="fas fa-edit mr-2"></i>
-                    Pedido Manual
+                <a href="{{ route('pedidos.create') }}" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-3 sm:py-3 sm:px-4 lg:px-6 rounded-lg shadow-md transition-all duration-300 text-sm sm:text-base text-center">
+                    <i class="fas fa-edit mr-1 sm:mr-2"></i>
+                    <span class="hidden sm:inline">Pedido Manual</span>
+                    <span class="sm:hidden">Manual</span>
                 </a>
             </div>
         </div>
@@ -34,8 +37,8 @@
         @endif
 
         <!-- Formulario de filtros -->
-        <div class="bg-white p-4 rounded-lg shadow mb-6">
-            <form method="GET" action="{{ route('pedidos.index') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="bg-white p-3 sm:p-4 rounded-lg shadow mb-4 lg:mb-6">
+            <form method="GET" action="{{ route('pedidos.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
                 <div>
                     <label for="busqueda" class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
                     <input type="text" name="busqueda" id="busqueda" 
@@ -84,23 +87,24 @@
                            class="form-input block w-full rounded-md shadow-sm">
                 </div>
                 
-                <div class="flex items-end gap-2 md:col-span-2 lg:col-span-5">
-                    <button type="submit" class="bg-boom-rose-dark hover:bg-boom-rose-light text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
-                        <i class="fas fa-search mr-2"></i>
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-2 sm:col-span-2 lg:col-span-5">
+                    <button type="submit" class="bg-boom-rose-dark hover:bg-boom-rose-light text-white font-bold py-2 px-4 sm:px-6 rounded-lg shadow-md transition-all duration-300 text-sm sm:text-base">
+                        <i class="fas fa-search mr-1 sm:mr-2"></i>
                         Filtrar
                     </button>
                     @if(!empty($filtros))
                         <a href="{{ route('pedidos.index') }}" 
-                           class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-300">
-                            <i class="fas fa-times mr-2"></i>
+                           class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 sm:px-6 rounded-lg shadow-md transition-all duration-300 text-sm sm:text-base text-center">
+                            <i class="fas fa-times mr-1 sm:mr-2"></i>
                             Limpiar
                         </a>
                     @endif
                     @if(Auth::user()->rol && Auth::user()->rol->nombre === 'Administrador')
                         <a href="{{ route('pedidos.por-operario') }}" 
-                           class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-300">
-                            <i class="fas fa-users mr-2"></i>
-                            Por Operario
+                           class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 sm:px-6 rounded-lg shadow-md transition-all duration-300 text-sm sm:text-base text-center">
+                            <i class="fas fa-users mr-1 sm:mr-2"></i>
+                            <span class="hidden sm:inline">Por Operario</span>
+                            <span class="sm:hidden">Operarios</span>
                         </a>
                     @endif
                 </div>
@@ -108,40 +112,40 @@
         </div>
 
         <!-- Estadísticas rápidas -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-yellow-100 border border-yellow-300 rounded-lg p-4">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 lg:mb-6">
+            <div class="bg-yellow-100 border border-yellow-300 rounded-lg p-2 sm:p-4">
                 <div class="flex items-center">
-                    <i class="fas fa-clock text-yellow-600 text-2xl mr-3"></i>
+                    <i class="fas fa-clock text-yellow-600 text-lg sm:text-2xl mr-2 sm:mr-3"></i>
                     <div>
-                        <p class="text-sm text-yellow-800">En Proceso</p>
-                        <p class="text-xl font-bold text-yellow-900">{{ $pedidos->where('estado', 'En proceso')->count() }}</p>
+                        <p class="text-xs sm:text-sm text-yellow-800">En Proceso</p>
+                        <p class="text-lg sm:text-xl font-bold text-yellow-900">{{ $pedidos->where('estado', 'En proceso')->count() }}</p>
                     </div>
                 </div>
             </div>
-            <div class="bg-blue-100 border border-blue-300 rounded-lg p-4">
+            <div class="bg-blue-100 border border-blue-300 rounded-lg p-2 sm:p-4">
                 <div class="flex items-center">
-                    <i class="fas fa-user-check text-blue-600 text-2xl mr-3"></i>
+                    <i class="fas fa-user-check text-blue-600 text-lg sm:text-2xl mr-2 sm:mr-3"></i>
                     <div>
-                        <p class="text-sm text-blue-800">Asignados</p>
-                        <p class="text-xl font-bold text-blue-900">{{ $pedidos->where('estado', 'Asignado')->count() }}</p>
+                        <p class="text-xs sm:text-sm text-blue-800">Asignados</p>
+                        <p class="text-lg sm:text-xl font-bold text-blue-900">{{ $pedidos->where('estado', 'Asignado')->count() }}</p>
                     </div>
                 </div>
             </div>
-            <div class="bg-purple-100 border border-purple-300 rounded-lg p-4">
+            <div class="bg-purple-100 border border-purple-300 rounded-lg p-2 sm:p-4">
                 <div class="flex items-center">
-                    <i class="fas fa-cogs text-purple-600 text-2xl mr-3"></i>
+                    <i class="fas fa-cogs text-purple-600 text-lg sm:text-2xl mr-2 sm:mr-3"></i>
                     <div>
-                        <p class="text-sm text-purple-800">En Producción</p>
-                        <p class="text-xl font-bold text-purple-900">{{ $pedidos->where('estado', 'En producción')->count() }}</p>
+                        <p class="text-xs sm:text-sm text-purple-800">En Producción</p>
+                        <p class="text-lg sm:text-xl font-bold text-purple-900">{{ $pedidos->where('estado', 'En producción')->count() }}</p>
                     </div>
                 </div>
             </div>
-            <div class="bg-green-100 border border-green-300 rounded-lg p-4">
+            <div class="bg-green-100 border border-green-300 rounded-lg p-2 sm:p-4">
                 <div class="flex items-center">
-                    <i class="fas fa-check-circle text-green-600 text-2xl mr-3"></i>
+                    <i class="fas fa-check-circle text-green-600 text-lg sm:text-2xl mr-2 sm:mr-3"></i>
                     <div>
-                        <p class="text-sm text-green-800">Completados</p>
-                        <p class="text-xl font-bold text-green-900">{{ $pedidos->whereIn('estado', ['Terminado', 'Entregado'])->count() }}</p>
+                        <p class="text-xs sm:text-sm text-green-800">Completados</p>
+                        <p class="text-lg sm:text-xl font-bold text-green-900">{{ $pedidos->whereIn('estado', ['Terminado', 'Entregado'])->count() }}</p>
                     </div>
                 </div>
             </div>
@@ -162,16 +166,17 @@
                 @endif
             </div>
             
-            <div class="overflow-x-auto">
+            <!-- Vista de tabla para desktop -->
+            <div class="hidden lg:block overflow-x-auto">
                 <table class="w-full text-left">
-                    <thead class="bg-boom-cream-200 text-boom-text-dark">
+                    <thead class="bg-boom-cream-400 text-boom-text-dark border-b-2 border-boom-cream-500">
                         <tr>
-                            <th class="p-4 font-semibold"># Pedido</th>
-                            <th class="p-4 font-semibold">Cliente</th>
-                            <th class="p-4 font-semibold">Estado</th>
-                            <th class="p-4 font-semibold">Total</th>
-                            <th class="p-4 font-semibold">Fecha</th>
-                            <th class="p-4 font-semibold text-center">Acciones</th>
+                            <th class="p-3 lg:p-4 font-semibold text-sm lg:text-base"># Pedido</th>
+                            <th class="p-3 lg:p-4 font-semibold text-sm lg:text-base">Cliente</th>
+                            <th class="p-3 lg:p-4 font-semibold text-sm lg:text-base">Estado</th>
+                            <th class="p-3 lg:p-4 font-semibold text-sm lg:text-base">Total</th>
+                            <th class="p-3 lg:p-4 font-semibold text-sm lg:text-base">Fecha</th>
+                            <th class="p-3 lg:p-4 font-semibold text-center text-sm lg:text-base">Acciones</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-boom-cream-200">
@@ -289,6 +294,87 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Vista de tarjetas para móviles -->
+            <div class="lg:hidden space-y-3">
+                @forelse ($pedidos as $pedido)
+                <div class="bg-white border border-boom-cream-200 rounded-lg p-4 shadow-sm">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-boom-primary rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                                {{ strtoupper(substr($pedido->cliente->nombre, 0, 1)) }}
+                            </div>
+                            <div>
+                                <div class="font-bold text-boom-primary text-sm">
+                                    #{{ $pedido->id_pedido }}
+                                </div>
+                                <div class="text-xs text-gray-500">
+                                    {{ $pedido->created_at->format('d/m/Y H:i') }}
+                                </div>
+                            </div>
+                        </div>
+                        <span class="px-2 py-1 text-xs font-medium rounded-full {{ $pedido->estado_color }}">
+                            <i class="{{ $pedido->estado_icono }} mr-1"></i>
+                            {{ $pedido->estado }}
+                        </span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="font-semibold text-boom-text-dark text-sm">
+                            {{ $pedido->nombre_completo_cliente }}
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            <i class="fas fa-id-card mr-1"></i>
+                            {{ $pedido->cliente->ci_nit }}
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <div class="font-semibold text-boom-text-dark">
+                            {{ $pedido->total_formateado }}
+                        </div>
+                        <div class="flex space-x-1">
+                            <a href="{{ route('pedidos.show', $pedido->id_pedido) }}" 
+                               class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200"
+                               title="Ver detalles">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            
+                            @if($pedido->puedeSerEditado())
+                                <a href="{{ route('pedidos.edit', $pedido->id_pedido) }}" 
+                                   class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200"
+                                   title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            @endif
+                            
+                            <a href="{{ route('pedidos.historial', $pedido->id_pedido) }}" 
+                               class="bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200"
+                               title="Ver historial">
+                                <i class="fas fa-history"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                @empty
+                <div class="bg-boom-cream-50 rounded-lg p-6 text-center">
+                    <i class="fas fa-shopping-bag text-4xl text-boom-text-medium mb-3"></i>
+                    <h3 class="text-lg font-semibold text-boom-text-dark mb-2">No hay pedidos</h3>
+                    <p class="text-boom-text-medium text-sm mb-4">
+                        @if(!empty($filtros))
+                            No hay pedidos que coincidan con los filtros aplicados.
+                        @else
+                            Aún no hay pedidos registrados en el sistema.
+                        @endif
+                    </p>
+                    @if(Auth::user()->id_rol == 1 || Auth::user()->id_rol == 2)
+                        <a href="{{ route('pedidos.empleado-crear') }}" class="bg-boom-rose-dark hover:bg-boom-rose-light text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 text-sm">
+                            <i class="fas fa-plus mr-2"></i>Crear Primer Pedido
+                        </a>
+                    @endif
+                </div>
+                @endforelse
             </div>
 
             <!-- Paginación -->
