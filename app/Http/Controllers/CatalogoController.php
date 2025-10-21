@@ -20,6 +20,15 @@ class CatalogoController extends Controller
      */
     public function index()
     {
+        // Obtener productos de la base de datos
+        $productos = \App\Models\Prenda::activas()
+            ->orderBy('categoria')
+            ->orderBy('nombre')
+            ->get();
+
+        // Obtener categorías únicas para los filtros
+        $categorias = $productos->pluck('categoria')->unique()->sort();
+
         // Registrar acceso al catálogo
         $this->bitacoraService->registrarActividad(
             'VIEW',
@@ -27,7 +36,7 @@ class CatalogoController extends Controller
             'Usuario accedió al catálogo de productos'
         );
 
-        return view('catalogo.index');
+        return view('catalogo.index', compact('productos', 'categorias'));
     }
 
     /**

@@ -17,164 +17,99 @@
                     <i class="fas fa-th-large mr-1"></i>
                     Todos
                 </button>
-                <button onclick="filtrarCategoria('trajes')" 
-                        class="categoria-btn bg-gray-200 text-gray-700 hover:bg-boom-primary hover:text-white px-3 sm:px-4 py-2 rounded font-medium transition-colors duration-200 text-sm sm:text-base"
-                        data-categoria="trajes">
-                    <i class="fas fa-user-tie mr-1"></i>
-                    Trajes
-                </button>
-                <button onclick="filtrarCategoria('vestidos')" 
-                        class="categoria-btn bg-gray-200 text-gray-700 hover:bg-boom-primary hover:text-white px-3 sm:px-4 py-2 rounded font-medium transition-colors duration-200 text-sm sm:text-base"
-                        data-categoria="vestidos">
-                    <i class="fas fa-female mr-1"></i>
-                    Vestidos
-                </button>
-                <button onclick="filtrarCategoria('blazers')" 
-                        class="categoria-btn bg-gray-200 text-gray-700 hover:bg-boom-primary hover:text-white px-3 sm:px-4 py-2 rounded font-medium transition-colors duration-200 text-sm sm:text-base"
-                        data-categoria="blazers">
-                    <i class="fas fa-vest mr-1"></i>
-                    Blazers
-                </button>
-                <button onclick="filtrarCategoria('camisas')" 
-                        class="categoria-btn bg-gray-200 text-gray-700 hover:bg-boom-primary hover:text-white px-3 sm:px-4 py-2 rounded font-medium transition-colors duration-200 text-sm sm:text-base"
-                        data-categoria="camisas">
-                    <i class="fas fa-tshirt mr-1"></i>
-                    Camisas
-                </button>
+                @foreach($categorias as $categoria)
+                    <button onclick="filtrarCategoria('{{ strtolower($categoria) }}')" 
+                            class="categoria-btn bg-gray-200 text-gray-700 hover:bg-boom-primary hover:text-white px-3 sm:px-4 py-2 rounded font-medium transition-colors duration-200 text-sm sm:text-base"
+                            data-categoria="{{ strtolower($categoria) }}">
+                        @if(strtolower($categoria) == 'formal')
+                            <i class="fas fa-user-tie mr-1"></i>
+                        @elseif(strtolower($categoria) == 'informal')
+                            <i class="fas fa-tshirt mr-1"></i>
+                        @else
+                            <i class="fas fa-tag mr-1"></i>
+                        @endif
+                        {{ $categoria }}
+                    </button>
+                @endforeach
             </div>
         </div>
 
         <!-- Catálogo de productos -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-            <!-- Traje Ejecutivo -->
-            <div class="producto-card bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300" data-categoria="trajes">
-                <div class="relative">
-                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop" 
-                         alt="Traje Ejecutivo" class="w-full h-64 object-cover">
-                    <div class="absolute top-2 right-2">
-                        <span class="bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                            Ejecutivo
-                        </span>
+            @forelse($productos as $producto)
+                <div class="producto-card bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300" 
+                     data-categoria="{{ strtolower($producto->categoria) }}">
+                    <div class="relative">
+                        @if($producto->imagen && file_exists(public_path($producto->imagen)))
+                            <img src="{{ asset($producto->imagen) }}" 
+                                 alt="{{ $producto->nombre }}" 
+                                 class="w-full h-64 object-cover">
+                        @else
+                            <div class="w-full h-64 bg-boom-cream-200 flex items-center justify-center">
+                                <i class="fas fa-tshirt text-4xl text-boom-text-medium"></i>
+                            </div>
+                        @endif
+                        <div class="absolute top-2 right-2">
+                            <span class="bg-boom-primary text-white px-2 py-1 rounded-full text-xs font-medium">
+                                {{ $producto->categoria }}
+                            </span>
+                        </div>
+                        @if($producto->stock <= 5)
+                            <div class="absolute top-2 left-2">
+                                <span class="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                    Stock Bajo
+                                </span>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="p-4">
+                        <h3 class="text-lg font-semibold text-boom-text-dark mb-2">{{ $producto->nombre }}</h3>
+                        <p class="text-gray-600 text-sm mb-3">{{ Str::limit($producto->descripcion, 80) }}</p>
+                        
+                        <!-- Colores disponibles -->
+                        @if($producto->colores && count($producto->colores) > 0)
+                            <div class="mb-3">
+                                <p class="text-xs text-gray-500 mb-1">Colores:</p>
+                                <div class="flex flex-wrap gap-1">
+                                    @foreach(array_slice($producto->colores, 0, 3) as $color)
+                                        <span class="text-xs bg-boom-cream-300 text-boom-text-dark px-2 py-1 rounded">{{ $color }}</span>
+                                    @endforeach
+                                    @if(count($producto->colores) > 3)
+                                        <span class="text-xs bg-boom-cream-400 text-boom-text-dark px-2 py-1 rounded">+{{ count($producto->colores) - 3 }}</span>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+                        
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-2xl font-bold text-boom-primary">Bs. {{ number_format($producto->precio, 0) }}</span>
+                            <span class="text-sm text-gray-500">Stock: {{ $producto->stock }}</span>
+                        </div>
+                        
+                        @if($producto->stock > 0)
+                            <button onclick="seleccionarProducto('{{ $producto->nombre }}', {{ $producto->precio }}, '{{ strtolower($producto->categoria) }}')" 
+                                    class="w-full bg-boom-primary hover:bg-boom-primary-dark text-white font-bold py-2 px-4 rounded transition-colors duration-200">
+                                <i class="fas fa-shopping-cart mr-2"></i>
+                                Hacer Pedido
+                            </button>
+                        @else
+                            <button disabled 
+                                    class="w-full bg-gray-400 text-white font-bold py-2 px-4 rounded cursor-not-allowed">
+                                <i class="fas fa-times mr-2"></i>
+                                Sin Stock
+                            </button>
+                        @endif
                     </div>
                 </div>
-                <div class="p-4">
-                    <h3 class="text-lg font-semibold text-boom-text-dark mb-2">Traje Ejecutivo Clásico</h3>
-                    <p class="text-gray-600 text-sm mb-3">Elegancia clásica para el mundo corporativo. Corte moderno y telas de alta calidad.</p>
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-2xl font-bold text-boom-primary">Bs. 850</span>
-                        <span class="text-sm text-gray-500">Desde</span>
-                    </div>
-                    <button onclick="seleccionarProducto('Traje Ejecutivo Clásico', 850, 'trajes')" 
-                            class="w-full bg-boom-primary hover:bg-boom-primary-dark text-white font-bold py-2 px-4 rounded transition-colors duration-200">
-                        <i class="fas fa-shopping-cart mr-2"></i>
-                        Hacer Pedido
-                    </button>
-                </div>
-            </div>
-
-            <!-- Vestido de Noche -->
-            <div class="producto-card bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300" data-categoria="vestidos">
-                <div class="relative">
-                    <img src="https://images.unsplash.com/photo-1566479179817-c0b5b4b4b1e5?w=400&h=500&fit=crop" 
-                         alt="Vestido de Noche" class="w-full h-64 object-cover">
-                    <div class="absolute top-2 right-2">
-                        <span class="bg-purple-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                            Elegante
-                        </span>
+            @empty
+                <div class="col-span-full text-center py-12">
+                    <div class="bg-boom-cream-100 rounded-lg p-8">
+                        <i class="fas fa-tshirt text-6xl text-boom-text-medium mb-4"></i>
+                        <h3 class="text-xl font-semibold text-boom-text-dark mb-2">No hay productos disponibles</h3>
+                        <p class="text-boom-text-medium">Actualmente no tenemos productos en el catálogo.</p>
                     </div>
                 </div>
-                <div class="p-4">
-                    <h3 class="text-lg font-semibold text-boom-text-dark mb-2">Vestido de Noche Elegante</h3>
-                    <p class="text-gray-600 text-sm mb-3">Sofisticación para eventos especiales. Diseños únicos y acabados impecables.</p>
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-2xl font-bold text-boom-primary">Bs. 650</span>
-                        <span class="text-sm text-gray-500">Desde</span>
-                    </div>
-                    <button onclick="seleccionarProducto('Vestido de Noche Elegante', 650, 'vestidos')" 
-                            class="w-full bg-boom-primary hover:bg-boom-primary-dark text-white font-bold py-2 px-4 rounded transition-colors duration-200">
-                        <i class="fas fa-shopping-cart mr-2"></i>
-                        Hacer Pedido
-                    </button>
-                </div>
-            </div>
-
-            <!-- Blazer Moderno -->
-            <div class="producto-card bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300" data-categoria="blazers">
-                <div class="relative">
-                    <img src="https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400&h=500&fit=crop" 
-                         alt="Blazer Moderno" class="w-full h-64 object-cover">
-                    <div class="absolute top-2 right-2">
-                        <span class="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                            Moderno
-                        </span>
-                    </div>
-                </div>
-                <div class="p-4">
-                    <h3 class="text-lg font-semibold text-boom-text-dark mb-2">Blazer Moderno</h3>
-                    <p class="text-gray-600 text-sm mb-3">Estilo contemporáneo con toque clásico. Perfecto para cualquier ocasión.</p>
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-2xl font-bold text-boom-primary">Bs. 450</span>
-                        <span class="text-sm text-gray-500">Desde</span>
-                    </div>
-                    <button onclick="seleccionarProducto('Blazer Moderno', 450, 'blazers')" 
-                            class="w-full bg-boom-primary hover:bg-boom-primary-dark text-white font-bold py-2 px-4 rounded transition-colors duration-200">
-                        <i class="fas fa-shopping-cart mr-2"></i>
-                        Hacer Pedido
-                    </button>
-                </div>
-            </div>
-
-            <!-- Camisa Formal -->
-            <div class="producto-card bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300" data-categoria="camisas">
-                <div class="relative">
-                    <img src="https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=400&h=500&fit=crop" 
-                         alt="Camisa Formal" class="w-full h-64 object-cover">
-                    <div class="absolute top-2 right-2">
-                        <span class="bg-indigo-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                            Formal
-                        </span>
-                    </div>
-                </div>
-                <div class="p-4">
-                    <h3 class="text-lg font-semibold text-boom-text-dark mb-2">Camisa Formal Premium</h3>
-                    <p class="text-gray-600 text-sm mb-3">Calidad superior en cada detalle. Comodidad y elegancia en una sola prenda.</p>
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-2xl font-bold text-boom-primary">Bs. 280</span>
-                        <span class="text-sm text-gray-500">Desde</span>
-                    </div>
-                    <button onclick="seleccionarProducto('Camisa Formal Premium', 280, 'camisas')" 
-                            class="w-full bg-boom-primary hover:bg-boom-primary-dark text-white font-bold py-2 px-4 rounded transition-colors duration-200">
-                        <i class="fas fa-shopping-cart mr-2"></i>
-                        Hacer Pedido
-                    </button>
-                </div>
-            </div>
-
-            <!-- Traje de Gala -->
-            <div class="producto-card bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300" data-categoria="trajes">
-                <div class="relative">
-                    <img src="https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?w=400&h=500&fit=crop" 
-                         alt="Traje de Gala" class="w-full h-64 object-cover">
-                    <div class="absolute top-2 right-2">
-                        <span class="bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                            Premium
-                        </span>
-                    </div>
-                </div>
-                <div class="p-4">
-                    <h3 class="text-lg font-semibold text-boom-text-dark mb-2">Traje de Gala Premium</h3>
-                    <p class="text-gray-600 text-sm mb-3">Para ocasiones especiales. Máxima elegancia y distinción en cada detalle.</p>
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-2xl font-bold text-boom-primary">Bs. 1,200</span>
-                        <span class="text-sm text-gray-500">Desde</span>
-                    </div>
-                    <button onclick="seleccionarProducto('Traje de Gala Premium', 1200, 'trajes')" 
-                            class="w-full bg-boom-primary hover:bg-boom-primary-dark text-white font-bold py-2 px-4 rounded transition-colors duration-200">
-                        <i class="fas fa-shopping-cart mr-2"></i>
-                        Hacer Pedido
-                    </button>
-                </div>
-            </div>
+            @endforelse
 
             <!-- Vestido Casual -->
             <div class="producto-card bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300" data-categoria="vestidos">
