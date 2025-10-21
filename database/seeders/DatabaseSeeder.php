@@ -18,7 +18,10 @@ class DatabaseSeeder extends Seeder
             RolSeeder::class,
             UsuarioSeeder::class,
             PoblacionSeeder::class,
-            // ClienteSeeder::class, // Removido
+            ClienteSeeder::class,
+            TipoProductoSeeder::class,
+            ProductoSeeder::class,
+            PedidoSeeder::class,
         ]);
     }
 }

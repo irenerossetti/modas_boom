@@ -7,6 +7,7 @@ use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\BitacoraController;
+use App\Http\Controllers\PedidoController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -26,6 +27,8 @@ Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
     Route::resource('clientes', ClienteController::class)->except(['index']);
     Route::resource('users', UserController::class);
     Route::resource('roles', RolController::class);
+     Route::resource('pedidos', PedidoController::class)
+        ->only(['index','create','store','edit','update']);
     
     // Rutas de bitácora - solo para administradores
     Route::get('bitacora', [BitacoraController::class, 'index'])->name('bitacora.index');

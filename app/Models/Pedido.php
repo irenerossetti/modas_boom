@@ -24,9 +24,29 @@ class Pedido extends Model
      */
     public $timestamps = true;
 
+    protected $fillable = [
+        'id_cliente',
+        'fecha_pedido',
+        'fecha_entrega',
+        'metodo_pago',
+        'total_pedido',
+        'observaciones',
+        'estado',
+    ];
+
+    protected $casts = [
+        'fecha_pedido'  => 'date',
+        'fecha_entrega' => 'date',
+        'total_pedido'  => 'decimal:2',
+    ];
     // Aquí puedes definir relaciones, por ejemplo, con el Cliente
     public function cliente()
     {
         return $this->belongsTo(Cliente::class, 'id_cliente');
     }
+    public function detalles()
+    {
+        return $this->hasMany(DetallePedido::class, 'id_pedido', 'id_pedido');
+    }
+
 }
