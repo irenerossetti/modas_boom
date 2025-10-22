@@ -12,6 +12,22 @@ use App\Http\Controllers\CatalogoController;
 use App\Http\Controllers\PrendaController;
 
 Route::get('/', function () {
+    if (auth()->check()) {
+        $user = auth()->user();
+        
+        // Redirigir según el rol del usuario
+        switch ($user->id_rol) {
+            case 1: // Administrador
+                return redirect()->route('dashboard');
+            case 2: // Empleado
+                return redirect()->route('empleado.dashboard');
+            case 3: // Cliente
+                return redirect()->route('cliente.dashboard');
+            default:
+                return view('welcome');
+        }
+    }
+    
     return view('welcome');
 });
 
@@ -37,6 +53,9 @@ Route::middleware(['auth', 'user.enabled'])->group(function () {
     // Rutas específicas para empleados y administradores - crear pedidos para clientes
     Route::get('crear-pedido-cliente', [PedidoController::class, 'empleadoCrear'])->name('pedidos.empleado-crear');
     Route::post('crear-pedido-cliente', [PedidoController::class, 'empleadoStore'])->name('pedidos.empleado-store');
+    
+    // Dashboard específico para clientes
+    Route::get('cliente/dashboard', [App\Http\Controllers\ClienteDashboardController::class, 'index'])->name('cliente.dashboard');
     
     // Rutas específicas para clientes - crear y ver sus propios pedidos
     Route::get('hacer-pedido', [PedidoController::class, 'clienteCrear'])->name('pedidos.cliente-crear');

@@ -177,18 +177,29 @@
                             <span class="text-sm lg:text-base">Gestionar Pedidos</span>
                         </a>
                     @elseif(Auth::user()->id_rol == 3) <!-- Cliente -->
-                        <a href="{{ route('pedidos.cliente-crear') }}" class="flex items-center p-2 lg:p-3 rounded-lg font-semibold transition-all duration-300 {{ request()->routeIs('pedidos.cliente-crear') ? 'text-boom-text-dark bg-boom-rose-light border border-boom-rose-dark shadow-md' : 'text-boom-text-medium hover:bg-boom-cream-200 border border-boom-cream-300 shadow-sm hover:shadow-md' }}">
+                        <a href="{{ route('cliente.dashboard') }}" class="flex items-center p-2 lg:p-3 rounded-lg font-semibold transition-all duration-300 {{ request()->routeIs('cliente.dashboard') ? 'text-boom-text-dark bg-boom-rose-light border border-boom-rose-dark shadow-md' : 'text-boom-text-medium hover:bg-boom-cream-200 border border-boom-cream-300 shadow-sm hover:shadow-md' }}">
                             <svg class="w-4 h-4 lg:w-5 lg:h-5 mr-2 lg:mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z"></path>
                             </svg>
-                            <span class="text-sm lg:text-base">Hacer Pedido</span>
+                            <span class="text-sm lg:text-base">Mi Dashboard</span>
                         </a>
+                        
+                        <!-- Botón destacado para hacer pedido -->
+                        <a href="{{ route('pedidos.cliente-crear') }}" class="flex items-center p-2 lg:p-3 rounded-lg font-bold transition-all duration-300 {{ request()->routeIs('pedidos.cliente-crear') ? 'text-white bg-boom-rose-dark border border-boom-rose-dark shadow-lg' : 'text-white bg-boom-rose-dark hover:bg-boom-rose-light border border-boom-rose-dark shadow-md hover:shadow-lg' }}">
+                            <svg class="w-4 h-4 lg:w-5 lg:h-5 mr-2 lg:mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            <span class="text-sm lg:text-base">🛍️ Hacer Pedido</span>
+                        </a>
+                        
                         <a href="{{ route('pedidos.mis-pedidos') }}" class="flex items-center p-2 lg:p-3 rounded-lg font-semibold transition-all duration-300 {{ request()->routeIs('pedidos.mis-pedidos') ? 'text-boom-text-dark bg-boom-rose-light border border-boom-rose-dark shadow-md' : 'text-boom-text-medium hover:bg-boom-cream-200 border border-boom-cream-300 shadow-sm hover:shadow-md' }}">
                             <svg class="w-4 h-4 lg:w-5 lg:h-5 mr-2 lg:mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                             </svg>
                             <span class="text-sm lg:text-base">Mis Pedidos</span>
                         </a>
+                        
                         <a href="{{ route('catalogo.index') }}" class="flex items-center p-2 lg:p-3 rounded-lg font-semibold transition-all duration-300 {{ request()->routeIs('catalogo.*') ? 'text-boom-text-dark bg-boom-rose-light border border-boom-rose-dark shadow-md' : 'text-boom-text-medium hover:bg-boom-cream-200 border border-boom-cream-300 shadow-sm hover:shadow-md' }}">
                             <svg class="w-4 h-4 lg:w-5 lg:h-5 mr-2 lg:mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
@@ -209,6 +220,19 @@
                 <main class="flex-1 page-transition p-2 lg:p-0">
                     {{ $slot }}
                 </main>
+
+                <!-- Botón flotante para clientes -->
+                @if(Auth::check() && Auth::user()->id_rol == 3)
+                    <div class="fixed bottom-6 right-6 z-40">
+                        <a href="{{ route('pedidos.cliente-crear') }}" 
+                           class="inline-flex items-center justify-center w-14 h-14 bg-boom-rose-dark hover:bg-boom-rose-light text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110"
+                           title="Hacer Pedido">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                        </a>
+                    </div>
+                @endif
             </div>
         </div>
 

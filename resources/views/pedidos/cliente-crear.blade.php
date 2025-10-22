@@ -1,71 +1,125 @@
 <x-app-layout>
-    <div class="py-4 lg:py-12">
-        <div class="max-w-4xl mx-auto px-2 sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-xl rounded-lg">
-                <div class="p-3 sm:p-6 bg-white border-b border-gray-200">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 lg:mb-6 space-y-3 sm:space-y-0">
-                        <div>
-                            <h2 class="text-xl sm:text-2xl font-bold text-boom-text-dark">Hacer Pedido</h2>
-                            @if(Auth::user()->id_rol == 2)
-                                <p class="text-sm text-boom-text-medium mt-1">Pedido personal como empleado</p>
-                            @endif
-                        </div>
-                        <a href="{{ route('pedidos.mis-pedidos') }}" class="bg-white hover:bg-gray-50 text-boom-text-dark border-2 border-boom-cream-500 hover:border-boom-cream-600 font-semibold py-2 px-3 sm:px-4 rounded-lg transition-colors duration-300 text-sm sm:text-base text-center shadow-sm hover:shadow-md">
-                            <span class="hidden sm:inline">Ver Mis Pedidos</span>
-                            <span class="sm:hidden">Mis Pedidos</span>
-                        </a>
+    <div class="p-4 sm:p-6 lg:p-8">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-3 sm:space-y-0">
+            <h1 class="text-2xl sm:text-3xl font-bold text-boom-text-dark">
+                <i class="fas fa-shopping-cart mr-2"></i>
+                @if(Auth::user()->id_rol == 2)
+                    Crear Pedido Personal
+                @else
+                    Crear Mi Pedido
+                @endif
+            </h1>
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                <a href="{{ route('catalogo.index') }}" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 text-center">
+                    <i class="fas fa-images mr-2"></i>Ver Catálogo
+                </a>
+                <a href="{{ route('pedidos.mis-pedidos') }}" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 text-center">
+                    <i class="fas fa-list mr-2"></i>Mis Pedidos
+                </a>
+            </div>
+        </div>
+
+        @if ($errors->any())
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
+                <strong class="font-bold">¡Oops! Hay algunos errores:</strong>
+                <ul class="mt-2 list-disc list-inside">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @if(session('success'))
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6" role="alert">
+                <i class="fas fa-check-circle mr-2"></i>
+                {{ session('success') }}
+            </div>
+        @endif
+
+        <!-- Información del Cliente -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h3 class="text-lg font-semibold text-blue-800 mb-2">
+                <i class="fas fa-user-check mr-2"></i>
+                Información del Pedido
+            </h3>
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white text-lg font-bold mr-4">
+                    {{ strtoupper(substr(Auth::user()->nombre, 0, 1)) }}
+                </div>
+                <div>
+                    <div class="font-semibold text-blue-800">
+                        {{ Auth::user()->nombre }} {{ Auth::user()->apellido ?? '' }}
                     </div>
+                    <div class="text-sm text-blue-600">
+                        @if(Auth::user()->id_rol == 2)
+                            Pedido Personal - Empleado
+                        @else
+                            Cliente - {{ Auth::user()->email }}
+                        @endif
+                    </div>
+                </div>
+            </div>
+            <p class="text-sm text-blue-700 mt-2">
+                <i class="fas fa-info-circle mr-1"></i>
+                Selecciona múltiples productos y cantidades para crear tu pedido personalizado.
+            </p>
+        </div>
 
-                    @if ($errors->any())
-                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-                            <ul class="list-disc list-inside">
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="p-6 bg-white border-b border-gray-200">
 
-                    <form action="{{ route('pedidos.cliente-store') }}" method="POST" id="pedidoForm">
-                        @csrf
-                        
-                        <!-- Selección Múltiple de Productos -->
-                        <div class="mb-4 lg:mb-6">
-                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 lg:mb-6 space-y-2 sm:space-y-0">
-                                <h3 class="text-lg font-semibold text-boom-text-dark">Seleccionar Productos</h3>
-                                <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                                    <span class="text-xs sm:text-sm text-boom-text-medium">
-                                        <i class="fas fa-info-circle mr-1"></i>
-                                        <span class="hidden sm:inline">Puedes seleccionar múltiples productos</span>
-                                        <span class="sm:hidden">Múltiples productos</span>
-                                    </span>
-                                    <button type="button" id="limpiar-seleccion" class="text-xs sm:text-sm text-boom-rose-dark hover:text-boom-rose-light transition-colors text-center">
-                                        <i class="fas fa-times mr-1"></i>Limpiar selección
-                                    </button>
-                                </div>
+                <form action="{{ route('pedidos.cliente-store') }}" method="POST" id="pedidoForm">
+                    @csrf
+                    
+                    <!-- Selección Múltiple de Productos -->
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-semibold text-boom-text-dark">
+                                <i class="fas fa-tshirt mr-2"></i>
+                                Seleccionar Productos
+                            </h3>
+                            <div class="flex items-center space-x-4">
+                                <span class="text-sm text-boom-text-medium bg-blue-100 px-3 py-1 rounded-full">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Múltiples productos disponibles
+                                </span>
+                                <button type="button" id="limpiar-seleccion" class="text-sm text-boom-rose-dark hover:text-boom-rose-light transition-colors bg-red-100 px-3 py-1 rounded-full">
+                                    <i class="fas fa-times mr-1"></i>Limpiar selección
+                                </button>
                             </div>
+                        </div>
                             
-                            @php
-                                $productosPorCategoria = collect($productos)->groupBy('categoria');
-                            @endphp
-                            
-                            @foreach($productosPorCategoria as $categoria => $productosCategoria)
-                                <div class="mb-10">
-                                    <!-- Etiqueta de Categoría Simple -->
-                                    <div class="mb-6">
-                                        <span class="inline-flex items-center px-4 py-2 bg-boom-rose-dark text-white font-semibold rounded-lg shadow-sm">
-                                            <i class="fas {{ $categoria == 'Formal' ? 'fa-user-tie' : ($categoria == 'Informal' ? 'fa-tshirt' : ($categoria == 'Deportivo' ? 'fa-running' : 'fa-tags')) }} mr-2"></i>
-                                            {{ $categoria }}
-                                        </span>
-                                    </div>
-                                    
-                                    <!-- Productos de la Categoría -->
-                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        @php
+                            $productosPorCategoria = collect($productos)->groupBy('categoria');
+                        @endphp
+                        
+                        @foreach($productosPorCategoria as $categoria => $productosCategoria)
+                            <div class="mb-8 bg-gray-50 rounded-lg p-6">
+                                <!-- Header de Categoría Profesional -->
+                                <div class="flex items-center justify-between mb-6 pb-3 border-b border-gray-200">
+                                    <h4 class="text-lg font-bold text-boom-text-dark flex items-center">
+                                        @if($categoria == 'Formal')
+                                            <i class="fas fa-user-tie text-blue-600 mr-3"></i>
+                                        @elseif($categoria == 'Informal')
+                                            <i class="fas fa-tshirt text-green-600 mr-3"></i>
+                                        @else
+                                            <i class="fas fa-tag text-purple-600 mr-3"></i>
+                                        @endif
+                                        {{ $categoria }}
+                                    </h4>
+                                    <span class="bg-boom-cream-300 text-boom-text-dark px-3 py-1 rounded-full text-sm font-medium">
+                                        {{ count($productosCategoria) }} producto{{ count($productosCategoria) > 1 ? 's' : '' }}
+                                    </span>
+                                </div>
+                                
+                                <!-- Grid de Productos Profesional -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                         @foreach($productosCategoria as $index => $producto)
                                             @php
                                                 $globalIndex = array_search($producto, $productos);
                                             @endphp
-                                            <div class="bg-white border border-boom-cream-300 rounded-xl p-5 cursor-pointer hover:shadow-lg hover:border-boom-rose-dark transition-all duration-300 producto-card" 
+                                            <div class="bg-white border-2 border-gray-200 rounded-lg shadow-md hover:shadow-xl hover:border-boom-rose-dark transition-all duration-300 producto-card overflow-hidden" 
                                                  data-id="{{ $producto['id'] }}"
                                                  data-nombre="{{ $producto['nombre'] }}" 
                                                  data-precio="{{ $producto['precio'] }}" 
@@ -77,10 +131,16 @@
                                                  data-stock="{{ $producto['stock'] ?? 0 }}">
                                                 
                                                 <!-- Imagen de la prenda -->
-                                                <div class="relative mb-4">
-                                                    <img src="{{ asset($producto['imagen']) }}" 
-                                                         alt="{{ $producto['nombre'] }}" 
-                                                         class="w-full h-48 object-cover rounded-lg">
+                                                <div class="relative">
+                                                    @if($producto['imagen'] && file_exists(public_path($producto['imagen'])))
+                                                        <img src="{{ asset($producto['imagen']) }}" 
+                                                             alt="{{ $producto['nombre'] }}" 
+                                                             class="w-full h-48 object-cover">
+                                                    @else
+                                                        <div class="w-full h-48 bg-boom-cream-200 flex items-center justify-center">
+                                                            <i class="fas fa-tshirt text-4xl text-boom-text-medium"></i>
+                                                        </div>
+                                                    @endif
                                                     
                                                     <!-- Botón de previsualización -->
                                                     <button type="button" onclick="mostrarPreview({{ $globalIndex }})" 
@@ -103,10 +163,38 @@
                                                 </div>
                                                 
                                                 <!-- Información del producto -->
-                                                <div class="space-y-2">
-                                                    <label for="producto_{{ $globalIndex }}" class="block font-semibold text-boom-text-dark cursor-pointer hover:text-boom-rose-dark transition-colors">
-                                                        {{ $producto['nombre'] }}
-                                                    </label>
+                                                <div class="p-4 space-y-3">
+                                                    <div>
+                                                        <label for="producto_{{ $globalIndex }}" class="block text-lg font-bold text-boom-text-dark cursor-pointer hover:text-boom-rose-dark transition-colors">
+                                                            {{ $producto['nombre'] }}
+                                                        </label>
+                                                        <p class="text-sm text-gray-600 mt-1">{{ Str::limit($producto['descripcion'] ?? '', 60) }}</p>
+                                                    </div>
+                                                    
+                                                    <!-- Precio destacado -->
+                                                    <div class="flex items-center justify-between">
+                                                        <span class="text-2xl font-bold text-boom-rose-dark">
+                                                            Bs. {{ number_format($producto['precio'], 0) }}
+                                                        </span>
+                                                        <span class="text-sm text-gray-500">
+                                                            Stock: {{ $producto['stock'] ?? 0 }}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <!-- Colores disponibles -->
+                                                    @if(!empty($producto['colores']))
+                                                        <div>
+                                                            <p class="text-xs text-gray-500 mb-1">Colores:</p>
+                                                            <div class="flex flex-wrap gap-1">
+                                                                @foreach(array_slice($producto['colores'], 0, 3) as $color)
+                                                                    <span class="text-xs bg-boom-cream-400 text-boom-text-dark border border-boom-cream-500 px-2 py-1 rounded font-medium">{{ $color }}</span>
+                                                                @endforeach
+                                                                @if(count($producto['colores']) > 3)
+                                                                    <span class="text-xs bg-boom-cream-400 text-boom-text-dark border border-boom-cream-500 px-2 py-1 rounded font-medium">+{{ count($producto['colores']) - 3 }}</span>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    @endif
                                                     
                                                     <!-- Controles de cantidad (ocultos inicialmente) -->
                                                     <div class="cantidad-controls mt-2" id="controls_{{ $globalIndex }}" style="display: none;">

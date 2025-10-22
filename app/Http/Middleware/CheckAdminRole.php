@@ -25,7 +25,11 @@ class CheckAdminRole
             if (Auth::user()->id_rol == 2) {
                 return redirect('/empleado-dashboard');
             }
-            // If client, redirect to home
+            // If client, redirect to client dashboard
+            if (Auth::user()->id_rol == 3) {
+                return redirect('/cliente/dashboard');
+            }
+            // Default redirect to home
             return redirect('/');
         }
 

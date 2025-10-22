@@ -4,15 +4,29 @@
             <!-- Botón Hacer Pedido - Solo para clientes y empleados -->
             @if(Auth::check() && in_array(Auth::user()->id_rol, [2, 3]))
                 <a href="{{ route('pedidos.cliente-crear') }}" 
-                   class="inline-flex items-center px-4 py-2 bg-boom-rose-dark hover:bg-boom-rose-light text-white font-semibold rounded-lg transition-colors duration-300 shadow-sm hover:shadow-md">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                   class="inline-flex items-center px-4 py-2 bg-boom-rose-dark hover:bg-boom-rose-light text-white font-bold rounded-lg transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
                     @if(Auth::user()->id_rol == 2)
-                        Hacer Pedido Personal
+                        <span class="hidden lg:inline">Hacer Pedido Personal</span>
+                        <span class="lg:hidden">Mi Pedido</span>
                     @else
-                        Hacer Pedido
+                        <span class="hidden lg:inline">Hacer Pedido</span>
+                        <span class="lg:hidden">Pedido</span>
                     @endif
+                </a>
+            @endif
+
+            <!-- Botón adicional para ver catálogo - Solo para clientes -->
+            @if(Auth::check() && Auth::user()->id_rol == 3)
+                <a href="{{ route('catalogo.index') }}" 
+                   class="inline-flex items-center px-3 py-2 bg-boom-cream-300 hover:bg-boom-cream-400 text-boom-text-dark font-semibold rounded-lg transition-colors duration-300 shadow-sm hover:shadow-md border border-boom-cream-400">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                    <span class="hidden lg:inline">Ver Catálogo</span>
+                    <span class="lg:hidden">Catálogo</span>
                 </a>
             @endif
 
@@ -76,20 +90,42 @@
                                 <i class="fas fa-sign-out-alt mr-2"></i>{{ __('Cerrar sesión') }}
                             </a>
                         </form>
+
+                        <!-- Botón Hacer Pedido para clientes - después de cerrar sesión -->
+                        @if(Auth::check() && Auth::user()->id_rol == 3)
+                            <div class="border-t border-boom-cream-300 my-1"></div>
+                            <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-white bg-boom-rose-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out font-bold" href="{{ route('pedidos.cliente-crear') }}">
+                                <i class="fas fa-plus mr-2"></i>🛍️ Hacer Pedido
+                            </a>
+                        @endif
                     </x-slot>
                 </x-dropdown>
             </div>
 
             <!-- Versión móvil -->
-            <div class="flex items-center sm:hidden space-x-2">
+            <div class="flex items-center sm:hidden space-x-1">
                 <!-- Botón Hacer Pedido móvil -->
                 @if(Auth::check() && in_array(Auth::user()->id_rol, [2, 3]))
                     <a href="{{ route('pedidos.cliente-crear') }}" 
-                       class="inline-flex items-center px-3 py-2 bg-boom-rose-dark hover:bg-boom-rose-light text-white font-medium rounded-lg transition-colors duration-300 text-sm">
+                       class="inline-flex items-center px-3 py-2 bg-boom-rose-dark hover:bg-boom-rose-light text-white font-bold rounded-lg transition-colors duration-300 text-sm shadow-md">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
-                        Pedido
+                        @if(Auth::user()->id_rol == 2)
+                            Mi Pedido
+                        @else
+                            Pedido
+                        @endif
+                    </a>
+                @endif
+
+                <!-- Botón Catálogo móvil - Solo para clientes -->
+                @if(Auth::check() && Auth::user()->id_rol == 3)
+                    <a href="{{ route('catalogo.index') }}" 
+                       class="inline-flex items-center px-2 py-2 bg-boom-cream-300 hover:bg-boom-cream-400 text-boom-text-dark font-medium rounded-lg transition-colors duration-300 text-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>
                     </a>
                 @endif
 
@@ -147,6 +183,14 @@
                                 <i class="fas fa-sign-out-alt mr-2"></i>{{ __('Cerrar sesión') }}
                             </a>
                         </form>
+
+                        <!-- Botón Hacer Pedido para clientes - versión móvil -->
+                        @if(Auth::check() && Auth::user()->id_rol == 3)
+                            <div class="border-t border-boom-cream-300 my-1"></div>
+                            <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-white bg-boom-rose-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out font-bold" href="{{ route('pedidos.cliente-crear') }}">
+                                <i class="fas fa-plus mr-2"></i>🛍️ Hacer Pedido
+                            </a>
+                        @endif
                     </x-slot>
                 </x-dropdown>
             </div>
