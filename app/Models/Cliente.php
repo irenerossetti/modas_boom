@@ -10,21 +10,29 @@ class Cliente extends Model
 {
     use HasFactory;
     
-    protected $table = 'cliente';
-    protected $primaryKey = 'id_cliente';
-    public $timestamps = false;
+    protected $table = 'clientes';
     
     // Columnas que se pueden asignar masivamente
     protected $fillable = [
         'id_usuario',
-        'nro_documento',
-        'habilitado',
+        'nombre',
+        'apellido',
+        'ci_nit',
+        'telefono',
+        'email',
+        'direccion',
     ];
 
     // Un Cliente está asociado a un Usuario
     public function usuario()
     {
         // Apuntamos al modelo User y no a Usuario
-        return $this->belongsTo(User::class, 'id_usuario');
+        return $this->belongsTo(User::class, 'id_usuario', 'id_usuario');
+    }
+
+    // Un Cliente puede tener muchos Pedidos
+    public function pedidos()
+    {
+        return $this->hasMany(Pedido::class, 'id_cliente', 'id');
     }
 }

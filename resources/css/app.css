@@ -2,6 +2,77 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mejoras de contraste para botones */
+@layer components {
+    /* Botones con fondo cream que necesitan mejor contraste */
+    .btn-cream-improved {
+        @apply bg-boom-cream-300 hover:bg-boom-cream-400 text-boom-text-dark border border-boom-cream-400 hover:border-boom-cream-500 font-semibold shadow-sm hover:shadow-md;
+    }
+
+    /* Botones grises mejorados */
+    .btn-gray-improved {
+        @apply bg-gray-600 hover:bg-gray-700 text-white font-semibold shadow-sm hover:shadow-md;
+    }
+
+    /* Botones de cancelar mejorados */
+    .btn-cancel-improved {
+        @apply bg-gray-500 hover:bg-gray-600 text-white font-semibold border border-gray-500 hover:border-gray-600 shadow-sm hover:shadow-md;
+    }
+
+    /* Estados de pedidos mejorados */
+    .status-badge-improved {
+        @apply px-3 py-1 text-sm font-medium rounded-full border;
+    }
+
+    .status-en-proceso {
+        @apply bg-yellow-100 text-yellow-800 border-yellow-300;
+    }
+
+    .status-asignado {
+        @apply bg-blue-100 text-blue-800 border-blue-300;
+    }
+
+    .status-en-produccion {
+        @apply bg-purple-100 text-purple-800 border-purple-300;
+    }
+
+    .status-terminado {
+        @apply bg-green-100 text-green-800 border-green-300;
+    }
+
+    .status-entregado {
+        @apply bg-green-200 text-green-900 border-green-400;
+    }
+
+    .status-cancelado {
+        @apply bg-red-100 text-red-800 border-red-300;
+    }
+
+    .status-default {
+        @apply bg-gray-200 text-gray-800 border-gray-300;
+    }
+
+    /* Botones de tabla mejorados */
+    .table-header-improved {
+        @apply bg-boom-cream-400 text-boom-text-dark font-semibold border-b-2 border-boom-cream-500;
+    }
+
+    /* Tags y badges mejorados */
+    .tag-improved {
+        @apply bg-boom-cream-400 text-boom-text-dark border border-boom-cream-500 px-2 py-1 rounded text-sm font-medium;
+    }
+
+    /* Botones de filtro mejorados */
+    .filter-btn-improved {
+        @apply bg-boom-rose-dark hover:bg-boom-rose-light text-white font-semibold shadow-sm hover:shadow-md border border-boom-rose-dark hover:border-boom-rose-light;
+    }
+
+    /* Botones secundarios mejorados */
+    .secondary-btn-improved {
+        @apply bg-white hover:bg-gray-50 text-boom-text-dark border-2 border-boom-cream-500 hover:border-boom-cream-600 font-semibold shadow-sm hover:shadow-md;
+    }
+}
+
 /* AÑADE TUS CLASES PERSONALIZADAS AQUÍ */
 .btn-boom {
     background-color: #A93226; /* El rojo de tu diseño */
@@ -10,8 +81,376 @@
     border-radius: 0.375rem;
     font-weight: 600;
     transition: background-color 0.2s;
+    border: 2px solid #8B2635;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .btn-boom:hover {
     background-color: #C0392B;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Estilos globales para bordes y sombras */
+* {
+    border-radius: 0.5rem;
+}
+
+/* Formularios - SIN BORDES */
+form {
+    border: none;
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+    background-color: #FEF5E7;
+}
+
+input, select, textarea {
+    border: 1px solid #D5B4B4 !important;
+    border-radius: 0.375rem !important;
+    box-shadow: 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: #A93226 !important;
+    box-shadow: 0 0 0 3px rgba(169, 50, 38, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+    outline: none !important;
+}
+
+/* Botones - BORDES MINIMOS */
+button, .btn, [type="submit"], [type="button"] {
+    border: none !important;
+    border-radius: 0.375rem !important;
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06) !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+button:hover, .btn:hover, [type="submit"]:hover, [type="button"]:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Cards y contenedores - SIN BORDES */
+.card, .bg-white, .bg-boom-cream-100, .bg-boom-cream-200, .bg-boom-cream-300 {
+    border: none !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Tablas - SIN BORDES */
+table {
+    border: none !important;
+    border-radius: 0.375rem !important;
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06) !important;
+    overflow: hidden;
+}
+
+th, td {
+    border: none !important;
+}
+
+/* Sidebar - SIN BORDE */
+aside {
+    border-right: none !important;
+    box-shadow: 2px 0 4px -1px rgba(0, 0, 0, 0.1), 1px 0 2px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Navegación - SIN BORDES */
+nav a {
+    border: none !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+nav a:hover {
+    border: none !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Alertas y mensajes - SIN BORDES */
+.alert, .alert-success, .alert-error, .alert-warning {
+    border: none !important;
+    border-radius: 0.375rem !important;
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Modal y overlays - SIN BORDES */
+.modal, .overlay {
+    border: none !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Animación de transición de página */
+.page-transition {
+    animation: fadeInPage 0.5s ease-in-out;
+}
+
+@keyframes fadeInPage {
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}/* ====
+= OPTIMIZACIONES MÓVILES ===== */
+
+/* Clases utilitarias para móviles */
+@layer components {
+    /* Optimizaciones móviles personalizadas */
+    .mobile-card {
+        @apply transform transition-transform duration-200;
+    }
+    
+    .mobile-card:active {
+        @apply scale-95;
+    }
+    
+    .mobile-touch-target {
+        @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+    }
+    
+    .mobile-text-responsive {
+        @apply text-sm sm:text-base;
+    }
+    
+    .mobile-padding-responsive {
+        @apply p-3 sm:p-4 lg:p-6;
+    }
+    
+    .mobile-grid-responsive {
+        @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+    }
+    
+    .mobile-button-responsive {
+        @apply py-2.5 px-4 text-sm sm:text-base min-h-[44px];
+    }
+}
+
+/* Media queries específicas para móviles */
+@media (max-width: 640px) {
+    /* Mejoras para tarjetas de productos en móvil */
+    .producto-card {
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
+        transition: all 0.2s ease-in-out !important;
+    }
+    
+    .producto-card:active {
+        transform: scale(0.98) !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+    }
+    
+    /* Mejoras para inputs en móvil */
+    input[type="checkbox"], input[type="radio"] {
+        min-width: 20px !important;
+        min-height: 20px !important;
+        transform: scale(1.2) !important;
+    }
+    
+    /* Botones más grandes para touch */
+    .btn-touch {
+        min-height: 44px !important;
+        min-width: 44px !important;
+        padding: 12px 16px !important;
+    }
+    
+    /* Texto más legible en móvil */
+    .mobile-text {
+        font-size: 16px !important;
+        line-height: 1.6 !important;
+    }
+    
+    /* Espaciado optimizado para móvil */
+    .mobile-spacing > * + * {
+        margin-top: 12px !important;
+    }
+    
+    /* Headers más compactos en móvil */
+    h1 {
+        font-size: 1.5rem !important;
+        line-height: 1.4 !important;
+    }
+    
+    h2 {
+        font-size: 1.25rem !important;
+        line-height: 1.4 !important;
+    }
+    
+    h3 {
+        font-size: 1.125rem !important;
+        line-height: 1.4 !important;
+    }
+    
+    /* Modales optimizados para móvil */
+    .modal-mobile {
+        margin: 8px !important;
+        max-height: calc(100vh - 16px) !important;
+        border-radius: 12px !important;
+    }
+    
+    /* Formularios más amigables en móvil */
+    input, select, textarea {
+        font-size: 16px !important; /* Evita zoom en iOS */
+        padding: 12px 16px !important;
+        border-radius: 8px !important;
+    }
+    
+    /* Botones de acción más grandes */
+    .action-button-mobile {
+        padding: 14px 20px !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+        min-height: 48px !important;
+    }
+    
+    /* Grid más compacto en móvil */
+    .grid-mobile {
+        gap: 8px !important;
+    }
+    
+    /* Navegación optimizada */
+    .nav-mobile {
+        padding: 8px 12px !important;
+        font-size: 14px !important;
+    }
+    
+    /* Estadísticas más compactas */
+    .stats-mobile {
+        padding: 12px !important;
+        border-radius: 8px !important;
+    }
+    
+    .stats-mobile .icon {
+        width: 32px !important;
+        height: 32px !important;
+    }
+    
+    .stats-mobile .text {
+        font-size: 14px !important;
+    }
+    
+    .stats-mobile .number {
+        font-size: 18px !important;
+        font-weight: 700 !important;
+    }
+}
+
+/* Optimizaciones para tablets */
+@media (min-width: 641px) and (max-width: 1024px) {
+    .tablet-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 16px !important;
+    }
+    
+    .tablet-padding {
+        padding: 16px !important;
+    }
+    
+    .tablet-text {
+        font-size: 15px !important;
+    }
+}
+
+/* Animaciones suaves para dispositivos táctiles */
+@media (hover: none) and (pointer: coarse) {
+    .hover\:shadow-xl:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+    }
+    
+    .transition-all {
+        transition: transform 0.15s ease-out !important;
+    }
+    
+    /* Eliminar efectos hover en dispositivos táctiles */
+    .hover\:bg-gray-50:hover {
+        background-color: inherit !important;
+    }
+    
+    /* Usar efectos active en su lugar */
+    .active\:bg-gray-100:active {
+        background-color: #f3f4f6 !important;
+    }
+}
+
+/* Mejoras de accesibilidad para móviles */
+@media (max-width: 640px) {
+    /* Área de toque mínima recomendada */
+    button, a, input[type="checkbox"], input[type="radio"], select {
+        min-height: 44px !important;
+        min-width: 44px !important;
+    }
+    
+    /* Contraste mejorado para texto pequeño */
+    .text-xs, .text-sm {
+        font-weight: 500 !important;
+    }
+    
+    /* Espaciado entre elementos interactivos */
+    .interactive-spacing > * + * {
+        margin-top: 8px !important;
+    }
+}
+
+/* Optimizaciones específicas para el carrito de compras */
+@media (max-width: 640px) {
+    .carrito-item-mobile {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        padding: 12px !important;
+        border-radius: 8px !important;
+    }
+    
+    .carrito-item-mobile .image {
+        width: 60px !important;
+        height: 60px !important;
+        margin-bottom: 8px !important;
+    }
+    
+    .carrito-item-mobile .controls {
+        width: 100% !important;
+        justify-content: space-between !important;
+        margin-top: 8px !important;
+    }
+    
+    .cantidad-controls-mobile {
+        background-color: #f9fafb !important;
+        border-radius: 6px !important;
+        padding: 4px !important;
+    }
+    
+    .cantidad-controls-mobile button {
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 4px !important;
+    }
+    
+    .cantidad-controls-mobile input {
+        width: 48px !important;
+        text-align: center !important;
+        font-weight: 600 !important;
+    }
+}
+
+/* Animaciones de carga optimizadas para móvil */
+@media (max-width: 640px) {
+    .loading-spinner {
+        width: 24px !important;
+        height: 24px !important;
+    }
+    
+    .fade-in-mobile {
+        animation: fadeInMobile 0.3s ease-out !important;
+    }
+    
+    @keyframes fadeInMobile {
+        0% {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 }

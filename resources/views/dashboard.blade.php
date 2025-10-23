@@ -1,12 +1,37 @@
+<style>
+    .contenedor{
+        transition: transform 0.3s ease;
+        animation: fadeIn 0.1s infinite alternate-reverse;
+    }
+    .contenedor:hover{
+        transform: scale(1.05);
+        animation: none;
+    }
+    #botoncito{
+        transition: transform 0.5s ease;
+    }
+    #botoncito:hover{
+        animation: fadeIn 0.5s infinite ;
+    }
+
+    @keyframes fadeIn{
+        0% {opacity: 0.3;}
+        100% {opacity: 1;}
+    }
+
+</style>
 <x-app-layout>
     <div class="bg-boom-cream-200 min-h-screen">
         
         <main class="p-4 sm:p-6 lg:p-8">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold text-boom-text-dark">Dashboard Administrativo</h1>
-                <button class="bg-boom-red-report hover:opacity-90 text-white font-bold py-2 px-4 rounded-lg shadow">
+                <div >
+                   <button class=" bg-boom-red-report text-white font-bold py-2 px-4 rounded-lg shadow" >
                     Generar Reporte
-                </button>
+                </button> 
+                </div>
+                
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -77,18 +102,30 @@
             <div>
                 <h3 class="font-bold text-xl text-boom-text-dark mb-4">Acciones Rápidas</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="bg-boom-cream-300 hover:bg-boom-rose-light cursor-pointer p-6 rounded-xl shadow text-center">
-                        <p class="font-bold text-boom-text-dark">Gestionar Usuarios</p>
-                    </div>
-                    <div class="bg-boom-cream-300 hover:bg-boom-rose-light cursor-pointer p-6 rounded-xl shadow text-center">
-                        <p class="font-bold text-boom-text-dark">Gestionar Inventario</p>
-                    </div>
-                    <div class="bg-boom-cream-300 hover:bg-boom-rose-light cursor-pointer p-6 rounded-xl shadow text-center">
-                        <p class="font-bold text-boom-text-dark">Programar Cita</p>
-                    </div>
-                    <div class="bg-boom-cream-300 hover:bg-boom-rose-light cursor-pointer p-6 rounded-xl shadow text-center">
+                    <a href="{{ route('users.create') }}" class="bg-boom-cream-300 hover:bg-boom-rose-light cursor-pointer p-6 rounded-xl shadow text-center border-2 border-boom-cream-400 transition-all duration-200 hover:shadow-lg hover:border-boom-red-title">
+                        <svg class="w-8 h-8 mx-auto mb-2 text-boom-red-title" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                        </svg>
+                        <p class="font-bold text-boom-text-dark">Crear Usuario</p>
+                    </a>
+                    <a href="{{ route('clientes.create') }}" class="bg-boom-cream-300 hover:bg-boom-rose-light cursor-pointer p-6 rounded-xl shadow text-center border-2 border-boom-cream-400 transition-all duration-200 hover:shadow-lg hover:border-boom-red-title">
+                        <svg class="w-8 h-8 mx-auto mb-2 text-boom-red-title" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                        <p class="font-bold text-boom-text-dark">Crear Cliente</p>
+                    </a>
+                    <a href="{{ route('roles.index') }}" class="bg-boom-cream-300 hover:bg-boom-rose-light cursor-pointer p-6 rounded-xl shadow text-center border-2 border-boom-cream-400 transition-all duration-200 hover:shadow-lg hover:border-boom-red-title">
+                        <svg class="w-8 h-8 mx-auto mb-2 text-boom-red-title" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                        <p class="font-bold text-boom-text-dark">Gestionar Roles</p>
+                    </a>
+                    <a href="{{ route('clientes.index') }}" class="bg-boom-cream-300 hover:bg-boom-rose-light cursor-pointer p-6 rounded-xl shadow text-center border-2 border-boom-cream-400 transition-all duration-200 hover:shadow-lg hover:border-boom-red-title">
+                        <svg class="w-8 h-8 mx-auto mb-2 text-boom-red-title" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
                         <p class="font-bold text-boom-text-dark">Ver Reportes</p>
-                    </div>
+                    </a>
                 </div>
             </div>
 
