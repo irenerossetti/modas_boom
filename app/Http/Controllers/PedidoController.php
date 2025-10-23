@@ -265,24 +265,81 @@ class PedidoController extends Controller
         ]);
 
         $datosAnteriores = $pedido->toArray();
+        $estadoAnterior = $pedido->estado;
+        $nuevoEstado = $request->estado;
         
-        $pedido->update([
-            'id_cliente' => $request->id_cliente,
-            'estado' => $request->estado,
-            'total' => $request->total,
-        ]);
+        try {
+            // Usar transacción para manejar cambios de stock si es necesario
+            \DB::transaction(function () use ($pedido, $request, $estadoAnterior, $nuevoEstado) {
+            // Si se está cambiando a "Cancelado" y antes no estaba cancelado, restaurar stock
+            if ($nuevoEstado === 'Cancelado' && $estadoAnterior !== 'Cancelado') {
+                foreach ($pedido->prendas as $prenda) {
+                    $cantidadUnidades = $prenda->pivot->cantidad ?? 0;
+                    if ($cantidadUnidades > 0) {
+                        $cantidadDocenas = $cantidadUnidades / 12; // Convertir unidades a docenas
+                        $prenda->restaurarStock($cantidadDocenas);
+                    }
+                }
+            }
+            
+            // Si se está cambiando de "Cancelado" a otro estado, descontar stock nuevamente
+            if ($estadoAnterior === 'Cancelado' && $nuevoEstado !== 'Cancelado') {
+                foreach ($pedido->prendas as $prenda) {
+                    $cantidadUnidades = $prenda->pivot->cantidad ?? 0;
+                    if ($cantidadUnidades > 0) {
+                        $cantidadDocenas = $cantidadUnidades / 12; // Convertir unidades a docenas
+                        if (!$prenda->tieneStock($cantidadDocenas)) {
+                            throw new \Exception("Stock insuficiente para '{$prenda->nombre}'. Disponible: {$prenda->stock} docenas, Necesario: {$cantidadDocenas} docenas");
+                        }
+                        $prenda->descontarStock($cantidadDocenas);
+                    }
+                }
+            }
+            
+            // Actualizar el pedido
+            $pedido->update([
+                'id_cliente' => $request->id_cliente,
+                'estado' => $nuevoEstado,
+                'total' => $request->total,
+            ]);
+        });
+        } catch (\Exception $e) {
+            return redirect()->route('pedidos.index')
+                ->with('error', 'Error al actualizar el pedido: ' . $e->getMessage());
+        }
+
+        // Preparar mensaje de bitácora
+        $mensaje = "Se actualizó el pedido #{$pedido->id_pedido}";
+        if ($estadoAnterior !== $nuevoEstado) {
+            $mensaje .= " - Estado: {$estadoAnterior} → {$nuevoEstado}";
+            
+            if ($nuevoEstado === 'Cancelado' && $estadoAnterior !== 'Cancelado') {
+                $mensaje .= " - Stock restaurado automáticamente";
+            } elseif ($estadoAnterior === 'Cancelado' && $nuevoEstado !== 'Cancelado') {
+                $mensaje .= " - Stock descontado nuevamente";
+            }
+        }
 
         // Registrar actualización en bitácora
         $this->bitacoraService->registrarActividad(
             'UPDATE',
             'PEDIDOS',
-            "Se actualizó el pedido #{$pedido->id_pedido}",
+            $mensaje,
             $datosAnteriores,
             $pedido->fresh()->toArray()
         );
 
+        $successMessage = "Pedido #{$pedido->id_pedido} actualizado exitosamente.";
+        if ($estadoAnterior !== $nuevoEstado) {
+            if ($nuevoEstado === 'Cancelado') {
+                $successMessage .= " Stock restaurado automáticamente.";
+            } elseif ($estadoAnterior === 'Cancelado') {
+                $successMessage .= " Stock actualizado automáticamente.";
+            }
+        }
+
         return redirect()->route('pedidos.index')
-            ->with('success', "Pedido #{$pedido->id_pedido} actualizado exitosamente.");
+            ->with('success', $successMessage);
     }
 
     /**
@@ -299,17 +356,25 @@ class PedidoController extends Controller
 
         $datosAnteriores = $pedido->toArray();
         
-        // Usar transacción para restaurar stock y cancelar pedido
-        \DB::transaction(function () use ($pedido) {
-            // Restaurar stock de todas las prendas del pedido
-            foreach ($pedido->prendas as $prenda) {
-                $cantidad = $prenda->pivot->cantidad;
-                $prenda->restaurarStock($cantidad);
-            }
-            
-            // Cambiar estado a cancelado
-            $pedido->update(['estado' => 'Cancelado']);
-        });
+        try {
+            // Usar transacción para restaurar stock y cancelar pedido
+            \DB::transaction(function () use ($pedido) {
+                // Restaurar stock de todas las prendas del pedido
+                foreach ($pedido->prendas as $prenda) {
+                    $cantidadUnidades = $prenda->pivot->cantidad ?? 0;
+                    if ($cantidadUnidades > 0) {
+                        $cantidadDocenas = $cantidadUnidades / 12; // Convertir unidades a docenas
+                        $prenda->restaurarStock($cantidadDocenas);
+                    }
+                }
+                
+                // Cambiar estado a cancelado
+                $pedido->update(['estado' => 'Cancelado']);
+            });
+        } catch (\Exception $e) {
+            return redirect()->route('pedidos.index')
+                ->with('error', 'Error al cancelar el pedido: ' . $e->getMessage());
+        }
 
         // Registrar cancelación en bitácora
         $this->bitacoraService->registrarActividad(
@@ -498,8 +563,10 @@ class PedidoController extends Controller
             $docenas = $producto['cantidad'];
             $unidades = $docenas * 12;
             
-            if (!$prenda->tieneStock($unidades)) {
-                $erroresStock[] = "Stock insuficiente para '{$prenda->nombre}'. Disponible: {$prenda->stock}, Solicitado: {$unidades}";
+            // El stock está en docenas, comparamos directamente con las docenas solicitadas
+            if (!$prenda->tieneStock($docenas)) {
+                $stockUnidades = $prenda->stock * 12;
+                $erroresStock[] = "Stock insuficiente para '{$prenda->nombre}'. Disponible: {$prenda->stock} docenas ({$stockUnidades} unidades), Solicitado: {$docenas} docenas ({$unidades} unidades)";
                 continue;
             }
             
@@ -557,8 +624,8 @@ class PedidoController extends Controller
 
             // Procesar cada prenda: descontar stock y crear relación
             foreach ($prendasVerificadas as $item) {
-                // Descontar stock
-                $item['prenda']->descontarStock($item['unidades']);
+                // Descontar stock (el stock está en docenas)
+                $item['prenda']->descontarStock($item['docenas']);
                 
                 // Crear relación en tabla pivot
                 $pedido->prendas()->attach($item['prenda']->id, [
@@ -707,8 +774,6 @@ class PedidoController extends Controller
             abort(403, 'No tienes permisos para realizar esta acción.');
         }
 
-
-
         $request->validate([
             'id_cliente' => 'required|integer|exists:clientes,id',
             'producto_nombre' => 'required|string|max:255',
@@ -723,28 +788,29 @@ class PedidoController extends Controller
 
         $cliente = Cliente::findOrFail($request->id_cliente);
 
-        // Calcular cantidades y precio total
+        // Calcular cantidades
         $docenas = $request->cantidad_docenas;
         $unidades = $docenas * 12;
         $precioTotal = $request->producto_precio * $docenas;
 
-        // Crear descripción del pedido
-        $descripcion = "Producto: {$request->producto_nombre}";
-        if ($request->categoria) {
-            $descripcion .= "\nCategoría: {$request->categoria}";
+        // Buscar la prenda en la base de datos por nombre y categoría
+        $prenda = Prenda::where('nombre', $request->producto_nombre)
+                       ->when($request->categoria, function($query, $categoria) {
+                           return $query->where('categoria', $categoria);
+                       })
+                       ->where('activo', true)
+                       ->first();
+
+        // Verificar stock si la prenda existe en la BD
+        if ($prenda) {
+            // El stock está en docenas, comparamos directamente con las docenas solicitadas
+            if (!$prenda->tieneStock($docenas)) {
+                $stockUnidades = $prenda->stock * 12;
+                return back()->withErrors([
+                    'stock' => "Stock insuficiente para '{$prenda->nombre}'. Disponible: {$prenda->stock} docenas ({$stockUnidades} unidades), Solicitado: {$docenas} docenas ({$unidades} unidades)"
+                ])->withInput();
+            }
         }
-        $descripcion .= "\nCantidad: {$docenas} docena" . ($docenas > 1 ? 's' : '') . " ({$unidades} unidades)";
-        $descripcion .= "\nPrecio por docena: Bs. " . number_format($request->producto_precio, 2);
-        if ($request->descripcion_adicional) {
-            $descripcion .= "\nDescripción adicional: {$request->descripcion_adicional}";
-        }
-        if ($request->direccion_entrega) {
-            $descripcion .= "\nDirección de entrega: {$request->direccion_entrega}";
-        }
-        if ($request->telefono_contacto) {
-            $descripcion .= "\nTeléfono de contacto: {$request->telefono_contacto}";
-        }
-        $descripcion .= "\nPedido creado por empleado: " . Auth::user()->nombre;
 
         // Determinar estado inicial
         $estado = 'En proceso';
@@ -752,11 +818,28 @@ class PedidoController extends Controller
             $estado = 'Asignado';
         }
 
-        $pedido = Pedido::create([
-            'id_cliente' => $request->id_cliente,
-            'estado' => $estado,
-            'total' => $precioTotal,
-        ]);
+        // Usar transacción para asegurar consistencia
+        \DB::transaction(function () use ($prenda, $unidades, $docenas, $request, $cliente, $estado, $precioTotal, &$pedido) {
+            // Crear el pedido
+            $pedido = Pedido::create([
+                'id_cliente' => $request->id_cliente,
+                'estado' => $estado,
+                'total' => $precioTotal,
+            ]);
+
+            // Si la prenda existe en la BD, descontar stock y crear relación
+            if ($prenda) {
+                // Descontar stock (el stock está en docenas)
+                $prenda->descontarStock($docenas);
+                
+                // Crear relación en tabla pivot
+                $pedido->prendas()->attach($prenda->id, [
+                    'cantidad' => $unidades,
+                    'precio_unitario' => $request->producto_precio,
+                    'observaciones' => "Pedido de {$docenas} docena" . ($docenas > 1 ? 's' : '') . " - Creado por empleado: " . Auth::user()->nombre
+                ]);
+            }
+        });
 
         // Preparar datos para bitácora
         $datosAdicionales = [
@@ -769,10 +852,16 @@ class PedidoController extends Controller
             'direccion_entrega' => $request->direccion_entrega,
             'telefono_contacto' => $request->telefono_contacto,
             'creado_por_empleado' => Auth::user()->nombre,
-            'origen' => 'empleado_plataforma'
+            'origen' => 'empleado_plataforma',
+            'stock_descontado' => $prenda ? true : false,
+            'prenda_id' => $prenda ? $prenda->id : null
         ];
 
         $mensaje = "Empleado " . Auth::user()->nombre . " creó el pedido #{$pedido->id_pedido} para {$cliente->nombre} {$cliente->apellido} - Producto: {$request->producto_nombre} - Cantidad: {$docenas} docena" . ($docenas > 1 ? 's' : '') . " ({$unidades} unidades)";
+        
+        if ($prenda) {
+            $mensaje .= " - Stock actualizado automáticamente";
+        }
 
         // Si se asignó operario
         if ($request->id_operario && Auth::user()->id_rol == 1) {
@@ -790,7 +879,81 @@ class PedidoController extends Controller
             array_merge($pedido->toArray(), $datosAdicionales)
         );
 
+        $successMessage = "¡Pedido #{$pedido->id_pedido} creado exitosamente para {$cliente->nombre} {$cliente->apellido}!";
+        if ($prenda) {
+            $successMessage .= " Stock actualizado automáticamente.";
+        }
+
         return redirect()->route('pedidos.index')
-            ->with('success', "¡Pedido #{$pedido->id_pedido} creado exitosamente para {$cliente->nombre} {$cliente->apellido}!");
+            ->with('success', $successMessage);
+    }
+
+    /**
+     * Verificar stock de productos antes de crear pedido (AJAX)
+     */
+    public function verificarStock(Request $request)
+    {
+        $request->validate([
+            'productos' => 'required|array',
+            'productos.*.id' => 'required|integer',
+            'productos.*.cantidad' => 'required|integer|min:1'
+        ]);
+
+        $resultados = [];
+        $errores = [];
+
+        foreach ($request->productos as $producto) {
+            $prenda = Prenda::find($producto['id']);
+            
+            if (!$prenda) {
+                $errores[] = "Producto con ID {$producto['id']} no encontrado";
+                continue;
+            }
+
+            $unidades = $producto['cantidad'] * 12; // Convertir docenas a unidades
+            $tieneStock = $prenda->tieneStock($unidades);
+
+            $resultados[] = [
+                'id' => $prenda->id,
+                'nombre' => $prenda->nombre,
+                'stock_disponible' => $prenda->stock,
+                'cantidad_solicitada' => $unidades,
+                'tiene_stock' => $tieneStock,
+                'mensaje' => $tieneStock 
+                    ? "Stock suficiente" 
+                    : "Stock insuficiente. Disponible: {$prenda->stock}, Solicitado: {$unidades}"
+            ];
+        }
+
+        return response()->json([
+            'success' => empty($errores),
+            'errores' => $errores,
+            'productos' => $resultados
+        ]);
+    }
+
+    /**
+     * Obtener stock actual de un producto específico (AJAX)
+     */
+    public function obtenerStock($id)
+    {
+        $prenda = Prenda::find($id);
+        
+        if (!$prenda) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Producto no encontrado'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'producto' => [
+                'id' => $prenda->id,
+                'nombre' => $prenda->nombre,
+                'stock' => $prenda->stock,
+                'activo' => $prenda->activo
+            ]
+        ]);
     }
 }

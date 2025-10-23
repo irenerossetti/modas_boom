@@ -20,7 +20,7 @@ Route::get('/', function () {
             case 1: // Administrador
                 return redirect()->route('dashboard');
             case 2: // Empleado
-                return redirect()->route('empleado.dashboard');
+                return redirect()->route('pedidos.index');
             case 3: // Cliente
                 return redirect()->route('cliente.dashboard');
             default:
@@ -37,7 +37,7 @@ Route::post('/catalogo/pedido', [CatalogoController::class, 'crearPedido'])->nam
 Route::get('/catalogo/pedido-confirmado/{id}', [CatalogoController::class, 'pedidoConfirmado'])->name('catalogo.pedido-confirmado');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified', 'user.enabled', 'admin.role'])->name('dashboard');
+    ->middleware(['auth', 'verified', 'user.enabled', 'admin.role', 'redirect.role'])->name('dashboard');
 
 Route::middleware(['auth', 'user.enabled'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -55,12 +55,17 @@ Route::middleware(['auth', 'user.enabled'])->group(function () {
     Route::post('crear-pedido-cliente', [PedidoController::class, 'empleadoStore'])->name('pedidos.empleado-store');
     
     // Dashboard específico para clientes
-    Route::get('cliente/dashboard', [App\Http\Controllers\ClienteDashboardController::class, 'index'])->name('cliente.dashboard');
+    Route::get('cliente/dashboard', [App\Http\Controllers\ClienteDashboardController::class, 'index'])
+        ->middleware('redirect.role')->name('cliente.dashboard');
     
     // Rutas específicas para clientes - crear y ver sus propios pedidos
     Route::get('hacer-pedido', [PedidoController::class, 'clienteCrear'])->name('pedidos.cliente-crear');
     Route::post('hacer-pedido', [PedidoController::class, 'clienteStore'])->name('pedidos.cliente-store');
     Route::get('mis-pedidos', [PedidoController::class, 'misPedidos'])->name('pedidos.mis-pedidos');
+    
+    // Rutas AJAX para verificación de stock
+    Route::post('pedidos/verificar-stock', [PedidoController::class, 'verificarStock'])->name('pedidos.verificar-stock');
+    Route::get('pedidos/stock/{id}', [PedidoController::class, 'obtenerStock'])->name('pedidos.obtener-stock');
     
     // Ruta del catálogo de productos
     Route::get('catalogo', [CatalogoController::class, 'index'])->name('catalogo.index');
@@ -104,8 +109,9 @@ Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
     Route::get('pedidos-por-operario', [PedidoController::class, 'porOperario'])->name('pedidos.por-operario');
 });
 
+// Ruta de dashboard para empleados - redirige a pedidos
 Route::get('/empleado-dashboard', function () {
-    return view('empleado-dashboard');
+    return redirect()->route('pedidos.index');
 })->middleware(['auth', 'verified', 'user.enabled'])->name('empleado.dashboard');
 
 

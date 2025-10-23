@@ -55,7 +55,7 @@
                                 <i class="fas fa-shopping-bag mr-2"></i>Gestionar Pedidos
                             </a>
                         @elseif(Auth::user()->id_rol == 2) <!-- Empleado -->
-                            <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('empleado.dashboard') }}">
+                            <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('pedidos.index') }}">
                                 <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
                             </a>
                             <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('pedidos.mis-pedidos') }}">
@@ -65,6 +65,9 @@
                                 <i class="fas fa-plus mr-2"></i>Crear Pedido Cliente
                             </a>
                         @elseif(Auth::user()->id_rol == 3) <!-- Cliente -->
+                            <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('cliente.dashboard') }}">
+                                <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                            </a>
                             <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('pedidos.mis-pedidos') }}">
                                 <i class="fas fa-list mr-2"></i>Mis Pedidos
                             </a>
@@ -152,7 +155,7 @@
                                 <i class="fas fa-shopping-bag mr-2"></i>Gestionar Pedidos
                             </a>
                         @elseif(Auth::user()->id_rol == 2) <!-- Empleado -->
-                            <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('empleado.dashboard') }}">
+                            <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('pedidos.index') }}">
                                 <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
                             </a>
                             <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('pedidos.mis-pedidos') }}">
@@ -162,6 +165,9 @@
                                 <i class="fas fa-plus mr-2"></i>Crear Pedido Cliente
                             </a>
                         @elseif(Auth::user()->id_rol == 3) <!-- Cliente -->
+                            <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('cliente.dashboard') }}">
+                                <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                            </a>
                             <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('pedidos.mis-pedidos') }}">
                                 <i class="fas fa-list mr-2"></i>Mis Pedidos
                             </a>

@@ -1,7 +1,7 @@
 <x-app-layout>
-    <div class="p-4 sm:p-6 lg:p-8">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-3 sm:space-y-0">
-            <h1 class="text-2xl sm:text-3xl font-bold text-boom-text-dark">
+    <div class="p-3 sm:p-4 lg:p-8 max-w-7xl mx-auto">
+        <div class="flex flex-col space-y-3 sm:flex-row sm:justify-between sm:items-center sm:space-y-0 mb-4 sm:mb-6">
+            <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-boom-text-dark text-center sm:text-left">
                 <i class="fas fa-shopping-cart mr-2"></i>
                 @if(Auth::user()->id_rol == 2)
                     Crear Pedido Personal
@@ -10,10 +10,10 @@
                 @endif
             </h1>
             <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                <a href="{{ route('catalogo.index') }}" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 text-center">
+                <a href="{{ route('catalogo.index') }}" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-300 text-center text-sm sm:text-base">
                     <i class="fas fa-images mr-2"></i>Ver Catálogo
                 </a>
-                <a href="{{ route('pedidos.mis-pedidos') }}" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 text-center">
+                <a href="{{ route('pedidos.mis-pedidos') }}" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-300 text-center text-sm sm:text-base">
                     <i class="fas fa-list mr-2"></i>Mis Pedidos
                 </a>
             </div>
@@ -37,21 +37,21 @@
             </div>
         @endif
 
-        <!-- Información del Cliente -->
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <h3 class="text-lg font-semibold text-blue-800 mb-2">
+        <!-- Información del Cliente - Optimizada para móvil -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+            <h3 class="text-base sm:text-lg font-semibold text-blue-800 mb-2">
                 <i class="fas fa-user-check mr-2"></i>
                 Información del Pedido
             </h3>
             <div class="flex items-center">
-                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white text-lg font-bold mr-4">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500 rounded-full flex items-center justify-center text-white text-base sm:text-lg font-bold mr-3 sm:mr-4 flex-shrink-0">
                     {{ strtoupper(substr(Auth::user()->nombre, 0, 1)) }}
                 </div>
-                <div>
-                    <div class="font-semibold text-blue-800">
+                <div class="min-w-0 flex-1">
+                    <div class="font-semibold text-blue-800 text-sm sm:text-base truncate">
                         {{ Auth::user()->nombre }} {{ Auth::user()->apellido ?? '' }}
                     </div>
-                    <div class="text-sm text-blue-600">
+                    <div class="text-xs sm:text-sm text-blue-600 truncate">
                         @if(Auth::user()->id_rol == 2)
                             Pedido Personal - Empleado
                         @else
@@ -60,31 +60,31 @@
                     </div>
                 </div>
             </div>
-            <p class="text-sm text-blue-700 mt-2">
+            <p class="text-xs sm:text-sm text-blue-700 mt-2">
                 <i class="fas fa-info-circle mr-1"></i>
                 Selecciona múltiples productos y cantidades para crear tu pedido personalizado.
             </p>
         </div>
 
         <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div class="p-6 bg-white border-b border-gray-200">
+            <div class="p-3 sm:p-6 bg-white border-b border-gray-200">
 
                 <form action="{{ route('pedidos.cliente-store') }}" method="POST" id="pedidoForm">
                     @csrf
                     
-                    <!-- Selección Múltiple de Productos -->
-                    <div class="mb-6">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-xl font-semibold text-boom-text-dark">
+                    <!-- Selección Múltiple de Productos - Optimizada para móvil -->
+                    <div class="mb-4 sm:mb-6">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 space-y-3 sm:space-y-0">
+                            <h3 class="text-lg sm:text-xl font-semibold text-boom-text-dark">
                                 <i class="fas fa-tshirt mr-2"></i>
                                 Seleccionar Productos
                             </h3>
-                            <div class="flex items-center space-x-4">
-                                <span class="text-sm text-boom-text-medium bg-blue-100 px-3 py-1 rounded-full">
+                            <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                                <span class="text-xs sm:text-sm text-boom-text-medium bg-blue-100 px-2 sm:px-3 py-1 rounded-full text-center">
                                     <i class="fas fa-info-circle mr-1"></i>
                                     Múltiples productos disponibles
                                 </span>
-                                <button type="button" id="limpiar-seleccion" class="text-sm text-boom-rose-dark hover:text-boom-rose-light transition-colors bg-red-100 px-3 py-1 rounded-full">
+                                <button type="button" id="limpiar-seleccion" class="text-xs sm:text-sm text-boom-rose-dark hover:text-boom-rose-light transition-colors bg-red-100 px-2 sm:px-3 py-1 rounded-full text-center">
                                     <i class="fas fa-times mr-1"></i>Limpiar selección
                                 </button>
                             </div>
@@ -95,26 +95,26 @@
                         @endphp
                         
                         @foreach($productosPorCategoria as $categoria => $productosCategoria)
-                            <div class="mb-8 bg-gray-50 rounded-lg p-6">
-                                <!-- Header de Categoría Profesional -->
-                                <div class="flex items-center justify-between mb-6 pb-3 border-b border-gray-200">
-                                    <h4 class="text-lg font-bold text-boom-text-dark flex items-center">
+                            <div class="mb-6 sm:mb-8 bg-gray-50 rounded-lg p-3 sm:p-6">
+                                <!-- Header de Categoría Profesional - Optimizado para móvil -->
+                                <div class="flex items-center justify-between mb-4 sm:mb-6 pb-2 sm:pb-3 border-b border-gray-200">
+                                    <h4 class="text-base sm:text-lg font-bold text-boom-text-dark flex items-center">
                                         @if($categoria == 'Formal')
-                                            <i class="fas fa-user-tie text-blue-600 mr-3"></i>
+                                            <i class="fas fa-user-tie text-blue-600 mr-2 sm:mr-3"></i>
                                         @elseif($categoria == 'Informal')
-                                            <i class="fas fa-tshirt text-green-600 mr-3"></i>
+                                            <i class="fas fa-tshirt text-green-600 mr-2 sm:mr-3"></i>
                                         @else
-                                            <i class="fas fa-tag text-purple-600 mr-3"></i>
+                                            <i class="fas fa-tag text-purple-600 mr-2 sm:mr-3"></i>
                                         @endif
                                         {{ $categoria }}
                                     </h4>
-                                    <span class="bg-boom-cream-300 text-boom-text-dark px-3 py-1 rounded-full text-sm font-medium">
+                                    <span class="bg-boom-cream-300 text-boom-text-dark px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
                                         {{ count($productosCategoria) }} producto{{ count($productosCategoria) > 1 ? 's' : '' }}
                                     </span>
                                 </div>
                                 
-                                <!-- Grid de Productos Profesional -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <!-- Grid de Productos Profesional - Optimizado para móvil -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
                                         @foreach($productosCategoria as $index => $producto)
                                             @php
                                                 $globalIndex = array_search($producto, $productos);
@@ -130,23 +130,23 @@
                                                  data-imagen="{{ asset($producto['imagen']) }}"
                                                  data-stock="{{ $producto['stock'] ?? 0 }}">
                                                 
-                                                <!-- Imagen de la prenda -->
+                                                <!-- Imagen de la prenda - Optimizada para móvil -->
                                                 <div class="relative">
                                                     @if($producto['imagen'] && file_exists(public_path($producto['imagen'])))
                                                         <img src="{{ asset($producto['imagen']) }}" 
                                                              alt="{{ $producto['nombre'] }}" 
-                                                             class="w-full h-48 object-cover">
+                                                             class="w-full h-36 sm:h-48 object-cover">
                                                     @else
-                                                        <div class="w-full h-48 bg-boom-cream-200 flex items-center justify-center">
-                                                            <i class="fas fa-tshirt text-4xl text-boom-text-medium"></i>
+                                                        <div class="w-full h-36 sm:h-48 bg-boom-cream-200 flex items-center justify-center">
+                                                            <i class="fas fa-tshirt text-2xl sm:text-4xl text-boom-text-medium"></i>
                                                         </div>
                                                     @endif
                                                     
-                                                    <!-- Botón de previsualización -->
+                                                    <!-- Botón de previsualización - Optimizado para móvil -->
                                                     <button type="button" onclick="mostrarPreview({{ $globalIndex }})" 
-                                                            class="absolute top-2 right-2 bg-white bg-opacity-90 hover:bg-opacity-100 text-boom-text-dark p-2 rounded-full shadow-md transition-all duration-300"
+                                                            class="absolute top-1 sm:top-2 right-1 sm:right-2 bg-white bg-opacity-90 hover:bg-opacity-100 text-boom-text-dark p-1.5 sm:p-2 rounded-full shadow-md transition-all duration-300"
                                                             title="Ver detalles">
-                                                        <i class="fas fa-eye"></i>
+                                                        <i class="fas fa-eye text-sm sm:text-base"></i>
                                                     </button>
                                                     
                                                     <!-- Checkbox para selección múltiple -->
@@ -206,12 +206,21 @@
                                                                     <i class="fas fa-minus text-xs"></i>
                                                                 </button>
                                                                 <input type="number" class="cantidad-input w-16 text-center border border-boom-cream-300 rounded px-2 py-1 text-sm" 
-                                                                       value="1" min="1" max="99" data-producto="{{ $globalIndex }}">
+                                                                       value="1" min="1" max="{{ $producto['stock'] ?? 0 }}" 
+                                                                       data-producto="{{ $globalIndex }}" 
+                                                                       data-stock="{{ $producto['stock'] ?? 0 }}"
+                                                                       data-max-docenas="{{ $producto['stock'] ?? 0 }}">
                                                                 <button type="button" class="btn-mas bg-boom-cream-200 hover:bg-boom-cream-300 text-boom-text-dark w-8 h-8 rounded-full flex items-center justify-center transition-colors" 
-                                                                        data-producto="{{ $globalIndex }}">
+                                                                        data-producto="{{ $globalIndex }}"
+                                                                        data-max-docenas="{{ $producto['stock'] ?? 0 }}">
                                                                     <i class="fas fa-plus text-xs"></i>
                                                                 </button>
                                                             </div>
+                                                        </div>
+                                                        <!-- Indicador de stock disponible -->
+                                                        <div class="mt-1 text-xs text-center">
+                                                            <span class="text-gray-600">Stock: {{ $producto['stock'] ?? 0 }} docenas</span>
+                                                            <span class="text-boom-rose-dark font-medium">({{ ($producto['stock'] ?? 0) * 12 }} unidades)</span>
                                                         </div>
                                                     </div>
                                                     
@@ -294,7 +303,19 @@
                                     <li>• 2 docenas = 24 unidades</li>
                                     <li>• 3 docenas = 36 unidades</li>
                                     <li>• Puedes seleccionar múltiples productos y cantidades diferentes</li>
+                                    <li>• <strong>El stock se actualiza automáticamente</strong> al crear el pedido</li>
                                 </ul>
+                            </div>
+                        </div>
+
+                        <!-- Alerta de Stock -->
+                        <div id="alerta-stock" class="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4" style="display: none;">
+                            <div class="flex items-center">
+                                <i class="fas fa-exclamation-triangle text-yellow-600 mr-2"></i>
+                                <div>
+                                    <h4 class="font-semibold text-yellow-800">Atención: Stock Limitado</h4>
+                                    <p class="text-yellow-700 text-sm mt-1" id="mensaje-stock"></p>
+                                </div>
                             </div>
                         </div>
 
@@ -499,9 +520,9 @@
                 
                 const stock = parseInt(card.dataset.stock);
                 
-                // Verificar si hay stock disponible (mínimo 12 unidades para 1 docena)
-                if (stock < 12) {
-                    alert(`Stock insuficiente para "${card.dataset.nombre}". Disponible: ${stock} unidades (se necesitan mínimo 12 para 1 docena)`);
+                // Verificar si hay stock disponible (mínimo 1 docena)
+                if (stock < 1) {
+                    alert(`Stock insuficiente para "${card.dataset.nombre}". Disponible: ${stock} docenas`);
                     return;
                 }
                 
@@ -553,29 +574,84 @@
             function cambiarCantidad(index, cambio) {
                 const input = document.querySelector(`input[data-producto="${index}"]`);
                 const producto = productosSeleccionados.find(p => p.index == index);
-                const nuevaCantidad = Math.max(1, parseInt(input.value) + cambio);
                 
-                // Validar stock disponible (cantidad en docenas * 12 unidades)
-                const unidadesNecesarias = nuevaCantidad * 12;
-                if (producto && unidadesNecesarias > producto.stock) {
-                    const docentasMaximas = Math.floor(producto.stock / 12);
-                    alert(`Stock insuficiente. Máximo disponible: ${docentasMaximas} docena${docentasMaximas !== 1 ? 's' : ''} (${producto.stock} unidades)`);
-                    input.value = docentasMaximas;
-                    actualizarCantidadProducto(index, docentasMaximas);
+                if (!producto) return;
+                
+                const cantidadActual = parseInt(input.value) || 1;
+                const nuevaCantidad = Math.max(1, cantidadActual + cambio);
+                const docentasMaximas = producto.stock; // El stock ya está en docenas
+                
+                // Validar que no exceda el stock disponible
+                if (nuevaCantidad > docentasMaximas) {
+                    // Mostrar alerta más informativa
+                    mostrarAlertaStock(producto.nombre, producto.stock, docentasMaximas);
                     return;
                 }
                 
+                // Actualizar el input y el producto
                 input.value = nuevaCantidad;
+                input.setAttribute('max', docentasMaximas);
                 actualizarCantidadProducto(index, nuevaCantidad);
+                
+                // Actualizar estado de botones
+                actualizarEstadoBotones(index, nuevaCantidad, docentasMaximas);
+            }
+
+            function mostrarAlertaStock(nombreProducto, stockTotal, docentasMaximas) {
+                const alertaDiv = document.getElementById('alerta-stock');
+                const mensajeSpan = document.getElementById('mensaje-stock');
+                
+                mensajeSpan.innerHTML = `
+                    <strong>${nombreProducto}</strong><br>
+                    Stock disponible: ${stockTotal} docenas (${stockTotal * 12} unidades)<br>
+                    Máximo permitido: ${docentasMaximas} docena${docentasMaximas !== 1 ? 's' : ''} (${docentasMaximas * 12} unidades)
+                `;
+                
+                alertaDiv.style.display = 'block';
+                
+                // Ocultar alerta después de 5 segundos
+                setTimeout(() => {
+                    alertaDiv.style.display = 'none';
+                }, 5000);
+            }
+
+            function actualizarEstadoBotones(index, cantidadActual, docentasMaximas) {
+                const btnMas = document.querySelector(`.btn-mas[data-producto="${index}"]`);
+                const btnMenos = document.querySelector(`.btn-menos[data-producto="${index}"]`);
+                
+                // Deshabilitar botón + si se alcanzó el máximo
+                if (btnMas) {
+                    if (cantidadActual >= docentasMaximas) {
+                        btnMas.disabled = true;
+                        btnMas.classList.add('opacity-50', 'cursor-not-allowed');
+                        btnMas.classList.remove('hover:bg-boom-cream-300');
+                    } else {
+                        btnMas.disabled = false;
+                        btnMas.classList.remove('opacity-50', 'cursor-not-allowed');
+                        btnMas.classList.add('hover:bg-boom-cream-300');
+                    }
+                }
+                
+                // Deshabilitar botón - si está en el mínimo
+                if (btnMenos) {
+                    if (cantidadActual <= 1) {
+                        btnMenos.disabled = true;
+                        btnMenos.classList.add('opacity-50', 'cursor-not-allowed');
+                        btnMenos.classList.remove('hover:bg-boom-cream-300');
+                    } else {
+                        btnMenos.disabled = false;
+                        btnMenos.classList.remove('opacity-50', 'cursor-not-allowed');
+                        btnMenos.classList.add('hover:bg-boom-cream-300');
+                    }
+                }
             }
 
             function actualizarCantidadProducto(index, cantidad) {
                 const producto = productosSeleccionados.find(p => p.index == index);
                 if (producto) {
-                    // Validar stock antes de actualizar
-                    const unidadesNecesarias = cantidad * 12;
-                    if (unidadesNecesarias > producto.stock) {
-                        const docentasMaximas = Math.floor(producto.stock / 12);
+                    // Validar stock antes de actualizar (el stock ya está en docenas)
+                    if (cantidad > producto.stock) {
+                        const docentasMaximas = producto.stock;
                         cantidad = docentasMaximas;
                         document.querySelector(`input[data-producto="${index}"]`).value = cantidad;
                     }
@@ -710,6 +786,109 @@
                     cerrarModalPreview();
                 }
             });
+
+            // Función para verificar stock antes de enviar el formulario
+            function verificarStockAntesDePedido() {
+                if (productosSeleccionados.length === 0) {
+                    return Promise.resolve(true);
+                }
+
+                const productosParaVerificar = productosSeleccionados.map(producto => ({
+                    id: producto.id,
+                    cantidad: producto.cantidad
+                }));
+
+                return fetch('{{ route("pedidos.verificar-stock") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        productos: productosParaVerificar
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        let mensaje = 'Problemas de stock detectados:\n\n';
+                        data.productos.forEach(producto => {
+                            if (!producto.tiene_stock) {
+                                mensaje += `• ${producto.nombre}: ${producto.mensaje}\n`;
+                            }
+                        });
+                        alert(mensaje);
+                        return false;
+                    }
+                    return true;
+                })
+                .catch(error => {
+                    console.error('Error verificando stock:', error);
+                    return true; // Permitir continuar si hay error en la verificación
+                });
+            }
+
+            // Actualizar el evento de envío del formulario para incluir verificación de stock
+            const form = document.getElementById('pedidoForm');
+            const originalSubmitHandler = form.onsubmit;
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Verificaciones básicas primero
+                if (productosSeleccionados.length === 0) {
+                    alert('Por favor selecciona al menos un producto');
+                    return false;
+                }
+                
+                const direccion = document.getElementById('direccion_entrega').value.trim();
+                const telefono = document.getElementById('telefono_contacto').value.trim();
+                
+                if (!direccion || !telefono) {
+                    alert('Por favor completa la dirección de entrega y teléfono de contacto');
+                    return false;
+                }
+
+                // Verificar stock antes de enviar
+                verificarStockAntesDePedido().then(stockOk => {
+                    if (stockOk) {
+                        // Si el stock está bien, enviar el formulario
+                        form.removeEventListener('submit', arguments.callee);
+                        form.submit();
+                    }
+                });
+            });
+
+            // Mostrar alertas de stock bajo en tiempo real
+            function mostrarAlertaStockBajo() {
+                productosSeleccionados.forEach(producto => {
+                    const unidades = producto.cantidad * 12;
+                    const stockRestante = producto.stock - unidades;
+                    
+                    if (stockRestante < 0) {
+                        // Stock insuficiente
+                        const card = document.querySelector(`[data-id="${producto.id}"]`);
+                        if (card) {
+                            card.style.borderColor = '#ef4444';
+                            card.style.backgroundColor = '#fef2f2';
+                        }
+                    } else if (stockRestante <= 5) {
+                        // Stock bajo
+                        const card = document.querySelector(`[data-id="${producto.id}"]`);
+                        if (card) {
+                            card.style.borderColor = '#f59e0b';
+                            card.style.backgroundColor = '#fffbeb';
+                        }
+                    }
+                });
+            }
+
+            // Llamar a la función de alerta cada vez que se actualice el carrito
+            const originalActualizarCarritoVisual = actualizarCarritoVisual;
+            actualizarCarritoVisual = function() {
+                originalActualizarCarritoVisual();
+                mostrarAlertaStockBajo();
+            };
         });
     </script>
     @endpush
