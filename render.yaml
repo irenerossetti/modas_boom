@@ -1,0 +1,72 @@
+services:
+  # --- Servicio Web (Tu App Laravel con Octane) ---
+  - type: web
+    name: modas-boom-app
+    env: php              # Usa el buildpack de PHP
+    plan: free
+    autoDeploy: true
+    
+    # --- Comandos de Construcción ---
+    buildCommand: |
+      composer install --no-interaction --no-dev --optimize-autoloader
+      npm install             # Instala dependencias de Node.js
+      npm run build           # Compila tus CSS/JS con Vite
+      php artisan optimize:clear
+      php artisan octane:prepare # Prepara Octane
+      php artisan migrate --force
+
+    # --- Comando de Arranque ---
+    startCommand: "php artisan octane:start --host=0.0.0.0 --port=${PORT}"
+    
+    # --- Variables de Entorno ---
+    envVars:
+      - key: APP_NAME
+        value: "Modas Boom"
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_URL
+        value: ${RENDER_SERVICE_URL}
+      - key: APP_KEY
+        generateValue: true # Render generará un APP_KEY
+      - key: LOG_CHANNEL
+        value: stderr
+        
+      # --- Conexión a la Base de Datos ---
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromService:
+          type: psql
+          name: boom-database # DEBE COINCIDCon EL NOMBRE DE LA BDD
+          property: host
+      - key: DB_PORT
+        fromService:
+          type: psql
+          name: boom-database
+          property: port
+      - key: DB_DATABASE
+        fromService:
+          type: psql
+          name: boom-database
+          property: database
+      - key: DB_USERNAME
+        fromService:
+          type: psql
+          name: boom-database
+          property: user
+      - key: DB_PASSWORD
+        fromService:
+          type: psql
+          name: boom-database
+          property: password
+
+  # --- Servicio de Base de Datos (PostgreSQL) ---
+  - type: psql
+    name: boom-database # Nombre interno para tu BDD
+    databaseName: boom
+    user: boom_user
+    plan: free
+    region: ohio
+    ipAllowList: []
