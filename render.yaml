@@ -38,27 +38,27 @@ services:
         value: pgsql
       - key: DB_HOST
         fromService:
-          type: psql
+          type: pg
           name: boom-database # DEBE COINCIDCon EL NOMBRE DE LA BDD
           property: host
       - key: DB_PORT
         fromService:
-          type: psql
+          type: pg
           name: boom-database
           property: port
       - key: DB_DATABASE
         fromService:
-          type: psql
+          type: pg
           name: boom-database
           property: database
       - key: DB_USERNAME
         fromService:
-          type: psql
+          type: pg
           name: boom-database
           property: user
       - key: DB_PASSWORD
         fromService:
-          type: psql
+          type: pg
           name: boom-database
           property: password
 
