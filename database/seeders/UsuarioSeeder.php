@@ -1,29 +1,38 @@
-<?php
-
-namespace Database\Seeders;
-
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-
-class UsuarioSeeder extends Seeder
+public function run(): void
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
-    {
-        // Crear usuario admin solo si no existe, leyendo credenciales de .env para mayor seguridad
-        $adminEmail = env('ADMIN_EMAIL', 'super@boom.com');
-        $adminPassword = env('ADMIN_PASSWORD', 'clave123');
+    // Usuario Admin
+    $adminEmail = env('ADMIN_EMAIL', 'super@boom.com');
+    $adminPassword = env('ADMIN_PASSWORD', 'clave123');
 
-        \App\Models\User::firstOrCreate(
-            ['email' => $adminEmail],
-            [
-                'id_rol' => 1,
-                'nombre' => 'Super Admin',
-                'password' => bcrypt($adminPassword),
-                'habilitado' => true,
-            ]
-        );
-    }
+    \App\Models\User::firstOrCreate(
+        ['email' => $adminEmail],
+        [
+            'id_rol' => 1,
+            'nombre' => 'Super Admin',
+            'password' => bcrypt($adminPassword),
+            'habilitado' => true,
+        ]
+    );
+
+    // Usuario Cliente
+    \App\Models\User::firstOrCreate(
+        ['email' => 'prueba@correo.com'],
+        [
+            'id_rol' => 2, // Asumiendo que 2 es cliente
+            'nombre' => 'Cliente Test',
+            'password' => bcrypt('clave123'),
+            'habilitado' => true,
+        ]
+    );
+
+    // Usuario Empleado
+    \App\Models\User::firstOrCreate(
+        ['email' => 'prueba2@correo.com'],
+        [
+            'id_rol' => 3, // Asumiendo que 3 es empleado
+            'nombre' => 'Empleado Test', 
+            'password' => bcrypt('clave123'),
+            'habilitado' => true,
+        ]
+    );
 }
