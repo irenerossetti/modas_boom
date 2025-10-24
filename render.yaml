@@ -1,12 +1,9 @@
 services:
-  # --- Servicio Web (Tu App Laravel) ---
   - type: web
     name: modas-boom-app
     env: php
     plan: free
     autoDeploy: true
-    
-    # --- Comandos de Construcción ---
     buildCommand: |
       composer install --no-interaction --no-dev --optimize-autoloader
       npm install
@@ -14,11 +11,7 @@ services:
       php artisan optimize:clear
       php artisan key:generate --force
       php artisan migrate --force
-
-    # --- Comando de Arranque ---
     startCommand: php artisan serve --host=0.0.0.0 --port=$PORT
-    
-    # --- Variables de Entorno ---
     envVars:
       - key: APP_NAME
         value: "Modas Boom"
@@ -30,8 +23,6 @@ services:
         generateValue: true
       - key: LOG_CHANNEL
         value: stderr
-      
-      # --- Conexión a la Base de Datos ---
       - key: DB_CONNECTION
         value: pgsql
       - key: DB_HOST
@@ -55,11 +46,9 @@ services:
           name: boom-database
           property: password
 
-# --- Servicio de Base de Datos (PostgreSQL) ---
 databases:
   - name: boom-database
     databaseName: boom
     user: boom_user
     plan: free
     region: ohio
-    ipAllowList: []
