@@ -7,3 +7,6 @@ NODE_VERSION = "18"
 
 [build.environment]
 COMPOSER_VERSION = "2.7"
+
+[deploy]
+startCommand = "php -S 0.0.0.0:$PORT -t public"
