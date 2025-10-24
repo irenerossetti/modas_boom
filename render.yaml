@@ -51,4 +51,3 @@ databases:
     databaseName: boom
     user: boom_user
     plan: free
-    region: ohio
