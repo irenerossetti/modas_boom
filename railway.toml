@@ -1,0 +1,13 @@
+[build]
+builder = "nixpacks"
+
+[build.args]
+PHP_VERSION = "8.3"
+NODE_VERSION = "18"
+
+[deploy]
+startCommand = "php artisan serve --host=0.0.0.0 --port=$PORT"
+restartPolicyType = "ON_FAILURE"
+
+[build.environment]
+COMPOSER_VERSION = "2.7"
