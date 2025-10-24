@@ -9,10 +9,10 @@ services:
     # --- Comandos de Construcción ---
     buildCommand: |
       composer install --no-interaction --no-dev --optimize-autoloader
-      npm install             # Instala dependencias de Node.js
-      npm run build           # Compila tus CSS/JS con Vite
+      npm install
+      npm run build
       php artisan optimize:clear
-      php artisan octane:prepare # Prepara Octane
+      php artisan octane:prepare
       php artisan migrate --force
 
     # --- Comando de Arranque ---
@@ -37,34 +37,30 @@ services:
       - key: DB_CONNECTION
         value: pgsql
       - key: DB_HOST
-        fromService:
-          type: pg
-          name: boom-database # DEBE COINCIDCon EL NOMBRE DE LA BDD
+        fromDatabase:
+          name: boom-database # DEBE COINCIDIR CON EL NOMBRE DE LA BDD
           property: host
       - key: DB_PORT
-        fromService:
-          type: pg
+        fromDatabase:
           name: boom-database
           property: port
       - key: DB_DATABASE
-        fromService:
-          type: pg
+        fromDatabase:
           name: boom-database
           property: database
       - key: DB_USERNAME
-        fromService:
-          type: pg
+        fromDatabase:
           name: boom-database
           property: user
       - key: DB_PASSWORD
-        fromService:
-          type: pg
+        fromDatabase:
           name: boom-database
           property: password
 
-  # --- Servicio de Base de Datos (PostgreSQL) ---
-  - type: pg
-    name: boom-database # Nombre interno para tu BDD
+# --- Servicio de Base de Datos (PostgreSQL) ---
+# ESTA ES LA SECCIÓN CORREGIDA. "databases:" está al mismo nivel que "services:"
+databases:
+  - name: boom-database # Nombre interno para tu BDD
     databaseName: boom
     user: boom_user
     plan: free
