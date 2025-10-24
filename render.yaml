@@ -1,4 +1,4 @@
-services:
+﻿services:
   - type: web
     name: modas-boom-app
     env: php
@@ -51,3 +51,4 @@ databases:
     databaseName: boom
     user: boom_user
     plan: free
+    region: ohio
