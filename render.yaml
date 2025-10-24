@@ -63,7 +63,7 @@ services:
           property: password
 
   # --- Servicio de Base de Datos (PostgreSQL) ---
-  - type: psql
+  - type: pg
     name: boom-database # Nombre interno para tu BDD
     databaseName: boom
     user: boom_user
