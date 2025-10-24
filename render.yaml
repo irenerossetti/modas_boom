@@ -2,7 +2,7 @@ services:
   # --- Servicio Web (Tu App Laravel con Octane) ---
   - type: web
     name: modas-boom-app
-    runtime: php              # Usa el buildpack de PHP
+    env: php              # Usa el buildpack de PHP
     plan: free
     autoDeploy: true
     
