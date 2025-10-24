@@ -2,7 +2,7 @@ services:
   # --- Servicio Web (Tu App Laravel con Octane) ---
   - type: web
     name: modas-boom-app
-    env: php              # Usa el buildpack de PHP
+    env: php
     plan: free
     autoDeploy: true
     
@@ -12,11 +12,13 @@ services:
       npm install
       npm run build
       php artisan optimize:clear
+      php artisan key:generate --force
+      php artisan octane:install --server=swoole
       php artisan octane:prepare
       php artisan migrate --force
 
     # --- Comando de Arranque ---
-    startCommand: "php artisan octane:start --host=0.0.0.0 --port=${PORT}"
+    startCommand: php artisan octane:start --host=0.0.0.0 --port=$PORT
     
     # --- Variables de Entorno ---
     envVars:
@@ -27,18 +29,23 @@ services:
       - key: APP_DEBUG
         value: false
       - key: APP_URL
-        value: ${RENDER_SERVICE_URL}
+        fromService:
+          type: web
+          name: modas-boom-app
+          property: url
       - key: APP_KEY
-        generateValue: true # Render generará un APP_KEY
+        generateValue: true
       - key: LOG_CHANNEL
         value: stderr
-        
+      - key: OCTANE_SERVER
+        value: swoole
+      
       # --- Conexión a la Base de Datos ---
       - key: DB_CONNECTION
         value: pgsql
       - key: DB_HOST
         fromDatabase:
-          name: boom-database # DEBE COINCIDIR CON EL NOMBRE DE LA BDD
+          name: boom-database
           property: host
       - key: DB_PORT
         fromDatabase:
@@ -58,13 +65,10 @@ services:
           property: password
 
 # --- Servicio de Base de Datos (PostgreSQL) ---
-# ESTA ES LA SECCIÓN CORREGIDA. "databases:" está al mismo nivel que "services:"
 databases:
-  - name: boom-database # Nombre interno para tu BDD
+  - name: boom-database
     databaseName: boom
     user: boom_user
     plan: free
     region: ohio
     ipAllowList: []
-
-# Forzando actualizacion de cache
