@@ -1,5 +1,5 @@
 services:
-  # --- Servicio Web (Tu App Laravel con Octane) ---
+  # --- Servicio Web (Tu App Laravel) ---
   - type: web
     name: modas-boom-app
     env: php
@@ -13,12 +13,10 @@ services:
       npm run build
       php artisan optimize:clear
       php artisan key:generate --force
-      php artisan octane:install --server=swoole
-      php artisan octane:prepare
       php artisan migrate --force
 
     # --- Comando de Arranque ---
-    startCommand: php artisan octane:start --host=0.0.0.0 --port=$PORT
+    startCommand: php artisan serve --host=0.0.0.0 --port=$PORT
     
     # --- Variables de Entorno ---
     envVars:
@@ -28,17 +26,10 @@ services:
         value: production
       - key: APP_DEBUG
         value: false
-      - key: APP_URL
-        fromService:
-          type: web
-          name: modas-boom-app
-          property: url
       - key: APP_KEY
         generateValue: true
       - key: LOG_CHANNEL
         value: stderr
-      - key: OCTANE_SERVER
-        value: swoole
       
       # --- Conexión a la Base de Datos ---
       - key: DB_CONNECTION
