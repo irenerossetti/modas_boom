@@ -784,6 +784,19 @@
                             </select>
                         </div>
                         
+                        <!-- Etapa -->
+                        <div class="mb-6">
+                            <label for="etapa_modal" class="block text-sm font-medium text-gray-700 mb-2">Etapa</label>
+                            <select id="etapa_modal" name="etapa" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50">
+                                <option value="">Seleccionar etapa...</option>
+                                <option value="Corte">Corte</option>
+                                <option value="Confección">Confección</option>
+                                <option value="Acabado">Acabado</option>
+                                <option value="Control de Calidad">Control de Calidad</option>
+                            </select>
+                        </div>
+                        
                         <!-- Porcentaje de Avance -->
                         <div class="mb-6">
                             <label for="porcentaje_avance_modal" class="block text-sm font-medium text-gray-700 mb-3">
