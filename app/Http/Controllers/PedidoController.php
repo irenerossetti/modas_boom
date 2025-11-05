@@ -78,7 +78,7 @@ class PedidoController extends Controller
             ->byCliente($filtros['id_cliente'] ?? null)
             ->byFechas($filtros['fecha_desde'] ?? null, $filtros['fecha_hasta'] ?? null)
             ->buscar($filtros['busqueda'] ?? null)
-            ->orderBy('created_at', 'desc');
+            ->orderBy('id_pedido', 'desc');
 
         $pedidos = $query->paginate(15);
 
@@ -451,7 +451,7 @@ class PedidoController extends Controller
             // Por ahora, mostrar pedidos asignados (en el futuro se podría agregar campo operario_id)
             $pedidos = Pedido::with('cliente')
                 ->where('estado', 'Asignado')
-                ->orderBy('created_at', 'desc')
+                ->orderBy('id_pedido', 'desc')
                 ->paginate(15);
         }
 
@@ -466,7 +466,7 @@ class PedidoController extends Controller
         $cliente = Cliente::findOrFail($clienteId);
         
         $pedidos = Pedido::where('id_cliente', $clienteId)
-            ->orderBy('created_at', 'desc')
+            ->orderBy('id_pedido', 'desc')
             ->paginate(15);
 
         // Registrar consulta de historial
@@ -711,7 +711,7 @@ class PedidoController extends Controller
             ->when($filtros['fecha_hasta'] ?? null, function($q, $fecha) {
                 return $q->whereDate('created_at', '<=', $fecha);
             })
-            ->orderBy('created_at', 'desc');
+            ->orderBy('id_pedido', 'desc');
 
         $pedidos = $query->paginate(10);
         $estados = Pedido::getEstadosDisponibles();
@@ -957,3 +957,152 @@ class PedidoController extends Controller
         ]);
     }
 }
+    // ========== CU19: REPROGRAMAR ENTREGA ==========
+
+    /**
+     * Mostrar formulario para reprogramar entrega
+     */
+    public function reprogramarEntrega(string $id)
+    {
+        $pedido = Pedido::with(['cliente', 'prendas'])->findOrFail($id);
+
+        if (!$pedido->puedeReprogramarEntrega()) {
+            return redirect()->route('pedidos.show', $pedido->id_pedido)
+                ->with('error', 'Este pedido no puede reprogramar su entrega en el estado actual.');
+        }
+
+        $historialReprogramaciones = $pedido->historialReprogramaciones();
+
+        return view('pedidos.reprogramar-entrega', compact('pedido', 'historialReprogramaciones'));
+    }
+
+    /**
+     * Procesar reprogramación de entrega
+     */
+    public function procesarReprogramacion(Request $request, string $id)
+    {
+        $pedido = Pedido::findOrFail($id);
+
+        if (!$pedido->puedeReprogramarEntrega()) {
+            return redirect()->route('pedidos.show', $pedido->id_pedido)
+                ->with('error', 'Este pedido no puede reprogramar su entrega.');
+        }
+
+        $request->validate([
+            'nueva_fecha_entrega' => 'required|date|after:today',
+            'motivo_reprogramacion' => 'required|string|max:500',
+        ]);
+
+        $fechaAnterior = $pedido->fecha_entrega_programada;
+        
+        $pedido->update([
+            'fecha_entrega_programada' => $request->nueva_fecha_entrega,
+            'observaciones_entrega' => $request->motivo_reprogramacion,
+            'reprogramado_por' => Auth::user()->id_usuario,
+            'fecha_reprogramacion' => now(),
+        ]);
+
+        // Registrar en bitácora
+        $mensaje = Auth::user()->nombre . " reprogramó la entrega del pedido #{$pedido->id_pedido}";
+        $mensaje .= " de " . ($fechaAnterior ? $fechaAnterior->format('d/m/Y') : 'sin fecha');
+        $mensaje .= " a " . \Carbon\Carbon::parse($request->nueva_fecha_entrega)->format('d/m/Y');
+        $mensaje .= " - Motivo: " . $request->motivo_reprogramacion;
+
+        $this->bitacoraService->registrarActividad(
+            'UPDATE',
+            'PEDIDOS',
+            $mensaje,
+            $pedido->getOriginal(),
+            $pedido->fresh()->toArray()
+        );
+
+        return redirect()->route('pedidos.show', $pedido->id_pedido)
+            ->with('success', 'Entrega reprogramada exitosamente para el ' . 
+                   \Carbon\Carbon::parse($request->nueva_fecha_entrega)->format('d/m/Y'));
+    }
+
+    /**
+     * Ver historial de reprogramaciones
+     */
+    public function historialReprogramaciones(string $id)
+    {
+        $pedido = Pedido::with('cliente')->findOrFail($id);
+        $reprogramaciones = $pedido->historialReprogramaciones();
+
+        return view('pedidos.historial-reprogramaciones', compact('pedido', 'reprogramaciones'));
+    }
+
+    // ========== CU20: REGISTRAR AVANCE DE PRODUCCIÓN ==========
+
+    /**
+     * Mostrar formulario para registrar avance
+     */
+    public function registrarAvance(string $id)
+    {
+        $pedido = Pedido::with(['cliente', 'avancesProduccion.registradoPor'])->findOrFail($id);
+
+        if (!in_array($pedido->estado, ['Asignado', 'En producción'])) {
+            return redirect()->route('pedidos.show', $pedido->id_pedido)
+                ->with('error', 'Solo se pueden registrar avances en pedidos Asignados o En producción.');
+        }
+
+        $etapas = AvanceProduccion::getEtapasDisponibles();
+        $avancesAnteriores = $pedido->avancesProduccion()->orderBy('created_at', 'desc')->get();
+
+        return view('pedidos.registrar-avance', compact('pedido', 'etapas', 'avancesAnteriores'));
+    }
+
+    /**
+     * Procesar registro de avance
+     */
+    public function procesarAvance(Request $request, string $id)
+    {
+        $pedido = Pedido::findOrFail($id);
+
+        $request->validate([
+            'etapa' => 'required|string|in:Corte,Confección,Acabado,Control de Calidad',
+            'porcentaje_avance' => 'required|integer|min:0|max:100',
+            'descripcion' => 'required|string|max:500',
+            'observaciones' => 'nullable|string|max:1000',
+        ]);
+
+        $avance = AvanceProduccion::create([
+            'id_pedido' => $pedido->id_pedido,
+            'etapa' => $request->etapa,
+            'porcentaje_avance' => $request->porcentaje_avance,
+            'descripcion' => $request->descripcion,
+            'observaciones' => $request->observaciones,
+            'registrado_por' => Auth::user()->id_usuario,
+        ]);
+
+        // Cambiar estado si es necesario
+        if ($pedido->estado === 'Asignado') {
+            $pedido->update(['estado' => 'En producción']);
+        }
+
+        // Registrar en bitácora
+        $mensaje = Auth::user()->nombre . " registró avance de producción para el pedido #{$pedido->id_pedido}";
+        $mensaje .= " - Etapa: {$request->etapa} ({$request->porcentaje_avance}%)";
+
+        $this->bitacoraService->registrarActividad(
+            'CREATE',
+            'PRODUCCION',
+            $mensaje,
+            null,
+            $avance->toArray()
+        );
+
+        return redirect()->route('pedidos.show', $pedido->id_pedido)
+            ->with('success', "Avance de {$request->etapa} registrado exitosamente ({$request->porcentaje_avance}%)");
+    }
+
+    /**
+     * Ver historial de avances
+     */
+    public function historialAvances(string $id)
+    {
+        $pedido = Pedido::with(['cliente', 'avancesProduccion.registradoPor'])->findOrFail($id);
+        $avances = $pedido->avancesProduccion()->with('registradoPor')->orderBy('created_at', 'desc')->get();
+
+        return view('pedidos.historial-avances', compact('pedido', 'avances'));
+    }
