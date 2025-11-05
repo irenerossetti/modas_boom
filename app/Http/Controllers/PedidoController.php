@@ -6,7 +6,10 @@ use App\Models\Pedido;
 use App\Models\Cliente;
 use App\Models\User;
 use App\Models\Prenda;
+use App\Models\ObservacionCalidad;
+use App\Models\AvanceProduccion;
 use App\Services\BitacoraService;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -14,10 +17,12 @@ use Illuminate\Support\Facades\Cache;
 class PedidoController extends Controller
 {
     protected $bitacoraService;
+    protected $emailService;
 
-    public function __construct(BitacoraService $bitacoraService)
+    public function __construct(BitacoraService $bitacoraService, EmailService $emailService)
     {
         $this->bitacoraService = $bitacoraService;
+        $this->emailService = $emailService;
     }
 
     /**
@@ -956,7 +961,7 @@ class PedidoController extends Controller
             ]
         ]);
     }
-}
+
     // ========== CU19: REPROGRAMAR ENTREGA ==========
 
     /**
@@ -1106,3 +1111,268 @@ class PedidoController extends Controller
 
         return view('pedidos.historial-avances', compact('pedido', 'avances'));
     }
+    // ========== CU21: REGISTRAR OBSERVACIÓN DE CALIDAD ==========
+
+    /**
+     * Mostrar formulario para registrar observación de calidad
+     */
+    public function registrarObservacionCalidad(string $id)
+    {
+        $pedido = Pedido::with(['cliente', 'observacionesCalidad.registradoPor'])->findOrFail($id);
+
+        if (!in_array($pedido->estado, ['En producción', 'Terminado'])) {
+            return redirect()->route('pedidos.show', $pedido->id_pedido)
+                ->with('error', 'Solo se pueden registrar observaciones de calidad en pedidos En producción o Terminados.');
+        }
+
+        $tiposObservacion = ObservacionCalidad::getTiposObservacion();
+        $prioridades = ObservacionCalidad::getPrioridades();
+        $observacionesAnteriores = $pedido->observacionesCalidad()->orderBy('created_at', 'desc')->get();
+
+        return view('pedidos.registrar-observacion-calidad', compact('pedido', 'tiposObservacion', 'prioridades', 'observacionesAnteriores'));
+    }
+
+    /**
+     * Procesar registro de observación de calidad
+     */
+    public function procesarObservacionCalidad(Request $request, string $id)
+    {
+        $pedido = Pedido::findOrFail($id);
+
+        $request->validate([
+            'tipo_observacion' => 'required|string|in:Defecto,Mejora,Aprobado,Rechazado',
+            'area_afectada' => 'required|string|max:255',
+            'descripcion' => 'required|string|max:1000',
+            'prioridad' => 'required|string|in:Baja,Media,Alta,Crítica',
+            'accion_correctiva' => 'nullable|string|max:1000',
+        ]);
+
+        $observacion = ObservacionCalidad::create([
+            'id_pedido' => $pedido->id_pedido,
+            'tipo_observacion' => $request->tipo_observacion,
+            'area_afectada' => $request->area_afectada,
+            'descripcion' => $request->descripcion,
+            'prioridad' => $request->prioridad,
+            'accion_correctiva' => $request->accion_correctiva,
+            'registrado_por' => Auth::user()->id_usuario,
+        ]);
+
+        // Registrar en bitácora
+        $mensaje = Auth::user()->nombre . " registró observación de calidad para el pedido #{$pedido->id_pedido}";
+        $mensaje .= " - Tipo: {$request->tipo_observacion} - Prioridad: {$request->prioridad}";
+
+        $this->bitacoraService->registrarActividad(
+            'CREATE',
+            'CALIDAD',
+            $mensaje,
+            null,
+            $observacion->toArray()
+        );
+
+        return redirect()->route('pedidos.show', $pedido->id_pedido)
+            ->with('success', "Observación de calidad registrada exitosamente (Tipo: {$request->tipo_observacion})");
+    }
+
+    /**
+     * Ver historial de observaciones de calidad
+     */
+    public function historialObservacionesCalidad(string $id)
+    {
+        $pedido = Pedido::with(['cliente', 'observacionesCalidad.registradoPor', 'observacionesCalidad.corregidoPor'])->findOrFail($id);
+        $observaciones = $pedido->observacionesCalidad()->with(['registradoPor', 'corregidoPor'])->orderBy('created_at', 'desc')->get();
+
+        return view('pedidos.historial-observaciones-calidad', compact('pedido', 'observaciones'));
+    }
+
+    /**
+     * Actualizar estado de observación de calidad
+     */
+    public function actualizarObservacionCalidad(Request $request, string $id, string $observacionId)
+    {
+        $pedido = Pedido::findOrFail($id);
+        $observacion = ObservacionCalidad::where('id_pedido', $pedido->id_pedido)->findOrFail($observacionId);
+
+        $request->validate([
+            'estado' => 'required|string|in:Pendiente,En corrección,Corregido,Cerrado',
+            'accion_correctiva' => 'nullable|string|max:1000',
+        ]);
+
+        $estadoAnterior = $observacion->estado;
+        
+        $observacion->update([
+            'estado' => $request->estado,
+            'accion_correctiva' => $request->accion_correctiva,
+            'corregido_por' => Auth::user()->id_usuario,
+            'fecha_correccion' => $request->estado === 'Corregido' ? now() : null,
+        ]);
+
+        // Registrar en bitácora
+        $mensaje = Auth::user()->nombre . " actualizó observación de calidad #{$observacion->id}";
+        $mensaje .= " del pedido #{$pedido->id_pedido} de '{$estadoAnterior}' a '{$request->estado}'";
+
+        $this->bitacoraService->registrarActividad(
+            'UPDATE',
+            'CALIDAD',
+            $mensaje,
+            ['estado' => $estadoAnterior],
+            $observacion->fresh()->toArray()
+        );
+
+        return redirect()->route('pedidos.historial-observaciones-calidad', $pedido->id_pedido)
+            ->with('success', "Estado de observación actualizado a: {$request->estado}");
+    }
+
+    // ========== CU23: NOTIFICACIONES POR EMAIL ==========
+
+    /**
+     * Cambiar estado del pedido con notificación automática
+     */
+    public function cambiarEstadoConNotificacion(Request $request, string $id)
+    {
+        $pedido = Pedido::findOrFail($id);
+        
+        $request->validate([
+            'nuevo_estado' => 'required|string|in:Pendiente,En proceso,Asignado,En producción,Terminado,Entregado,Cancelado',
+            'observaciones' => 'nullable|string|max:500'
+        ]);
+
+        $estadoAnterior = $pedido->estado;
+        $estadoNuevo = $request->nuevo_estado;
+
+        // Actualizar el pedido
+        $pedido->update([
+            'estado' => $estadoNuevo,
+            'observaciones' => $request->observaciones
+        ]);
+
+        // Registrar en bitácora
+        $mensaje = Auth::user()->nombre . " cambió el estado del pedido #{$pedido->id_pedido}";
+        $mensaje .= " de '{$estadoAnterior}' a '{$estadoNuevo}'";
+        if ($request->observaciones) {
+            $mensaje .= " - Observaciones: " . $request->observaciones;
+        }
+
+        $this->bitacoraService->registrarActividad(
+            'UPDATE',
+            'PEDIDOS',
+            $mensaje,
+            ['estado' => $estadoAnterior],
+            $pedido->fresh()->toArray()
+        );
+
+        // Enviar notificación por email
+        $resultadoEmail = $this->emailService->enviarNotificacionCambioEstado($pedido, $estadoAnterior, $estadoNuevo);
+        
+        $mensaje = "Estado del pedido actualizado exitosamente de '{$estadoAnterior}' a '{$estadoNuevo}'.";
+        
+        if ($resultadoEmail['success']) {
+            $mensaje .= " Notificación enviada por email a " . $resultadoEmail['email'];
+        } else {
+            $mensaje .= " Advertencia: No se pudo enviar la notificación por email - " . $resultadoEmail['message'];
+        }
+
+        return redirect()->route('pedidos.show', $pedido->id_pedido)
+            ->with('success', $mensaje);
+    }
+
+    /**
+     * Mostrar formulario para cambiar estado
+     */
+    public function mostrarCambiarEstado(string $id)
+    {
+        $pedido = Pedido::with('cliente')->findOrFail($id);
+        
+        $estadosDisponibles = [
+            'Pendiente' => 'Pendiente',
+            'En proceso' => 'En proceso', 
+            'Asignado' => 'Asignado',
+            'En producción' => 'En producción',
+            'Terminado' => 'Terminado',
+            'Entregado' => 'Entregado',
+            'Cancelado' => 'Cancelado'
+        ];
+
+        return view('pedidos.cambiar-estado', compact('pedido', 'estadosDisponibles'));
+    }
+
+    /**
+     * Probar configuración de email
+     */
+    public function probarEmail(string $id)
+    {
+        $pedido = Pedido::with('cliente')->findOrFail($id);
+        
+        if (!$pedido->cliente || !$pedido->cliente->email) {
+            return redirect()->route('pedidos.show', $pedido->id_pedido)
+                ->with('error', 'El cliente no tiene email registrado.');
+        }
+
+        // Probar configuración
+        $configuracion = $this->emailService->probarConfiguracion();
+        
+        if (!$configuracion['success']) {
+            return redirect()->route('pedidos.show', $pedido->id_pedido)
+                ->with('error', 'Error en configuración de email: ' . $configuracion['message']);
+        }
+
+        // Enviar email de prueba
+        $resultado = $this->emailService->enviarConfirmacionPedido($pedido);
+        
+        if ($resultado['success']) {
+            return redirect()->route('pedidos.show', $pedido->id_pedido)
+                ->with('success', 'Email de prueba enviado exitosamente a ' . $resultado['email']);
+        } else {
+            return redirect()->route('pedidos.show', $pedido->id_pedido)
+                ->with('error', 'Error enviando email de prueba: ' . $resultado['message']);
+        }
+    }
+
+    // ========== CU22: CONFIRMAR RECEPCIÓN ==========
+
+    /**
+     * Confirmar recepción del pedido
+     */
+    public function confirmarRecepcion(string $id)
+    {
+        $pedido = Pedido::findOrFail($id);
+        
+        if ($pedido->estado !== 'Terminado') {
+            return redirect()->route('pedidos.show', $pedido->id_pedido)
+                ->with('error', 'Solo se puede confirmar la recepción de pedidos terminados.');
+        }
+
+        $estadoAnterior = $pedido->estado;
+        
+        // Actualizar estado a Entregado
+        $pedido->update([
+            'estado' => 'Entregado',
+            'fecha_entrega_real' => now(),
+            'entregado_por' => Auth::user()->id_usuario
+        ]);
+
+        // Registrar en bitácora
+        $mensaje = Auth::user()->nombre . " confirmó la recepción del pedido #{$pedido->id_pedido}";
+        $mensaje .= " - Estado cambiado de '{$estadoAnterior}' a 'Entregado'";
+
+        $this->bitacoraService->registrarActividad(
+            'UPDATE',
+            'PEDIDOS',
+            $mensaje,
+            ['estado' => $estadoAnterior],
+            $pedido->fresh()->toArray()
+        );
+
+        // Enviar notificación por email
+        $resultadoEmail = $this->emailService->enviarNotificacionEntregado($pedido);
+        
+        $mensaje = "Recepción del pedido confirmada exitosamente. Estado cambiado a 'Entregado'.";
+        
+        if ($resultadoEmail['success']) {
+            $mensaje .= " Notificación enviada por email a " . $resultadoEmail['email'];
+        } else {
+            $mensaje .= " Advertencia: No se pudo enviar la notificación por email - " . $resultadoEmail['message'];
+        }
+
+        return redirect()->route('pedidos.show', $pedido->id_pedido)
+            ->with('success', $mensaje);
+    }}

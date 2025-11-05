@@ -236,4 +236,90 @@ class EmailService
             ];
         }
     }
-}
+
+    /**
+     * Enviar notificación por cambio de estado del pedido
+     */
+    public function enviarNotificacionCambioEstado(Pedido $pedido, string $estadoAnterior, string $estadoNuevo): array
+    {
+        try {
+            if (!$pedido->cliente || !$pedido->cliente->email) {
+                return [
+                    'success' => false,
+                    'message' => 'El cliente no tiene email registrado.'
+                ];
+            }
+
+            // Determinar qué tipo de notificación enviar según el nuevo estado
+            switch ($estadoNuevo) {
+                case 'Terminado':
+                    return $this->enviarNotificacionTerminado($pedido);
+                
+                case 'Entregado':
+                    return $this->enviarNotificacionEntregado($pedido);
+                
+                case 'En proceso':
+                case 'Asignado':
+                case 'En producción':
+                    // Para estos estados, enviar notificación general de cambio
+                    return $this->enviarNotificacionGeneral($pedido, $estadoAnterior, $estadoNuevo);
+                
+                default:
+                    return [
+                        'success' => false,
+                        'message' => 'No se requiere notificación para este cambio de estado.'
+                    ];
+            }
+
+        } catch (\Exception $e) {
+            Log::error("Error enviando notificación de cambio de estado", [
+                'pedido_id' => $pedido->id_pedido,
+                'estado_anterior' => $estadoAnterior,
+                'estado_nuevo' => $estadoNuevo,
+                'error' => $e->getMessage()
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Error interno: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Enviar notificación general de cambio de estado
+     */
+    private function enviarNotificacionGeneral(Pedido $pedido, string $estadoAnterior, string $estadoNuevo): array
+    {
+        try {
+            Mail::to($pedido->cliente->email)
+                ->send(new \App\Mail\CambioEstadoPedidoMail($pedido, $estadoAnterior, $estadoNuevo));
+
+            Log::info("Notificación de cambio de estado enviada por Email", [
+                'pedido_id' => $pedido->id_pedido,
+                'cliente' => $pedido->cliente->nombre,
+                'email' => $pedido->cliente->email,
+                'estado_anterior' => $estadoAnterior,
+                'estado_nuevo' => $estadoNuevo
+            ]);
+
+            return [
+                'success' => true,
+                'message' => "Email de cambio de estado enviado exitosamente (de '{$estadoAnterior}' a '{$estadoNuevo}')",
+                'email' => $pedido->cliente->email
+            ];
+
+        } catch (\Exception $e) {
+            Log::error("Error enviando notificación general de cambio de estado", [
+                'pedido_id' => $pedido->id_pedido,
+                'estado_anterior' => $estadoAnterior,
+                'estado_nuevo' => $estadoNuevo,
+                'error' => $e->getMessage()
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Error interno: ' . $e->getMessage()
+            ];
+        }
+    }}

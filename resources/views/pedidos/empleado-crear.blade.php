@@ -1,4 +1,6 @@
-<x-app-layout>
+﻿@extends('layouts.app')
+
+@section('content')
     <div class="py-4 sm:py-8 lg:py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl rounded-lg">
@@ -733,4 +735,4 @@
         });
     </script>
     @endpush
-</x-app-layout>
+@endsection

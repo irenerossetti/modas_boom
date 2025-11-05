@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.role' => \App\Http\Middleware\CheckAdminRole::class,
             'auditoria' => \App\Http\Middleware\AuditoriaMiddleware::class,
             'redirect.role' => \App\Http\Middleware\RedirectByRole::class,
+            'vendedor.role' => \App\Http\Middleware\VendedorRoleMiddleware::class,
         ]);
         
         // Aplicar middleware de auditoría a rutas web autenticadas

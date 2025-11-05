@@ -218,7 +218,7 @@
                 @include('layouts.navigation')
 
                 <main class="flex-1 page-transition p-2 lg:p-0">
-                    {{ $slot }}
+                    @yield('content')
                 </main>
 
                 <!-- Botón flotante para clientes -->

@@ -32,7 +32,13 @@ class Pedido extends Model
     protected $fillable = [
         'id_cliente',
         'estado',
-        'total'
+        'total',
+        'fecha_entrega_programada',
+        'observaciones_entrega',
+        'reprogramado_por',
+        'fecha_reprogramacion',
+        'fecha_entrega_real',
+        'entregado_por'
     ];
 
     /**
@@ -44,6 +50,9 @@ class Pedido extends Model
             'total' => 'decimal:2',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
+            'fecha_entrega_programada' => 'date',
+            'fecha_reprogramacion' => 'datetime',
+            'fecha_entrega_real' => 'datetime',
         ];
     }
 

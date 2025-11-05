@@ -1,4 +1,6 @@
-<x-app-layout>
+﻿@extends('layouts.app')
+
+@section('content')
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <!-- Header -->
@@ -294,4 +296,4 @@
                 .catch(error => console.log('Error:', error));
         }, 30000);
     </script>
-</x-app-layout>
+@endsection

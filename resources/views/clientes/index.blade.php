@@ -1,4 +1,6 @@
-<x-app-layout>
+﻿@extends('layouts.app')
+
+@section('content')
     <div class="p-4 sm:p-6 lg:p-8">
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
             <h1 class="text-2xl sm:text-3xl font-bold text-boom-text-dark">Gestión de Clientes</h1>
@@ -194,4 +196,4 @@
             @endif
         </div>
     </div>
-</x-app-layout>
+@endsection

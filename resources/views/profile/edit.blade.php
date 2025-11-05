@@ -1,4 +1,6 @@
-<x-app-layout>
+﻿@extends('layouts.app')
+
+@section('content')
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-boom-text-dark leading-tight">
             Perfil
@@ -26,4 +28,5 @@
             </div>
         </div>
     </div>
-</x-app-layout>
+@endsection
+
