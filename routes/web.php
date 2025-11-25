@@ -67,6 +67,39 @@ Route::middleware(['auth', 'user.enabled'])->group(function () {
     Route::post('pedidos/verificar-stock', [PedidoController::class, 'verificarStock'])->name('pedidos.verificar-stock');
     Route::get('pedidos/stock/{id}', [PedidoController::class, 'obtenerStock'])->name('pedidos.obtener-stock');
     
+    // Rutas para reprogramar entrega - solo vendedores (empleados)
+    Route::middleware('vendedor.role')->group(function () {
+        Route::get('pedidos/{id}/reprogramar-entrega', [PedidoController::class, 'reprogramarEntrega'])->name('pedidos.reprogramar-entrega');
+        Route::post('pedidos/{id}/reprogramar-entrega', [PedidoController::class, 'procesarReprogramacion'])->name('pedidos.procesar-reprogramacion');
+    });
+    
+    // Rutas para registrar avance de producción - solo empleados
+    Route::middleware('vendedor.role')->group(function () {
+        Route::get('pedidos/{id}/registrar-avance', [PedidoController::class, 'registrarAvance'])->name('pedidos.registrar-avance');
+        Route::post('pedidos/{id}/registrar-avance', [PedidoController::class, 'procesarAvance'])->name('pedidos.procesar-avance');
+        Route::get('pedidos/{id}/historial-avances', [PedidoController::class, 'historialAvances'])->name('pedidos.historial-avances');
+    });
+    
+    // Rutas para observaciones de calidad - solo empleados
+    Route::middleware('vendedor.role')->group(function () {
+        Route::get('pedidos/{id}/registrar-observacion-calidad', [PedidoController::class, 'registrarObservacionCalidad'])->name('pedidos.registrar-observacion-calidad');
+        Route::post('pedidos/{id}/registrar-observacion-calidad', [PedidoController::class, 'procesarObservacionCalidad'])->name('pedidos.procesar-observacion-calidad');
+        Route::get('pedidos/{id}/historial-observaciones-calidad', [PedidoController::class, 'historialObservacionesCalidad'])->name('pedidos.historial-observaciones-calidad');
+        Route::put('pedidos/{id}/observaciones-calidad/{observacionId}', [PedidoController::class, 'actualizarObservacionCalidad'])->name('pedidos.actualizar-observacion-calidad');
+    });
+    
+    // Rutas para notificaciones por email - solo empleados
+    Route::middleware('vendedor.role')->group(function () {
+        Route::get('pedidos/{id}/cambiar-estado', [PedidoController::class, 'mostrarCambiarEstado'])->name('pedidos.cambiar-estado');
+        Route::post('pedidos/{id}/cambiar-estado', [PedidoController::class, 'cambiarEstadoConNotificacion'])->name('pedidos.cambiar-estado-con-notificacion');
+        Route::post('pedidos/{id}/probar-email', [PedidoController::class, 'probarEmail'])->name('pedidos.probar-email');
+    });
+    
+    // Ruta para confirmar recepción - solo empleados
+    Route::middleware('vendedor.role')->group(function () {
+        Route::post('pedidos/{id}/confirmar-recepcion', [PedidoController::class, 'confirmarRecepcion'])->name('pedidos.confirmar-recepcion');
+    });
+    
     // Ruta del catálogo de productos
     Route::get('catalogo', [CatalogoController::class, 'index'])->name('catalogo.index');
     

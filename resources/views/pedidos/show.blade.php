@@ -1,5 +1,7 @@
-<x-app-layout>
-    <div class="p-2 sm:p-4 lg:p-6">
+@extends('layouts.app')
+
+@section('content')
+<div class="p-2 sm:p-4 lg:p-6">
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 lg:mb-6 space-y-3 sm:space-y-0">
             <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-boom-text-dark">
                 <i class="fas fa-shopping-bag mr-2"></i>
@@ -21,9 +23,83 @@
                     Historial
                 </a>
                 
+                @if(in_array(Auth::user()->id_rol, [1, 2]))
+                <a href="{{ route('pedidos.historial-avances', $pedido->id_pedido) }}" 
+                   class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-3 sm:px-4 rounded text-sm sm:text-base text-center">
+                    <i class="fas fa-tasks mr-1"></i>
+                    Avances
+                </a>
+                
+                <a href="{{ route('pedidos.historial-observaciones-calidad', $pedido->id_pedido) }}" 
+                   class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-3 sm:px-4 rounded text-sm sm:text-base text-center">
+                    <i class="fas fa-clipboard-check mr-1"></i>
+                    Calidad
+                </a>
+                @endif
+                
+                <!-- Botón Ver Detalles -->
+                <a href="{{ route('pedidos.show', $pedido->id_pedido) }}" 
+                   class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
+                    <i class="fas fa-eye mr-2"></i>
+                    Ver Detalles
+                </a>
+                
+                <!-- Botón Más Opciones -->
+                @if($pedido->puedeReprogramarEntrega() || $pedido->estado == 'Terminado' || $pedido->puedeSerAsignado() || $pedido->puedeSerCancelado())
+                <div class="relative inline-block text-left">
+                    <button onclick="toggleHeaderDropdown()" 
+                            class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
+                        <i class="fas fa-ellipsis-h mr-2"></i>
+                        Más opciones
+                        <i class="fas fa-chevron-down ml-2"></i>
+                    </button>
+                    
+                    <div id="headerDropdownMenu" class="hidden absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                        <div class="py-1">
+                            @if($pedido->puedeReprogramarEntrega() && in_array(Auth::user()->id_rol, [1, 2]))
+                                <button onclick="mostrarModalReprogramar(); toggleHeaderDropdown();" 
+                                        class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 flex items-center">
+                                    <i class="fas fa-calendar-alt mr-3 text-blue-500"></i>
+                                    Reprogramar Entrega
+                                </button>
+                            @endif
+                            
+                            @if($pedido->estado == 'Terminado' && in_array(Auth::user()->id_rol, [1, 2]))
+                                <button onclick="mostrarModalConfirmarRecepcion(); toggleHeaderDropdown();" 
+                                        class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-900 flex items-center">
+                                    <i class="fas fa-check-circle mr-3 text-green-500"></i>
+                                    Confirmar Recepción
+                                </button>
+                            @endif
+                            
+                            @if(Auth::user()->rol && Auth::user()->rol->nombre === 'Administrador' && $pedido->puedeSerAsignado())
+                                <button onclick="mostrarModalAsignar(); toggleHeaderDropdown();" 
+                                        class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-900 flex items-center">
+                                    <i class="fas fa-user-plus mr-3 text-purple-500"></i>
+                                    Asignar Operario
+                                </button>
+                            @endif
+                            
+                            @if($pedido->puedeSerCancelado())
+                                <form action="{{ route('pedidos.destroy', $pedido->id_pedido) }}" method="POST" class="inline w-full" 
+                                      onsubmit="return confirm('¿Está seguro de que desea cancelar este pedido?\n\nEsta acción no se puede deshacer.')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" 
+                                            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-900 flex items-center">
+                                        <i class="fas fa-times mr-3 text-red-500"></i>
+                                        Cancelar Pedido
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                @endif
+                
                 <a href="{{ route('pedidos.index') }}" 
-                   class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-3 sm:px-4 rounded text-sm sm:text-base text-center">
-                    <i class="fas fa-arrow-left mr-1"></i>
+                   class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
+                    <i class="fas fa-arrow-left mr-2"></i>
                     Volver
                 </a>
             </div>
@@ -168,7 +244,7 @@
                 @endif
 
                 <!-- Acciones Disponibles -->
-                @if($pedido->puedeSerEditado() || $pedido->puedeSerCancelado() || $pedido->puedeSerAsignado())
+                @if($pedido->puedeSerEditado() || $pedido->puedeSerCancelado() || $pedido->puedeSerAsignado() || $pedido->puedeReprogramarEntrega() || in_array($pedido->estado, ['Asignado', 'En producción', 'Terminado']))
                 <div class="bg-white p-6 rounded-lg shadow">
                     <h2 class="text-xl font-semibold text-boom-text-dark mb-4">
                         <i class="fas fa-cogs mr-2"></i>
@@ -176,33 +252,45 @@
                     </h2>
                     
                     <div class="flex flex-wrap gap-3">
+                        <!-- Botones Principales -->
                         @if($pedido->puedeSerEditado())
                             <a href="{{ route('pedidos.edit', $pedido->id_pedido) }}" 
-                               class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded transition-colors duration-200">
-                                <i class="fas fa-edit mr-1"></i>
-                                Editar Pedido
+                               class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
+                                <i class="fas fa-edit mr-2"></i>
+                                Editar
                             </a>
                         @endif
                         
-                        @if(Auth::user()->rol && Auth::user()->rol->nombre === 'Administrador' && $pedido->puedeSerAsignado())
-                            <button onclick="mostrarModalAsignar()" 
-                                    class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition-colors duration-200">
-                                <i class="fas fa-user-plus mr-1"></i>
-                                Asignar Operario
+                        @if(in_array(Auth::user()->id_rol, [1, 2]))
+                            <a href="{{ route('pedidos.historial-avances', $pedido->id_pedido) }}" 
+                               class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
+                                <i class="fas fa-history mr-2"></i>
+                                Historial
+                            </a>
+                        @endif
+                        
+                        @if(in_array($pedido->estado, ['Asignado', 'En producción']) && in_array(Auth::user()->id_rol, [1, 2]))
+                            <button onclick="mostrarModalAvance()" 
+                                    class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
+                                <i class="fas fa-tasks mr-2"></i>
+                                Avances
                             </button>
                         @endif
                         
-                        @if($pedido->puedeSerCancelado())
-                            <form action="{{ route('pedidos.destroy', $pedido->id_pedido) }}" method="POST" class="inline" 
-                                  onsubmit="return confirm('¿Está seguro de que desea cancelar este pedido?\n\nEsta acción no se puede deshacer.')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" 
-                                        class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors duration-200">
-                                    <i class="fas fa-times mr-1"></i>
-                                    Cancelar Pedido
-                                </button>
-                            </form>
+                        @if(in_array($pedido->estado, ['En producción', 'Terminado']) && in_array(Auth::user()->id_rol, [1, 2]))
+                            <button onclick="mostrarModalCalidad()" 
+                                    class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-emerald-400 to-green-500 hover:from-emerald-500 hover:to-green-600 text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
+                                <i class="fas fa-clipboard-check mr-2"></i>
+                                Calidad
+                            </button>
+                        @endif
+                        
+                        @if(in_array(Auth::user()->id_rol, [1, 2]))
+                            <button onclick="mostrarModalCambiarEstado()" 
+                                    class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
+                                <i class="fas fa-exchange-alt mr-2"></i>
+                                Cambiar Estado
+                            </button>
                         @endif
                     </div>
                 </div>
@@ -362,6 +450,45 @@
     </div>
     @endif
 
+    @push('styles')
+    <style>
+        /* Estilos para el slider personalizado */
+        .slider-thumb::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #1f2937;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .slider-thumb::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #1f2937;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .slider-thumb::-webkit-slider-track {
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+        }
+        
+        .slider-thumb::-moz-range-track {
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+            border: none;
+        }
+    </style>
+    @endpush
+
     @push('scripts')
     <script>
         function mostrarModalAsignar() {
@@ -376,8 +503,457 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 cerrarModalAsignar();
+                cerrarModalReprogramar();
+                cerrarModalCambiarEstado();
+                cerrarModalAvance();
+                cerrarModalCalidad();
+                cerrarModalConfirmarRecepcion();
+            }
+        });
+
+        // ========== MODAL REPROGRAMAR ENTREGA ==========
+        function mostrarModalReprogramar() {
+            document.getElementById('modalReprogramar').classList.remove('hidden');
+            // Establecer fecha mínima como mañana
+            const fechaInput = document.getElementById('nueva_fecha_entrega_modal');
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            fechaInput.min = tomorrow.toISOString().split('T')[0];
+        }
+
+        function cerrarModalReprogramar(event) {
+            if (event) event.preventDefault();
+            document.getElementById('modalReprogramar').classList.add('hidden');
+            document.getElementById('formReprogramar').reset();
+        }
+
+        // ========== MODAL CAMBIAR ESTADO ==========
+        function mostrarModalCambiarEstado() {
+            document.getElementById('modalCambiarEstado').classList.remove('hidden');
+        }
+
+        function cerrarModalCambiarEstado(event) {
+            if (event) event.preventDefault();
+            document.getElementById('modalCambiarEstado').classList.add('hidden');
+            document.getElementById('formCambiarEstado').reset();
+        }
+
+        // ========== MODAL REGISTRAR AVANCE ==========
+        function mostrarModalAvance() {
+            document.getElementById('modalAvance').classList.remove('hidden');
+        }
+
+        function cerrarModalAvance(event) {
+            if (event) event.preventDefault();
+            document.getElementById('modalAvance').classList.add('hidden');
+            document.getElementById('formAvance').reset();
+        }
+
+        // ========== MODAL OBSERVACIÓN CALIDAD ==========
+        function mostrarModalCalidad() {
+            document.getElementById('modalCalidad').classList.remove('hidden');
+        }
+
+        function cerrarModalCalidad(event) {
+            if (event) event.preventDefault();
+            document.getElementById('modalCalidad').classList.add('hidden');
+            document.getElementById('formCalidad').reset();
+        }
+
+        // ========== MODAL CONFIRMAR RECEPCIÓN ==========
+        function mostrarModalConfirmarRecepcion() {
+            document.getElementById('modalConfirmarRecepcion').classList.remove('hidden');
+        }
+
+        function cerrarModalConfirmarRecepcion(event) {
+            if (event) event.preventDefault();
+            document.getElementById('modalConfirmarRecepcion').classList.add('hidden');
+        }
+
+        // ========== DROPDOWN MÁS OPCIONES HEADER ==========
+        function toggleHeaderDropdown() {
+            const dropdown = document.getElementById('headerDropdownMenu');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // Cerrar dropdown al hacer clic fuera
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('headerDropdownMenu');
+            const button = event.target.closest('button');
+            
+            if (!button || !button.onclick || button.onclick.toString().indexOf('toggleHeaderDropdown') === -1) {
+                if (dropdown && !dropdown.classList.contains('hidden')) {
+                    dropdown.classList.add('hidden');
+                }
             }
         });
     </script>
     @endpush
-</x-app-layout>
+
+    <!-- Modal Reprogramar Entrega -->
+    @if($pedido->puedeReprogramarEntrega() && in_array(Auth::user()->id_rol, [1, 2]))
+    <div id="modalReprogramar" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Reprogramar Entrega</h3>
+                    <button onclick="cerrarModalReprogramar(event)" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <form id="formReprogramar" action="{{ route('pedidos.procesar-reprogramacion', $pedido->id_pedido) }}" method="POST">
+                    @csrf
+                    
+                    <!-- Fecha Actual -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Fecha Actual</label>
+                        <input type="text" 
+                               value="{{ $pedido->fecha_entrega_programada ? \Carbon\Carbon::parse($pedido->fecha_entrega_programada)->format('d/m/Y') : 'Sin fecha programada' }}" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" 
+                               readonly>
+                    </div>
+                    
+                    <!-- Nueva Fecha de Entrega -->
+                    <div class="mb-4">
+                        <label for="nueva_fecha_entrega_modal" class="block text-sm font-medium text-gray-700 mb-2">
+                            Nueva Fecha de Entrega *
+                        </label>
+                        <input type="date" 
+                               id="nueva_fecha_entrega_modal" 
+                               name="nueva_fecha_entrega" 
+                               required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <!-- Motivo -->
+                    <div class="mb-6">
+                        <label for="motivo_reprogramacion_modal" class="block text-sm font-medium text-gray-700 mb-2">
+                            Motivo *
+                        </label>
+                        <textarea id="motivo_reprogramacion_modal" 
+                                  name="motivo_reprogramacion" 
+                                  rows="3" 
+                                  required
+                                  placeholder="Describe el motivo de la reprogramación..."
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+                    
+                    <!-- Botones -->
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" 
+                                onclick="cerrarModalReprogramar(event)" 
+                                class="bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white px-4 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-md">
+                            <i class="fas fa-times mr-2"></i>Cancelar
+                        </button>
+                        <button type="submit" 
+                                class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-md font-semibold">
+                            <i class="fas fa-calendar-check mr-2"></i>Confirmar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Modal Cambiar Estado -->
+    @if(in_array(Auth::user()->id_rol, [1, 2]))
+    <div id="modalCambiarEstado" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Cambiar Estado</h3>
+                    <button onclick="cerrarModalCambiarEstado(event)" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <form id="formCambiarEstado" action="{{ route('pedidos.cambiar-estado-con-notificacion', $pedido->id_pedido) }}" method="POST">
+                    @csrf
+                    
+                    <!-- Estado Actual -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Estado Actual</label>
+                        <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="px-2 py-1 rounded-full text-xs font-medium
+                                @if($pedido->estado == 'Pendiente') bg-yellow-100 text-yellow-800
+                                @elseif($pedido->estado == 'En proceso') bg-blue-100 text-blue-800
+                                @elseif($pedido->estado == 'Asignado') bg-purple-100 text-purple-800
+                                @elseif($pedido->estado == 'En producción') bg-orange-100 text-orange-800
+                                @elseif($pedido->estado == 'Terminado') bg-green-100 text-green-800
+                                @elseif($pedido->estado == 'Entregado') bg-gray-100 text-gray-800
+                                @else bg-red-100 text-red-800 @endif">
+                                {{ $pedido->estado }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- Nuevo Estado -->
+                    <div class="mb-4">
+                        <label for="nuevo_estado_modal" class="block text-sm font-medium text-gray-700 mb-2">
+                            Nuevo Estado *
+                        </label>
+                        <select id="nuevo_estado_modal" name="nuevo_estado" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Seleccionar nuevo estado...</option>
+                            @php
+                                $estadosDisponibles = ['Pendiente', 'En proceso', 'Asignado', 'En producción', 'Terminado', 'Entregado', 'Cancelado'];
+                            @endphp
+                            @foreach($estadosDisponibles as $estado)
+                                @if($estado !== $pedido->estado)
+                                    <option value="{{ $estado }}">{{ $estado }}</option>
+                                @endif
+                            @endforeach
+                        </select>
+                    </div>
+                    
+                    <!-- Observaciones -->
+                    <div class="mb-4">
+                        <label for="observaciones_modal" class="block text-sm font-medium text-gray-700 mb-2">
+                            Observaciones (Opcional)
+                        </label>
+                        <textarea id="observaciones_modal" 
+                                  name="observaciones" 
+                                  rows="3" 
+                                  placeholder="Observaciones sobre el cambio de estado..."
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+
+                    <!-- Información de Email -->
+                    <div class="mb-4 p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-envelope text-blue-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-blue-700">
+                                    @if($pedido->cliente && $pedido->cliente->email)
+                                        Se enviará notificación por email a <strong>{{ $pedido->cliente->email }}</strong>
+                                    @else
+                                        <span class="text-red-600">El cliente no tiene email registrado</span>
+                                    @endif
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botones -->
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" 
+                                onclick="cerrarModalCambiarEstado(event)" 
+                                class="bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white px-4 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-md">
+                            <i class="fas fa-times mr-2"></i>Cancelar
+                        </button>
+                        <button type="submit" 
+                                class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-md font-semibold">
+                            <i class="fas fa-paper-plane mr-2"></i>Cambiar y Notificar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Modal Registrar Avance de Producción -->
+    @if(in_array($pedido->estado, ['Asignado', 'En producción']) && in_array(Auth::user()->id_rol, [1, 2]))
+    <div id="modalAvance" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4">
+                <!-- Header -->
+                <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800">CU20: Registrar Avance de Producción</h3>
+                    <button onclick="cerrarModalAvance(event)" class="text-gray-400 hover:text-gray-600 text-xl">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <!-- Content -->
+                <div class="p-6">
+                    <form id="formAvance" action="{{ route('pedidos.procesar-avance', $pedido->id_pedido) }}" method="POST">
+                        @csrf
+                        
+                        <!-- Artículo -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Artículo</label>
+                            <select name="prenda_id" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50">
+                                @foreach($pedido->prendas as $prenda)
+                                    <option value="{{ $prenda->id }}">{{ $prenda->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        
+                        <!-- Etapa -->
+                        <div class="mb-6">
+                            <label for="etapa_modal" class="block text-sm font-medium text-gray-700 mb-2">Etapa</label>
+                            <select id="etapa_modal" name="etapa" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50">
+                                <option value="">Seleccionar etapa...</option>
+                                <option value="Corte">Corte</option>
+                                <option value="Confección">Confección</option>
+                                <option value="Acabado">Acabado</option>
+                                <option value="Control de Calidad">Control de Calidad</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Porcentaje de Avance -->
+                        <div class="mb-6">
+                            <label for="porcentaje_avance_modal" class="block text-sm font-medium text-gray-700 mb-3">
+                                Porcentaje de Avance: <span id="porcentaje_display" class="font-semibold">0%</span>
+                            </label>
+                            <div class="relative">
+                                <input type="range" 
+                                       id="porcentaje_avance_modal" 
+                                       name="porcentaje_avance" 
+                                       min="0" max="100" value="0" 
+                                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb"
+                                       oninput="document.getElementById('porcentaje_display').textContent = this.value + '%'">
+                            </div>
+                        </div>
+                        
+                        <!-- Notas -->
+                        <div class="mb-8">
+                            <label for="descripcion_modal" class="block text-sm font-medium text-gray-700 mb-2">Notas</label>
+                            <textarea id="descripcion_modal" 
+                                      name="descripcion" 
+                                      rows="4" 
+                                      required
+                                      placeholder="Descripción del avance..."
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"></textarea>
+                        </div>
+                        
+                        <!-- Botones -->
+                        <div class="flex justify-center space-x-4">
+                            <button type="submit" 
+                                    class="bg-red-700 hover:bg-red-800 text-white px-8 py-3 rounded-lg font-medium transition-colors duration-200">
+                                Confirmar
+                            </button>
+                            <button type="button" 
+                                    onclick="cerrarModalAvance(event)" 
+                                    class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-8 py-3 rounded-lg font-medium transition-colors duration-200">
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Modal Registrar Observación de Calidad -->
+    @if(in_array($pedido->estado, ['En producción', 'Terminado']) && in_array(Auth::user()->id_rol, [1, 2]))
+    <div id="modalCalidad" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4">
+                <!-- Header -->
+                <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800">CU21: Registrar Observación de Calidad</h3>
+                    <button onclick="cerrarModalCalidad(event)" class="text-gray-400 hover:text-gray-600 text-xl">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <!-- Content -->
+                <div class="p-6">
+                    <form id="formCalidad" action="{{ route('pedidos.procesar-observacion-calidad', $pedido->id_pedido) }}" method="POST">
+                        @csrf
+                        
+                        <!-- Artículo -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Artículo</label>
+                            <select name="prenda_id" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50">
+                                @foreach($pedido->prendas as $prenda)
+                                    <option value="{{ $prenda->id }}">{{ $prenda->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        
+                        <!-- Nivel de Severidad -->
+                        <div class="mb-6">
+                            <label for="prioridad_modal" class="block text-sm font-medium text-gray-700 mb-2">Nivel de Severidad</label>
+                            <select id="prioridad_modal" name="prioridad" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50">
+                                <option value="">Seleccionar nivel...</option>
+                                <option value="Baja">Leve</option>
+                                <option value="Media">Media</option>
+                                <option value="Alta">Alta</option>
+                                <option value="Crítica">Crítica</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Observación -->
+                        <div class="mb-6">
+                            <label for="descripcion_calidad_modal" class="block text-sm font-medium text-gray-700 mb-2">Observación</label>
+                            <textarea id="descripcion_calidad_modal" 
+                                      name="descripcion" 
+                                      rows="4" 
+                                      required
+                                      placeholder="Describe la observación de calidad..."
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"></textarea>
+                        </div>
+                        
+                        <!-- Artículo aprobado -->
+                        <div class="mb-8 bg-gray-50 p-4 rounded-lg">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" name="articulo_aprobado" value="1" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                                <span class="ml-3 text-sm font-medium text-gray-700">Artículo aprobado</span>
+                            </label>
+                        </div>
+                        
+                        <!-- Botones -->
+                        <div class="flex justify-center space-x-4">
+                            <button type="submit" 
+                                    class="bg-red-700 hover:bg-red-800 text-white px-8 py-3 rounded-lg font-medium transition-colors duration-200">
+                                Confirmar
+                            </button>
+                            <button type="button" 
+                                    onclick="cerrarModalCalidad(event)" 
+                                    class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-8 py-3 rounded-lg font-medium transition-colors duration-200">
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Modal Confirmar Recepción -->
+    @if($pedido->estado == 'Terminado' && in_array(Auth::user()->id_rol, [1, 2]))
+    <div id="modalConfirmarRecepcion" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Confirmar Recepción de Pedido</h3>
+                    <button onclick="cerrarModalConfirmarRecepcion(event)" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="mb-6">
+                    <p class="text-gray-600 text-center">
+                        Confirma que el cliente ha recibido el pedido y envía una notificación por WhatsApp.
+                    </p>
+                </div>
+                
+                <form action="{{ route('pedidos.confirmar-recepcion', $pedido->id_pedido) }}" method="POST">
+                    @csrf
+                    
+                    <!-- Botón de Confirmación -->
+                    <div class="text-center">
+                        <button type="submit" 
+                                class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg font-semibold">
+                            <i class="fas fa-check-circle mr-2"></i>Confirmar Recepción
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
+
+</div>
+@endsection

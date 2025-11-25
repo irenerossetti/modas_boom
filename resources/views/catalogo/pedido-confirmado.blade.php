@@ -1,4 +1,6 @@
-<x-app-layout>
+﻿@extends('layouts.app')
+
+@section('content')
     <div class="p-4 sm:p-6 lg:p-8">
         <div class="max-w-2xl mx-auto">
             <!-- Mensaje de éxito -->
@@ -197,4 +199,4 @@
         }
     </style>
     @endpush
-</x-app-layout>
+@endsection

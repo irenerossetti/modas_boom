@@ -20,10 +20,12 @@
     }
 
 </style>
-<x-app-layout>
-    <div class="bg-boom-cream-200 min-h-screen">
-        
-        <main class="p-4 sm:p-6 lg:p-8">
+@extends('layouts.app')
+
+@section('content')
+<div class="bg-boom-cream-200 min-h-screen">
+    
+    <main class="p-4 sm:p-6 lg:p-8">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold text-boom-text-dark">Dashboard Administrativo</h1>
                 <div >
@@ -129,6 +131,6 @@
                 </div>
             </div>
 
-        </main>
-    </div>
-</x-app-layout>
+    </main>
+</div>
+@endsection

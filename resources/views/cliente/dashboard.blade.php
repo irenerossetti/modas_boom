@@ -1,4 +1,6 @@
-<x-app-layout>
+﻿@extends('layouts.app')
+
+@section('content')
     <div class="min-h-screen bg-gray-50">
         <div class="max-w-4xl mx-auto px-4 py-6">
             <!-- Saludo Simple -->
@@ -100,4 +102,4 @@
             </div>
         </div>
     </div>
-</x-app-layout>
+@endsection

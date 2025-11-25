@@ -1,4 +1,6 @@
-<x-app-layout>
+﻿@extends('layouts.app')
+
+@section('content')
     <div class="p-2 sm:p-4 lg:p-6">
         <div class="flex justify-between items-center mb-4 lg:mb-6">
             <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-boom-text-dark">
@@ -251,4 +253,4 @@
         });
     </script>
     @endpush
-</x-app-layout>
+@endsection
