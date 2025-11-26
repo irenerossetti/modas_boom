@@ -56,7 +56,7 @@
                     </p>
                 </div>
                 <div class="px-6 py-4">
-                    <form action="{{ route('pedidos.procesar-confirmacion-recepcion', $pedido->id_pedido) }}" method="POST">
+                    <form action="{{ route('pedidos.confirmar-recepcion', $pedido->id_pedido) }}" method="POST">
                         @csrf
                         
                         <!-- Observaciones -->

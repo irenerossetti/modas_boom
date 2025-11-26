@@ -123,4 +123,18 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Limits and thresholds
+    |--------------------------------------------------------------------------
+    |
+    | These values control the threshold above which we avoid attempting to
+    | generate large PDFs in web requests to prevent memory/timeouts. They are
+    | both configurable via environment variables.
+    |
+    */
+    'max_clients_pdf' => env('MAX_CLIENTS_PDF', 1000),
+    'max_clients_pdf_web' => env('MAX_CLIENTS_PDF_WEB', 200),
+    'max_clients_pdf_buffer' => env('MAX_CLIENTS_PDF_BUFFER', 50),
+
 ];

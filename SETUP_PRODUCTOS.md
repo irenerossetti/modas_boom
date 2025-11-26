@@ -97,6 +97,22 @@ Si sigues teniendo problemas:
 2. Asegurar que la base de datos esté funcionando
 3. Revisar los logs en `storage/logs/laravel.log`
 
+## 🧾 Exportación de Clientes a PDF (CU25)
+
+La aplicación intenta generar PDFs para la lista de clientes, pero en entornos con restricciones de memoria o tiempo (por ejemplo PHP `memory_limit` = 128M o `max_execution_time` = 30/300s), la generación puede fallar o tomar demasiado tiempo.
+
+Para evitar errores y mejorar la experiencia:
+- Puedes ajustar los límites en `.env` con **MAX_CLIENTS_PDF** (global) y **MAX_CLIENTS_PDF_WEB** (umbral para peticiones web). Por ejemplo:
+
+```
+MAX_CLIENTS_PDF=1000
+MAX_CLIENTS_PDF_WEB=200
+```
+
+- Si necesitas exportar un listado muy grande, se recomienda usar la exportación a CSV (más ligera) o crear un job asíncrono para generar el PDF y notificar cuando esté listo.
+
+Si necesitas ayuda para configurar un job de exportación en background, pregunta y te doy los pasos.
+
 ---
 
 **¡Importante!** Los productos ahora se cargan desde la **base de datos**, no desde archivos hardcodeados. Esto asegura que funcione en cualquier instalación del proyecto.

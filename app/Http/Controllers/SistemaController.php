@@ -21,13 +21,13 @@ class SistemaController extends Controller
         // Estadísticas generales
         $stats = [
             'usuarios' => User::count(),
-            'usuarios_activos' => User::where('habilitado', true)->count(),
+            'usuarios_activos' => User::whereRaw('"habilitado" = true')->count(),
             'roles' => Rol::count(),
             'clientes' => Cliente::count(),
             'pedidos' => Pedido::count(),
             'pedidos_activos' => Pedido::whereNotIn('estado', ['Entregado', 'Cancelado'])->count(),
             'prendas' => Prenda::count(),
-            'prendas_activas' => Prenda::where('activo', true)->count(),
+            'prendas_activas' => Prenda::whereRaw('"activo" = true')->count(),
             'stock_total' => Prenda::sum('stock'),
         ];
 
@@ -50,7 +50,7 @@ class SistemaController extends Controller
 
         // Prendas por categoría
         $prendasPorCategoria = Prenda::select('categoria', DB::raw('count(*) as total'), DB::raw('sum(stock) as stock_total'))
-            ->where('activo', true)
+            ->whereRaw('"activo" = true')
             ->groupBy('categoria')
             ->get();
 
@@ -103,9 +103,9 @@ class SistemaController extends Controller
     public function estadisticas()
     {
         $stats = [
-            'usuarios_online' => User::where('habilitado', true)->count(), // Se puede mejorar con sesiones
+            'usuarios_online' => User::whereRaw('"habilitado" = true')->count(), // Se puede mejorar con sesiones
             'pedidos_hoy' => Pedido::whereDate('created_at', today())->count(),
-            'stock_bajo' => Prenda::where('activo', true)->where('stock', '<', 10)->count(),
+            'stock_bajo' => Prenda::whereRaw('"activo" = true')->where('stock', '<', 10)->count(),
             'timestamp' => now()->format('H:i:s')
         ];
 

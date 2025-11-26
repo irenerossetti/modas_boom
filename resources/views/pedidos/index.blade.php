@@ -49,6 +49,7 @@
                            class="form-input block w-full rounded-md shadow-sm">
                 </div>
                 
+                @if(Auth::user()->id_rol == 1)
                 <div>
                     <label for="estado" class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
                     <select name="estado" id="estado" class="form-select block w-full rounded-md shadow-sm">
@@ -61,6 +62,7 @@
                         @endforeach
                     </select>
                 </div>
+                @endif
                 
                 <div>
                     <label for="id_cliente" class="block text-sm font-medium text-gray-700 mb-1">Cliente</label>

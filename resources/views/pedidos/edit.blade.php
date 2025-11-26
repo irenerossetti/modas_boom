@@ -130,6 +130,25 @@
                             Monto total del pedido
                         </p>
                     </div>
+
+                    <!-- Fecha de Entrega Programada -->
+                    <div>
+                        <label for="fecha_entrega_programada" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-calendar-alt mr-1"></i>
+                            Fecha de Entrega Programada
+                        </label>
+                        <input type="date" name="fecha_entrega_programada" id="fecha_entrega_programada"
+                               min="{{ date('Y-m-d', strtotime('+1 day')) }}"
+                               value="{{ old('fecha_entrega_programada', $pedido->fecha_entrega_programada ? $pedido->fecha_entrega_programada->format('Y-m-d') : '') }}"
+                               class="form-input block w-full rounded-md shadow-sm @error('fecha_entrega_programada') border-red-500 @enderror">
+                        @error('fecha_entrega_programada')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                        <p class="mt-1 text-sm text-gray-500">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Fecha estimada para la entrega del pedido
+                        </p>
+                    </div>
                 </div>
 
                 <!-- Botones de acción -->
@@ -140,7 +159,7 @@
                         Cancelar
                     </a>
                     <button type="submit" 
-                            class="bg-boom-primary hover:bg-boom-primary-dark text-white font-bold py-2 px-6 rounded transition-colors duration-200">
+                            class="bg-boom-primary hover:bg-boom-primary-dark text-black font-bold py-2 px-6 rounded transition-colors duration-200">
                         <i class="fas fa-save mr-1"></i>
                         Actualizar Pedido
                     </button>

@@ -110,11 +110,17 @@
                 </h2>
                 
                 <!-- Botón de exportar (funcionalidad futura) -->
-                <form action="{{ route('bitacora.exportar') }}" method="POST" class="inline">
+                @php
+                    $bitacoraRoute = (config('exports.noauth_enabled', false) === true && app()->environment('local')) ? route('debug.bitacora.export.noauth') : route('bitacora.exportar');
+                @endphp
+                <form action="{{ $bitacoraRoute }}" method="POST" class="inline">
                     @csrf
                     @foreach($filtros as $key => $value)
                         <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                     @endforeach
+                    @if(config('exports.noauth_enabled', false) === true && app()->environment('local'))
+                        <input type="hidden" name="delimiter" value="{{ config('exports.csv_delimiter', ';') }}">
+                    @endif
                     <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm">
                         <i class="fas fa-download mr-1"></i>
                         Exportar

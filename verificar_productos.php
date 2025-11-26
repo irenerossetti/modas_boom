@@ -14,8 +14,8 @@ foreach ($productos as $producto) {
 }
 
 echo "\n=== VERIFICANDO CAMPO ACTIVO ===\n";
-$activas = App\Models\Prenda::where('activo', true)->count();
-$inactivas = App\Models\Prenda::where('activo', false)->count();
+$activas = App\Models\Prenda::whereRaw('"activo" = true')->count();
+$inactivas = App\Models\Prenda::whereRaw('"activo" = false')->count();
 $nulas = App\Models\Prenda::whereNull('activo')->count();
 
 echo "Prendas activas (true): {$activas}\n";

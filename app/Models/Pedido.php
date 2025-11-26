@@ -37,24 +37,26 @@ class Pedido extends Model
         'observaciones_entrega',
         'reprogramado_por',
         'fecha_reprogramacion',
-        'fecha_entrega_real',
-        'entregado_por'
+        'fecha_confirmacion_recepcion',
+        'confirmado_por',
+        'recepcion_confirmada',
+        'observaciones_recepcion',
+        'notificacion_whatsapp_enviada'
     ];
 
     /**
      * Casting de atributos
      */
-    protected function casts(): array
-    {
-        return [
-            'total' => 'decimal:2',
-            'created_at' => 'datetime',
-            'updated_at' => 'datetime',
-            'fecha_entrega_programada' => 'date',
-            'fecha_reprogramacion' => 'datetime',
-            'fecha_entrega_real' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'total' => 'decimal:2',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'fecha_entrega_programada' => 'date',
+        'fecha_reprogramacion' => 'datetime',
+        'fecha_confirmacion_recepcion' => 'datetime',
+        'recepcion_confirmada' => 'boolean',
+        'notificacion_whatsapp_enviada' => 'boolean',
+    ];
 
     /**
      * Get the route key for the model.
@@ -253,6 +255,14 @@ class Pedido extends Model
         return $this->belongsTo(User::class, 'confirmado_por', 'id_usuario');
     }
 
+    /**
+     * Usuario que reprogramó la entrega
+     */
+    public function reprogramadoPor()
+    {
+        return $this->belongsTo(User::class, 'reprogramado_por', 'id_usuario');
+    }
+
     // ========== MÉTODOS PARA CU22: CONFIRMAR RECEPCIÓN ==========
 
     /**
@@ -293,5 +303,20 @@ class Pedido extends Model
             ->where('descripcion', 'like', "%reprogramó la entrega del pedido #{$this->id_pedido}%")
             ->orderBy('created_at', 'desc')
             ->get();
+    }
+
+    /**
+     * Compatibilidad con nomenclatura anterior en código o clientes externos:
+     * - si se establece 'fecha_entrega_real', lo guardamos en 'fecha_confirmacion_recepcion'
+     * - si se establece 'entregado_por', lo guardamos en 'confirmado_por'
+     */
+    public function setFechaEntregaRealAttribute($value)
+    {
+        $this->attributes['fecha_confirmacion_recepcion'] = $value;
+    }
+
+    public function setEntregadoPorAttribute($value)
+    {
+        $this->attributes['confirmado_por'] = $value;
     }
 }

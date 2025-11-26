@@ -25,7 +25,21 @@ class PrendaController extends Controller
         }
 
         if ($request->has('activo')) {
-            $query->where('activo', $request->activo);
+            // El parámetro puede llegar como '1' / '0' o 'true' / 'false' desde la query string.
+            // Convertimos de forma segura a boolean para evitar comparaciones tipo boolean = integer
+            // que fallan en Postgres (ej: "activo" = 1).
+            $activo = filter_var($request->activo, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+            // Si la conversión no produce boolean (null), ignoramos el filtro.
+            if (!is_null($activo)) {
+                // Evitar que Postgres construya comparaciones tipo boolean = integer ("activo" = 1)
+                // Forzar la comparación booleano explícita en SQL
+                if ($activo === true) {
+                    $query->whereRaw('"activo" = true');
+                } else {
+                    $query->whereRaw('"activo" = false');
+                }
+            }
         }
 
         $prendas = $query->orderBy('categoria')->orderBy('nombre')->paginate(12);

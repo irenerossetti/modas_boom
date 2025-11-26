@@ -78,9 +78,14 @@ class BitacoraController extends Controller
      */
     public function exportar(Request $request)
     {
-        // Verificar que el usuario sea administrador
-        if (!Auth::check() || !Auth::user()->rol || Auth::user()->rol->nombre !== 'Administrador') {
-            abort(403, 'No tienes permisos para acceder a esta sección.');
+        // If exports noauth is enabled (local only), note it and bypass admin checks.
+        if (config('exports.noauth_enabled', false) === true && app()->environment('local')) {
+            \Illuminate\Support\Facades\Log::warning('BitacoraController::exportar - EXPORT_NOAUTH_ENABLED: allowing request without authentication (local only).');
+        } else {
+            // Verificar que el usuario sea administrador
+            if (!Auth::check() || !Auth::user()->rol || Auth::user()->rol->nombre !== 'Administrador') {
+                abort(403, 'No tienes permisos para acceder a esta sección.');
+            }
         }
         // Validar filtros
         $request->validate([

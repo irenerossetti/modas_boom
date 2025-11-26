@@ -140,10 +140,10 @@
                         @foreach($historialReprogramaciones as $registro)
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $registro->fecha_hora->format('d/m/Y H:i') }}
+                                {{ $registro->created_at ? $registro->created_at->format('d/m/Y H:i') : '-' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $registro->usuario }}
+                                {{ $registro->nombre_usuario }}
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-900">
                                 {{ $registro->descripcion }}

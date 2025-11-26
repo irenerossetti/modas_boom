@@ -23,19 +23,21 @@
                     Historial
                 </a>
                 
-                @if(in_array(Auth::user()->id_rol, [1, 2]))
-                <a href="{{ route('pedidos.historial-avances', $pedido->id_pedido) }}" 
+                     @if(Auth::user()->id_rol == 1)
+                     <a href="{{ route('pedidos.historial-avances', $pedido->id_pedido) }}" 
                    class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-3 sm:px-4 rounded text-sm sm:text-base text-center">
                     <i class="fas fa-tasks mr-1"></i>
                     Avances
                 </a>
-                
-                <a href="{{ route('pedidos.historial-observaciones-calidad', $pedido->id_pedido) }}" 
-                   class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-3 sm:px-4 rounded text-sm sm:text-base text-center">
+                     @endif
+
+                     @if(in_array(Auth::user()->id_rol, [1, 2]))
+                     <a href="{{ route('pedidos.historial-observaciones-calidad', $pedido->id_pedido) }}" 
+                         class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-3 sm:px-4 rounded text-sm sm:text-base text-center">
                     <i class="fas fa-clipboard-check mr-1"></i>
                     Calidad
                 </a>
-                @endif
+                     @endif
                 
                 <!-- Botón Ver Detalles -->
                 <a href="{{ route('pedidos.show', $pedido->id_pedido) }}" 
@@ -56,15 +58,20 @@
                     
                     <div id="headerDropdownMenu" class="hidden absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
                         <div class="py-1">
-                            @if($pedido->puedeReprogramarEntrega() && in_array(Auth::user()->id_rol, [1, 2]))
+                            @if($pedido->puedeReprogramarEntrega() && (Auth::user()->id_rol == 1 || (Auth::user()->id_rol == 3 && $pedido->id_cliente == Auth::user()->id_usuario)))
                                 <button onclick="mostrarModalReprogramar(); toggleHeaderDropdown();" 
                                         class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 flex items-center">
                                     <i class="fas fa-calendar-alt mr-3 text-blue-500"></i>
                                     Reprogramar Entrega
                                 </button>
+                                <a href="{{ route('pedidos.historial-reprogramaciones', $pedido->id_pedido) }}" 
+                                   class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 flex items-center">
+                                    <i class="fas fa-history mr-3 text-purple-500"></i>
+                                    Ver historial de reprogramaciones
+                                </a>
                             @endif
                             
-                            @if($pedido->estado == 'Terminado' && in_array(Auth::user()->id_rol, [1, 2]))
+                            @if($pedido->estado == 'Terminado' && (Auth::user()->id_rol == 1 || (Auth::user()->id_rol == 3 && $pedido->id_cliente == Auth::user()->id_usuario)))
                                 <button onclick="mostrarModalConfirmarRecepcion(); toggleHeaderDropdown();" 
                                         class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-900 flex items-center">
                                     <i class="fas fa-check-circle mr-3 text-green-500"></i>
@@ -167,6 +174,25 @@
                             </div>
                         </div>
                         @endif
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha estimada de entrega</label>
+                            <div class="text-boom-text-dark">
+                                <i class="fas fa-calendar-alt mr-1"></i>
+                                {{ $pedido->fecha_entrega_programada ? \Carbon\Carbon::parse($pedido->fecha_entrega_programada)->format('d/m/Y') : 'Sin fecha programada' }}
+                            </div>
+                        </div>
+
+                        @if($pedido->fecha_reprogramacion)
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Última reprogramación</label>
+                            <div class="text-boom-text-dark">
+                                <i class="fas fa-history mr-1"></i>
+                                {{ $pedido->fecha_reprogramacion ? \Carbon\Carbon::parse($pedido->fecha_reprogramacion)->format('d/m/Y H:i') : '-' }}
+                                <span class="text-sm text-gray-500 ml-2">por {{ $pedido->reprogramadoPor->nombre ?? 'Sistema' }}</span>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
 
@@ -261,7 +287,7 @@
                             </a>
                         @endif
                         
-                        @if(in_array(Auth::user()->id_rol, [1, 2]))
+                        @if(Auth::user()->id_rol == 1)
                             <a href="{{ route('pedidos.historial-avances', $pedido->id_pedido) }}" 
                                class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
                                 <i class="fas fa-history mr-2"></i>
@@ -269,7 +295,7 @@
                             </a>
                         @endif
                         
-                        @if(in_array($pedido->estado, ['Asignado', 'En producción']) && in_array(Auth::user()->id_rol, [1, 2]))
+                        @if(in_array($pedido->estado, ['Asignado', 'En producción']) && Auth::user()->id_rol == 1)
                             <button onclick="mostrarModalAvance()" 
                                     class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
                                 <i class="fas fa-tasks mr-2"></i>
@@ -591,7 +617,7 @@
     @endpush
 
     <!-- Modal Reprogramar Entrega -->
-    @if($pedido->puedeReprogramarEntrega() && in_array(Auth::user()->id_rol, [1, 2]))
+                    @if($pedido->puedeReprogramarEntrega() && (Auth::user()->id_rol == 1 || (Auth::user()->id_rol == 3 && $pedido->id_cliente == Auth::user()->id_usuario)))
     <div id="modalReprogramar" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
         <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div class="mt-3">
@@ -757,7 +783,7 @@
     @endif
 
     <!-- Modal Registrar Avance de Producción -->
-    @if(in_array($pedido->estado, ['Asignado', 'En producción']) && in_array(Auth::user()->id_rol, [1, 2]))
+    @if(in_array($pedido->estado, ['Asignado', 'En producción']) && Auth::user()->id_rol == 1)
     <div id="modalAvance" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
         <div class="flex items-center justify-center min-h-screen p-4">
             <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4">

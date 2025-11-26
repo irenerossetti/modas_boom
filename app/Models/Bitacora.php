@@ -22,15 +22,12 @@ class Bitacora extends Model
         'user_agent',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'datos_anteriores' => 'array',
-            'datos_nuevos' => 'array',
-            'created_at' => 'datetime',
-            'updated_at' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'datos_anteriores' => 'array',
+        'datos_nuevos' => 'array',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 
     // Relación con el modelo User
     public function usuario(): BelongsTo

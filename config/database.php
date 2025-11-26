@@ -100,6 +100,15 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => 'prefer',
+            // Evitar prepared statements server-side y conexiones persistentes que
+            // pueden causar "prepared statement ... does not exist" en entornos
+            // con pg_bouncer/pooled connections. Aquí emulamos prepares y
+            // deshabilitamos persistencia por seguridad.
+            'options' => extension_loaded('pdo_pgsql') ? array_filter([
+                \PDO::ATTR_EMULATE_PREPARES => true,
+                \PDO::ATTR_PERSISTENT => false,
+                \PDO::ATTR_TIMEOUT => 30,
+            ]) : [],
         ],
 
         'sqlsrv' => [

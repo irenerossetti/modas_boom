@@ -50,7 +50,7 @@ class UserController extends Controller
             'direccion' => $request->direccion,
             'email' => $request->email,
             'password' => bcrypt($request->password),
-            'habilitado' => $request->has('habilitado') ? 1 : 0,
+            'habilitado' => $request->boolean('habilitado'),
         ]);
 
         // Si el rol es Cliente (id_rol = 3), crear cliente automáticamente
@@ -111,7 +111,7 @@ class UserController extends Controller
             'telefono' => $request->telefono,
             'direccion' => $request->direccion,
             'email' => $request->email,
-            'habilitado' => $request->has('habilitado') ? 1 : 0,
+            'habilitado' => $request->boolean('habilitado'),
         ];
 
         if ($request->filled('password')) {

@@ -14,7 +14,7 @@
                     <p class="text-gray-600 mt-1">Pedido #{{ $pedido->id_pedido }} - {{ $pedido->cliente->nombre }}</p>
                 </div>
                 <div class="flex space-x-3">
-                    @if(in_array($pedido->estado, ['Asignado', 'En producción']) && in_array(Auth::user()->id_rol, [1, 2]))
+                                @if(in_array($pedido->estado, ['Asignado', 'En producción']) && Auth::user()->id_rol == 1)
                         <button onclick="mostrarModalAvance()" 
                                 class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition duration-200">
                             <i class="fas fa-plus mr-2"></i>Nuevo Avance
@@ -183,7 +183,7 @@
                     <h3 class="text-lg font-medium text-gray-900 mb-2">No hay avances registrados</h3>
                     <p class="text-gray-500 mb-6">Este pedido aún no tiene avances de producción registrados.</p>
                     
-                    @if(in_array($pedido->estado, ['Asignado', 'En producción']) && in_array(Auth::user()->id_rol, [1, 2]))
+                    @if(in_array($pedido->estado, ['Asignado', 'En producción']) && Auth::user()->id_rol == 1)
                         <button onclick="mostrarModalAvance()" 
                                 class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg transition duration-200">
                             <i class="fas fa-plus mr-2"></i>Registrar Primer Avance
@@ -196,7 +196,7 @@
 </div>
 
 <!-- Botón flotante para agregar avance -->
-@if(in_array($pedido->estado, ['Asignado', 'En producción']) && in_array(Auth::user()->id_rol, [1, 2]))
+                    @if(in_array($pedido->estado, ['Asignado', 'En producción']) && Auth::user()->id_rol == 1)
 <div class="fixed bottom-6 right-6 z-40">
     <button onclick="mostrarModalAvance()" 
             class="inline-flex items-center justify-center w-16 h-16 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110"
@@ -207,7 +207,7 @@
 @endif
 
 <!-- Modal Registrar Avance de Producción -->
-@if(in_array($pedido->estado, ['Asignado', 'En producción']) && in_array(Auth::user()->id_rol, [1, 2]))
+@if(in_array($pedido->estado, ['Asignado', 'En producción']) && Auth::user()->id_rol == 1)
 <div id="modalAvance" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
     <div class="flex items-center justify-center min-h-screen p-4">
         <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4">

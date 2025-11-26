@@ -37,15 +37,12 @@ class User extends Authenticatable
     ];
 
     // Mapeo para que Laravel sepa cómo manejar ciertos datos
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'habilitado' => 'boolean',
-            'fecha_registro' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'habilitado' => 'boolean',
+        'fecha_registro' => 'datetime',
+    ];
 
     /**
      * Get the route key for the model.

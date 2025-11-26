@@ -35,7 +35,8 @@ class Prenda extends Model
      */
     public function scopeActivas($query)
     {
-        return $query->where('activo', true);
+        // Use explicit boolean literal for Postgres compatibility
+        return $query->whereRaw('"activo" = true');
     }
 
     /**
@@ -120,9 +121,11 @@ class Prenda extends Model
      */
     public static function getCategorias()
     {
+        // Forzar comparación con literal booleano en SQL para Postgres
+        // evita errores cuando el driver o parámetros usarían enteros (activo = 1)
         return self::select('categoria')
             ->distinct()
-            ->where('activo', true)
+            ->whereRaw('"activo" = true')
             ->orderBy('categoria')
             ->pluck('categoria');
     }

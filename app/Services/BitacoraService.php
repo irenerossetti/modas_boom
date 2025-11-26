@@ -206,7 +206,7 @@ class BitacoraService
     public function obtenerUsuariosParaFiltros()
     {
         return User::select('id_usuario', 'nombre')
-            ->where('habilitado', true)
+            ->whereRaw('"habilitado" = true')
             ->orderBy('nombre')
             ->get();
     }

@@ -10,6 +10,7 @@ use App\Models\ObservacionCalidad;
 use App\Models\AvanceProduccion;
 use App\Services\BitacoraService;
 use App\Services\EmailService;
+use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -18,11 +19,13 @@ class PedidoController extends Controller
 {
     protected $bitacoraService;
     protected $emailService;
+    protected $whatsAppService;
 
-    public function __construct(BitacoraService $bitacoraService, EmailService $emailService)
+    public function __construct(BitacoraService $bitacoraService, EmailService $emailService, WhatsAppService $whatsAppService)
     {
         $this->bitacoraService = $bitacoraService;
         $this->emailService = $emailService;
+        $this->whatsAppService = $whatsAppService;
     }
 
     /**
@@ -73,6 +76,11 @@ class PedidoController extends Controller
         $filtros = array_filter($filtros, function($value) {
             return !is_null($value) && $value !== '';
         });
+
+        // Sólo administradores pueden filtrar por estado (CU24)
+        if (!Auth::check() || Auth::user()->id_rol !== 1) {
+            unset($filtros['estado']);
+        }
 
         // Construir consulta con filtros optimizada
         $query = Pedido::with(['cliente' => function($query) {
@@ -138,12 +146,14 @@ class PedidoController extends Controller
             'id_cliente' => 'required|integer|exists:clientes,id',
             'total' => 'nullable|numeric|min:0',
             'descripcion' => 'nullable|string|max:1000',
+            'fecha_entrega_programada' => 'nullable|date|after:today',
         ]);
 
         $pedido = Pedido::create([
             'id_cliente' => $request->id_cliente,
             'estado' => 'En proceso',
             'total' => $request->total,
+            'fecha_entrega_programada' => $request->fecha_entrega_programada ?? null,
         ]);
 
         // Registrar creación en bitácora
@@ -267,6 +277,7 @@ class PedidoController extends Controller
             'id_cliente' => 'required|integer|exists:clientes,id',
             'estado' => 'required|string|in:En proceso,Asignado,En producción,Terminado,Entregado,Cancelado',
             'total' => 'nullable|numeric|min:0',
+            'fecha_entrega_programada' => 'nullable|date|after:today',
         ]);
 
         $datosAnteriores = $pedido->toArray();
@@ -306,6 +317,7 @@ class PedidoController extends Controller
                 'id_cliente' => $request->id_cliente,
                 'estado' => $nuevoEstado,
                 'total' => $request->total,
+                'fecha_entrega_programada' => $request->fecha_entrega_programada ?? $pedido->fecha_entrega_programada,
             ]);
         });
         } catch (\Exception $e) {
@@ -803,7 +815,7 @@ class PedidoController extends Controller
                        ->when($request->categoria, function($query, $categoria) {
                            return $query->where('categoria', $categoria);
                        })
-                       ->where('activo', true)
+                       ->whereRaw('"activo" = true')
                        ->first();
 
         // Verificar stock si la prenda existe en la BD
@@ -971,11 +983,20 @@ class PedidoController extends Controller
     {
         $pedido = Pedido::with(['cliente', 'prendas'])->findOrFail($id);
 
+        // Solo permitir si el pedido está en un estado reprogramable
         if (!$pedido->puedeReprogramarEntrega()) {
             return redirect()->route('pedidos.show', $pedido->id_pedido)
                 ->with('error', 'Este pedido no puede reprogramar su entrega en el estado actual.');
         }
-
+        // Verificar rol: administradores pueden reprogramar cualquier pedido.
+        // Clientes sólo pueden reprogramar sus propios pedidos.
+        $user = Auth::user();
+        if ($user->id_rol === 3) { // cliente
+            if ($pedido->id_cliente != $user->id_usuario) {
+                return redirect()->route('pedidos.show', $pedido->id_pedido)
+                    ->with('error', 'No tienes permiso para reprogramar este pedido.');
+            }
+        }
         $historialReprogramaciones = $pedido->historialReprogramaciones();
 
         return view('pedidos.reprogramar-entrega', compact('pedido', 'historialReprogramaciones'));
@@ -991,6 +1012,13 @@ class PedidoController extends Controller
         if (!$pedido->puedeReprogramarEntrega()) {
             return redirect()->route('pedidos.show', $pedido->id_pedido)
                 ->with('error', 'Este pedido no puede reprogramar su entrega.');
+        }
+
+        // Sólo administradores o clientes propietarios
+        $user = Auth::user();
+        if ($user->id_rol === 3 && $pedido->id_cliente != $user->id_usuario) {
+            return redirect()->route('pedidos.show', $pedido->id_pedido)
+                ->with('error', 'No tienes permiso para reprogramar este pedido.');
         }
 
         $request->validate([
@@ -1046,6 +1074,12 @@ class PedidoController extends Controller
     {
         $pedido = Pedido::with(['cliente', 'avancesProduccion.registradoPor'])->findOrFail($id);
 
+        // Acceso exclusivo para administradores (CU20)
+        if (Auth::user()->id_rol !== 1) {
+            return redirect()->route('pedidos.show', $pedido->id_pedido)
+                ->with('error', 'Solo administradores pueden registrar avances de producción.');
+        }
+
         if (!in_array($pedido->estado, ['Asignado', 'En producción'])) {
             return redirect()->route('pedidos.show', $pedido->id_pedido)
                 ->with('error', 'Solo se pueden registrar avances en pedidos Asignados o En producción.');
@@ -1063,6 +1097,12 @@ class PedidoController extends Controller
     public function procesarAvance(Request $request, string $id)
     {
         $pedido = Pedido::findOrFail($id);
+
+        // Acceso exclusivo para administradores
+        if (Auth::user()->id_rol !== 1) {
+            return redirect()->route('pedidos.show', $pedido->id_pedido)
+                ->with('error', 'No tienes permiso para registrar avances.');
+        }
 
         $request->validate([
             'etapa' => 'required|string|in:Corte,Confección,Acabado,Control de Calidad',
@@ -1107,6 +1147,12 @@ class PedidoController extends Controller
     public function historialAvances(string $id)
     {
         $pedido = Pedido::with(['cliente', 'avancesProduccion.registradoPor'])->findOrFail($id);
+        // Acceso exclusivo para administradores
+        if (Auth::user()->id_rol !== 1) {
+            return redirect()->route('pedidos.show', $pedido->id_pedido)
+                ->with('error', 'No tienes permisos para ver el historial de avances.');
+        }
+
         $avances = $pedido->avancesProduccion()->with('registradoPor')->orderBy('created_at', 'desc')->get();
 
         return view('pedidos.historial-avances', compact('pedido', 'avances'));
@@ -1332,22 +1378,36 @@ class PedidoController extends Controller
     /**
      * Confirmar recepción del pedido
      */
-    public function confirmarRecepcion(string $id)
+    public function confirmarRecepcion(Request $request, string $id)
     {
         $pedido = Pedido::findOrFail($id);
-        
+        // Verificar estado
         if ($pedido->estado !== 'Terminado') {
             return redirect()->route('pedidos.show', $pedido->id_pedido)
                 ->with('error', 'Solo se puede confirmar la recepción de pedidos terminados.');
         }
-
+        // Verificar permisos: solo administradores o cliente propietario
+        $user = Auth::user();
+        if (!($user && ($user->id_rol == 1 || ($user->id_rol == 3 && $pedido->id_cliente == $user->id_usuario)))) {
+            return redirect()->route('pedidos.show', $pedido->id_pedido)
+                ->with('error', 'No tienes permiso para confirmar la recepción de este pedido.');
+        }
         $estadoAnterior = $pedido->estado;
         
-        // Actualizar estado a Entregado
+        // Validar observaciones
+        $request->validate([
+            'observaciones_recepcion' => 'nullable|string|max:1000',
+            'enviar_whatsapp' => 'nullable|boolean',
+            'enviar_email' => 'nullable|boolean',
+        ]);
+
+        // Actualizar estado a Entregado y marcar confirmación
         $pedido->update([
             'estado' => 'Entregado',
-            'fecha_entrega_real' => now(),
-            'entregado_por' => Auth::user()->id_usuario
+            'recepcion_confirmada' => true,
+            'fecha_confirmacion_recepcion' => now(),
+            'confirmado_por' => Auth::user()->id_usuario,
+            'observaciones_recepcion' => $request->observaciones_recepcion ?? null,
         ]);
 
         // Registrar en bitácora
@@ -1362,15 +1422,24 @@ class PedidoController extends Controller
             $pedido->fresh()->toArray()
         );
 
-        // Enviar notificación por email
-        $resultadoEmail = $this->emailService->enviarNotificacionEntregado($pedido);
-        
+        // Enviar notificaciones según selecciones
         $mensaje = "Recepción del pedido confirmada exitosamente. Estado cambiado a 'Entregado'.";
-        
-        if ($resultadoEmail['success']) {
-            $mensaje .= " Notificación enviada por email a " . $resultadoEmail['email'];
-        } else {
-            $mensaje .= " Advertencia: No se pudo enviar la notificación por email - " . $resultadoEmail['message'];
+        if ($request->boolean('enviar_whatsapp')) {
+            $resultadoWhatsapp = $this->whatsAppService->enviarConfirmacionRecepcion($pedido);
+            if ($resultadoWhatsapp['success']) {
+                $mensaje .= " Notificación enviada por WhatsApp a " . ($pedido->cliente->telefono ?? 'N/A') . ".";
+            } else {
+                $mensaje .= " Advertencia WhatsApp: " . $resultadoWhatsapp['message'];
+            }
+        }
+
+        if ($request->boolean('enviar_email')) {
+            $resultadoEmail = $this->emailService->enviarNotificacionEntregado($pedido);
+            if ($resultadoEmail['success']) {
+                $mensaje .= " Notificación enviada por email a " . ($resultadoEmail['email'] ?? 'N/A') . ".";
+            } else {
+                $mensaje .= " Advertencia Email: " . $resultadoEmail['message'];
+            }
         }
 
         return redirect()->route('pedidos.show', $pedido->id_pedido)

@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckAdminRole
@@ -21,6 +22,7 @@ class CheckAdminRole
         }
 
         if (Auth::user()->id_rol != 1) {
+            Log::info('CheckAdminRole - redirecting non-admin', ['user_id' => Auth::id(), 'id_rol' => Auth::user()->id_rol]);
             // If employee, redirect to employee dashboard
             if (Auth::user()->id_rol == 2) {
                 return redirect('/empleado-dashboard');

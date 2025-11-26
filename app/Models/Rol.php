@@ -19,6 +19,10 @@ class Rol extends Model
         'habilitado',
     ];
 
+    protected $casts = [
+        'habilitado' => 'boolean',
+    ];
+
     /**
      * Get the route key for the model.
      */

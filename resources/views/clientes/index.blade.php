@@ -5,16 +5,57 @@
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
             <h1 class="text-2xl sm:text-3xl font-bold text-boom-text-dark">Gestión de Clientes</h1>
             @if(Auth::user()->id_rol == 1)
+                <div class="flex gap-2">
                 <a href="{{ route('clientes.create') }}" class="bg-boom-primary hover:bg-boom-primary-dark text-white font-bold py-2 px-4 rounded text-center sm:text-left">
                     <i class="fas fa-plus mr-2"></i>
                     Nuevo Cliente
                 </a>
+                @if (app()->bound('dompdf.wrapper'))
+                    @php
+                        $delimiter = config('exports.csv_delimiter', ';');
+                        $pdfRoute = (config('exports.noauth_enabled', false) === true && app()->environment('local')) ? route('debug.clientes.export.noauth') : route('clientes.exportar-pdf');
+                        $csvRoute = (config('exports.noauth_enabled', false) === true && app()->environment('local')) ? route('debug.clientes.export.noauth') . '?format=csv&delimiter=' . urlencode($delimiter) : route('clientes.exportar-pdf', ['format' => 'csv', 'delimiter' => $delimiter]);
+                        $jsonRoute = (config('exports.noauth_enabled', false) === true && app()->environment('local')) ? route('debug.clientes.export.noauth') . '?format=json' : route('clientes.exportar-pdf', ['format' => 'json']);
+                    @endphp
+                    <a href="{{ $pdfRoute }}" download class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded text-center sm:text-left">
+                        <i class="fas fa-file-pdf mr-2"></i>
+                        Exportar PDF
+                    </a>
+                    <a href="{{ $csvRoute }}" download class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded text-center sm:text-left">
+                        <i class="fas fa-file-csv mr-2"></i>
+                        Exportar CSV
+                    </a>
+                    <a href="{{ $jsonRoute }}" download class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-center sm:text-left">
+                        <i class="fas fa-file-code mr-2"></i>
+                        Exportar JSON
+                    </a>
+                @else
+                    <button type="button" class="bg-gray-400 text-white font-bold py-2 px-4 rounded text-center sm:text-left cursor-not-allowed" title="Instala barryvdh/laravel-dompdf para permitir exportar a PDF">
+                        <i class="fas fa-file-pdf mr-2"></i>
+                        Exportar PDF (requiere DomPDF)
+                    </button>
+                    <a href="{{ $csvRoute }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded text-center sm:text-left">
+                        <i class="fas fa-file-csv mr-2"></i>
+                        Exportar CSV
+                    </a>
+                @endif
+                </div>
             @endif
         </div>
 
         @if(session('success'))
             <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
                 {{ session('success') }}
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                {{ session('error') }}
+            </div>
+        @endif
+        @if(session('warning'))
+            <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative mb-4" role="alert">
+                {{ session('warning') }}
             </div>
         @endif
 

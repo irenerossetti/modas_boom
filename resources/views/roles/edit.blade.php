@@ -59,14 +59,14 @@
                                 <label class="block text-sm font-medium text-boom-text-dark mb-3">Estado del Rol</label>
                                 <div class="space-y-2">
                                     <label class="flex items-center">
-                                        <input type="radio" name="habilitado" value="1" {{ old('habilitado', $rol->habilitado) == 1 ? 'checked' : '' }}
+                                        <input type="radio" name="habilitado" value="1" {{ old('habilitado', $rol->habilitado) ? 'checked' : '' }}
                                                class="rounded border-boom-cream-300 text-boom-rose-dark shadow-sm focus:border-boom-rose-dark focus:ring focus:ring-boom-rose-light focus:ring-opacity-50">
                                         <span class="ml-2 text-sm text-boom-text-dark">
                                             <i class="fas fa-check text-green-600 mr-1"></i>Habilitado
                                         </span>
                                     </label>
                                     <label class="flex items-center">
-                                        <input type="radio" name="habilitado" value="0" {{ old('habilitado', $rol->habilitado) == 0 ? 'checked' : '' }}
+                                        <input type="radio" name="habilitado" value="0" {{ old('habilitado', $rol->habilitado) ? '' : 'checked' }}
                                                class="rounded border-boom-cream-300 text-boom-rose-dark shadow-sm focus:border-boom-rose-dark focus:ring focus:ring-boom-rose-light focus:ring-opacity-50">
                                         <span class="ml-2 text-sm text-boom-text-dark">
                                             <i class="fas fa-times text-red-600 mr-1"></i>Deshabilitado

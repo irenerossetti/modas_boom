@@ -36,7 +36,9 @@ class RolController extends Controller
             'habilitado' => 'boolean',
         ]);
 
-        Rol::create($request->all());
+        Rol::create(array_merge($request->except('habilitado'), [
+            'habilitado' => $request->boolean('habilitado'),
+        ]));
 
         return redirect()->route('roles.index')->with('success', 'Rol creado exitosamente.');
     }
@@ -82,7 +84,9 @@ class RolController extends Controller
             'habilitado' => 'boolean',
         ]);
 
-        $rol->update($request->all());
+        $rol->update(array_merge($request->except('habilitado'), [
+            'habilitado' => $request->boolean('habilitado'),
+        ]));
 
         return redirect()->route('roles.index')->with('success', 'Rol actualizado exitosamente.');
     }
