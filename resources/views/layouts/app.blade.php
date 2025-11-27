@@ -87,6 +87,13 @@
                             </svg>
                             <span class="text-sm lg:text-base">Prendas</span>
                         </a>
+                        <a href="{{ route('proveedores.index') }}" class="flex items-center p-2 lg:p-3 rounded-lg font-semibold transition-all duration-300 {{ request()->routeIs('proveedores.*') ? 'text-boom-text-dark bg-boom-rose-light border border-boom-rose-dark shadow-md' : 'text-boom-text-medium hover:bg-boom-cream-200 border border-boom-cream-300 shadow-sm hover:shadow-md' }}">
+                            <svg class="w-4 h-4 lg:w-5 lg:h-5 mr-2 lg:mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h10M7 16h10"></path>
+                            </svg>
+                            <span class="text-sm lg:text-base">Proveedores</span>
+                        </a>
                         <!-- Inventario - Telas (group with nested actions) -->
                         <div class="">
                             <a href="{{ route('telas.index') }}" class="flex items-center p-2 lg:p-3 rounded-lg font-semibold transition-all duration-300 {{ request()->routeIs('telas.*') ? 'text-boom-text-dark bg-boom-rose-light border border-boom-rose-dark shadow-md' : 'text-boom-text-medium hover:bg-boom-cream-200 border border-boom-cream-300 shadow-sm hover:shadow-md' }}">
@@ -96,9 +103,9 @@
                                 <span class="text-sm lg:text-base">Inventario</span>
                             </a>
                             <!-- Nested actions for Inventario (optional) -->
-                            <div class="ml-6 mt-1">
-                                {{-- Registrar Tela moved to Inventario view as a CTA button; keep only inventory link here --}}
-                            </div>
+                                <div class="ml-6 mt-1">
+                                    {{-- Registrar Tela moved to Inventario view as a CTA button; keep only inventory link here --}}
+                                </div>
                         </div>
                         <a href="{{ route('clientes.index') }}" class="flex items-center p-2 lg:p-3 rounded-lg font-semibold transition-all duration-300 {{ request()->routeIs('clientes.*') ? 'text-boom-text-dark bg-boom-rose-light border border-boom-rose-dark shadow-md' : 'text-boom-text-medium hover:bg-boom-cream-200 border border-boom-cream-300 shadow-sm hover:shadow-md' }}">
                             <svg class="w-4 h-4 lg:w-5 lg:h-5 mr-2 lg:mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

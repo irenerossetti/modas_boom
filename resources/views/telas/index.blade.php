@@ -6,7 +6,10 @@
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-2xl font-bold text-center">Inventario de Telas</h2>
-                    <a href="{{ route('telas.create') }}" class="bg-gray-400 text-black px-4 py-2 rounded">Registrar Tela</a>
+                    <div class="flex items-center gap-2">
+                        <a href="{{ route('compras.index') }}" class="bg-blue-500 text-white px-4 py-2 rounded">Registrar Insumo</a>
+                        <a href="{{ route('telas.create') }}" class="bg-gray-400 text-black px-4 py-2 rounded">Registrar Tela</a>
+                    </div>
                 </div>
                 <table class="w-full text-center">
                     <thead>
@@ -29,10 +32,10 @@
                                 <td class="p-3">{{ number_format($tela->stock_minimo, 2) }}</td>
                                 <td>
                                     <a href="{{ route('telas.edit', $tela->id) }}" class="text-blue-600 hover:underline mr-2">Editar</a>
-                                    <form action="{{ route('telas.consumir', $tela->id) }}" method="POST" class="inline">
+                                    <form action="{{ route('telas.consumir', $tela->id) }}" method="POST" class="inline-flex items-center gap-2">
                                         @csrf
-                                        <input type="hidden" name="cantidad" value="1">
-                                        <button class="text-red-600" title="Consumir 1 {{ $tela->unidad }}">Consumir</button>
+                                        <input type="number" name="cantidad" step="0.01" min="0.01" value="1" class="form-input w-20" title="Cantidad a consumir"> 
+                                        <button class="text-red-600" title="Consumir {{ $tela->unidad }}">Consumir</button>
                                     </form>
                                     @if($tela->isLowStock())
                                         <span class="text-yellow-700 ml-2">⚠️ Stock bajo</span>

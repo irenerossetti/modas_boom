@@ -382,6 +382,16 @@ Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
     Route::put('telas/{id}', [App\Http\Controllers\TelaController::class, 'update'])->name('telas.update');
     // Consumo tras producción (resta stock)
     Route::post('telas/{id}/consumir', [App\Http\Controllers\TelaController::class, 'consumir'])->name('telas.consumir');
+
+    // Compras de insumos - inventario
+    Route::get('inventario/compras', [App\Http\Controllers\CompraInsumoController::class, 'index'])->name('compras.index');
+    Route::get('inventario/compras/create', [App\Http\Controllers\CompraInsumoController::class, 'create'])->name('compras.create');
+    Route::post('inventario/compras', [App\Http\Controllers\CompraInsumoController::class, 'store'])->name('compras.store');
+    Route::get('inventario/compras/proveedor/{id}', [App\Http\Controllers\CompraInsumoController::class, 'historialPorProveedor'])->name('compras.historial.proveedor');
+    Route::get('inventario/compras/auditar/ultima-semana', [App\Http\Controllers\CompraInsumoController::class, 'auditarUltimaSemana'])->name('compras.auditar.ultima-semana');
+
+    // Proveedores CRUD (admin)
+    Route::resource('proveedores', App\Http\Controllers\ProveedorController::class);
 });
 
 

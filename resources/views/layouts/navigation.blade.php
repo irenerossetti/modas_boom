@@ -56,6 +56,15 @@
                             </a>
                             <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('telas.index') }}">
                                 <i class="fas fa-tablet-alt mr-2"></i>Inventario
+                                </a>
+                                <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('compras.index') }}"> 
+                                    <i class="fas fa-file-invoice-dollar mr-2"></i>Compras
+                                </a>
+                                <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('proveedores.index') }}"> 
+                                    <i class="fas fa-truck mr-2"></i>Proveedores
+                                </a>
+                                <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('compras.auditar.ultima-semana') }}"> 
+                                    <i class="fas fa-search mr-2"></i>Auditar Movimientos (Últ. Semana)
                             </a>
                         @elseif(Auth::user()->id_rol == 2) <!-- Empleado -->
                             <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('pedidos.index') }}">

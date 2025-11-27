@@ -23,6 +23,7 @@ test('telas index shows single medida column and numeric stock values without un
     $response->assertOk();
     $response->assertSee('Medida');
     $response->assertSee('Registrar Tela');
+    $response->assertSee('Compras');
     $response->assertSee('100.00');
     $response->assertSee('10.00');
     $response->assertSee('m');
