@@ -28,10 +28,50 @@
     <main class="p-4 sm:p-6 lg:p-8">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold text-boom-text-dark">Dashboard Administrativo</h1>
-                <div >
-                   <button class=" bg-boom-red-report text-white font-bold py-2 px-4 rounded-lg shadow" >
-                    Generar Reporte
-                </button> 
+                <div>
+                    <!-- Button that opens the modal -->
+                    <button id="openReportModal" type="button" class="bg-boom-red-report text-white font-bold py-2 px-4 rounded-lg shadow">Generar Reporte</button>
+                </div>
+                
+                <!-- Modal para generar reportes -->
+                <div id="reportModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+                    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
+                        <h2 class="text-xl font-semibold mb-4">Generar Reporte</h2>
+                        <form method="POST" action="{{ route('reportes.generate') }}">
+                            @csrf
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="format" class="block text-sm font-medium text-boom-text-dark mb-1">Formato</label>
+                                    <select name="format" id="format" class="w-full rounded-md border-boom-cream-300 shadow-sm" required>
+                                        <option value="json">JSON</option>
+                                        <option value="csv">CSV</option>
+                                        <option value="pdf">PDF</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="desde" class="block text-sm font-medium text-boom-text-dark mb-1">Desde</label>
+                                    <input type="date" name="desde" id="desde" class="w-full rounded-md border-boom-cream-300 shadow-sm" required>
+                                </div>
+                                <div>
+                                    <label for="hasta" class="block text-sm font-medium text-boom-text-dark mb-1">Hasta</label>
+                                    <input type="date" name="hasta" id="hasta" class="w-full rounded-md border-boom-cream-300 shadow-sm" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-boom-text-dark mb-1">Secciones</label>
+                                    <div class="space-y-1">
+                                        <label class="inline-flex items-center"><input type="checkbox" name="sections[]" value="productos" checked> Productos</label>
+                                        <label class="inline-flex items-center"><input type="checkbox" name="sections[]" value="telas" checked> Telas</label>
+                                        <label class="inline-flex items-center"><input type="checkbox" name="sections[]" value="ventas" checked> Ventas</label>
+                                        <label class="inline-flex items-center"><input type="checkbox" name="sections[]" value="compras" checked> Compras</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex justify-end space-x-2">
+                                <button type="button" id="closeReportModal" class="px-4 py-2 rounded-md bg-gray-200">Cancelar</button>
+                                <button type="submit" class="px-4 py-2 rounded-md bg-boom-red-report text-white">Generar</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
                 
             </div>
@@ -134,3 +174,25 @@
     </main>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const openBtn = document.getElementById('openReportModal');
+    const closeBtn = document.getElementById('closeReportModal');
+    const modal = document.getElementById('reportModal');
+    if (openBtn && modal) {
+        openBtn.addEventListener('click', function(){
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        });
+    }
+    if (closeBtn && modal) {
+        closeBtn.addEventListener('click', function(){
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        });
+    }
+});
+</script>
+@endpush

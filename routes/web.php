@@ -392,6 +392,8 @@ Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
 
     // Proveedores CRUD (admin)
     Route::resource('proveedores', App\Http\Controllers\ProveedorController::class);
+    // Reportes - CU39
+    Route::post('reportes/generate', [App\Http\Controllers\ReportController::class, 'generate'])->name('reportes.generate');
 });
 
 

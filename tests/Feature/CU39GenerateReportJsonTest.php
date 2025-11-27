@@ -1,0 +1,43 @@
+<?php
+
+use App\Models\User;
+use App\Models\Rol;
+use App\Models\Prenda;
+use App\Models\Tela;
+use App\Models\Pedido;
+use App\Models\CompraInsumo;
+use App\Models\Proveedor;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
+test('admin puede generar reporte en json con secciones y rango de fechas', function () {
+    Rol::create(['nombre' => 'Administrador', 'habilitado' => true]);
+    $admin = User::factory()->create(['id_rol' => 1]);
+
+    Prenda::create(['nombre' => 'Remera', 'descripcion' => 'Remera', 'precio' => 15.5, 'categoria' => 'Cat1']);
+    Tela::create(['nombre' => 'Algodón', 'stock' => 100, 'unidad' => 'm', 'stock_minimo' => 10]);
+
+    $proveedor = Proveedor::create(['nombre' => 'Proveedor Z']);
+    CompraInsumo::create(['proveedor_id' => $proveedor->id, 'descripcion' => 'Compra test', 'monto' => 20, 'fecha_compra' => now()]);
+    // Crear cliente para el pedido
+    $cliente = \App\Models\Cliente::create(['nombre' => 'Cliente Test', 'apellido' => 'A', 'ci_nit' => '123', 'telefono' => '123', 'email' => 'cliente@example.com', 'direccion' => 'Calle 1']);
+    Pedido::create(['id_cliente' => $cliente->id, 'total' => 200, 'created_at' => now(), 'estado' => 'completado']);
+
+    $response = $this->actingAs($admin)->post(route('reportes.generate'), [
+        'format' => 'json',
+        'desde' => now()->subDay()->format('Y-m-d'),
+        'hasta' => now()->format('Y-m-d'),
+        'sections' => ['productos','telas','ventas','compras']
+    ]);
+
+    $response->assertStatus(200);
+    $contentType = $response->headers->get('content-type');
+    $this->assertStringContainsString('application/json', $contentType);
+
+    $body = json_decode($response->getContent(), true);
+    $this->assertArrayHasKey('productos', $body);
+    $this->assertArrayHasKey('telas', $body);
+    $this->assertArrayHasKey('ventas', $body);
+    $this->assertArrayHasKey('compras', $body);
+});
