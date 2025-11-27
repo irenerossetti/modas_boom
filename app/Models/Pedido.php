@@ -264,6 +264,14 @@ class Pedido extends Model
     }
 
     /**
+     * Relaciones con pagos
+     */
+    public function pagos()
+    {
+        return $this->hasMany(\App\Models\Pago::class, 'id_pedido', 'id_pedido');
+    }
+
+    /**
      * Usuario que reprogramó la entrega
      */
     public function reprogramadoPor()

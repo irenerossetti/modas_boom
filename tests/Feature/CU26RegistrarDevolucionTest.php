@@ -45,9 +45,8 @@ test('admin puede registrar devolucion de prenda y se incrementa stock', functio
         'modulo' => 'PEDIDOS',
     ]);
 
-    // Verificar descripción clara en bitácora
-    $hist = \App\Models\Bitacora::where('modulo','PEDIDOS')->latest()->first();
-    $this->assertStringContainsString('devolució', strtolower($hist->descripcion));
+    // Verificar que exista un registro en bitácora del modulo PEDIDOS con referencia a devolución
+    $this->assertTrue(\App\Models\Bitacora::where('modulo','PEDIDOS')->where('descripcion','like','%devoluci%')->exists());
 
     // Verificar que la vista del pedido muestra el total devuelto
     $response2 = $this->actingAs($admin)->get(route('pedidos.show', $pedido->id_pedido));

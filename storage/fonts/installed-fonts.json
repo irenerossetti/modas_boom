@@ -1,0 +1,8 @@
+{
+    "dejavu sans": {
+        "bold": "C:\\Users\\PG\\Desktop\\Materias\\Sistemas de Informacion 1\\Grupo SC\\proyecto_confeccion\\modas_boom\\vendor\\dompdf\\dompdf\/lib\/fonts\/DejaVuSans-Bold",
+        "bold_italic": "C:\\Users\\PG\\Desktop\\Materias\\Sistemas de Informacion 1\\Grupo SC\\proyecto_confeccion\\modas_boom\\vendor\\dompdf\\dompdf\/lib\/fonts\/DejaVuSans-BoldOblique",
+        "italic": "C:\\Users\\PG\\Desktop\\Materias\\Sistemas de Informacion 1\\Grupo SC\\proyecto_confeccion\\modas_boom\\vendor\\dompdf\\dompdf\/lib\/fonts\/DejaVuSans-Oblique",
+        "normal": "dejavu_sans_normal_4439f1a0fbef5a9e307b59facae1e02a"
+    }
+}

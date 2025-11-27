@@ -59,10 +59,17 @@ class DevolucionController extends Controller
             return redirect()->back()->withInput()->with('error', 'La cantidad de devolución no puede ser mayor a la cantidad vendida en el pedido.');
         }
 
+        // Convertimos la cantidad medida en unidades a docenas para almacenarla
+        $cantidadDocenas = intdiv($request->cantidad, 12);
+        // Si no son exactamente docenas, registrar como una docena parcial redondeada hacia arriba
+        if ($request->cantidad % 12 !== 0) {
+            $cantidadDocenas = (int) ceil($request->cantidad / 12);
+        }
+
         $devolucion = DevolucionPrenda::create([
             'id_pedido' => $pedido->id_pedido,
             'id_prenda' => $request->prenda_id,
-            'cantidad' => $request->cantidad,
+            'cantidad' => $cantidadDocenas,
             'motivo' => $request->motivo,
             'registrado_por' => auth()->id(),
         ]);
@@ -76,7 +83,8 @@ class DevolucionController extends Controller
         }
 
         // Registrar en bitácora (agregar información legible y módulo PEDIDOS para que aparezca en el historial del pedido)
-        $mensaje = auth()->user()->nombre . " registró devolución de {$devolucion->cantidad} unidad" . ($devolucion->cantidad > 1 ? 'es' : '') . " de la prenda '" . ($prenda->nombre ?? 'Desconocida') . "' en el pedido #{$pedido->id_pedido}";
+        // Mensaje que incluye tanto docenas almacenadas como unidades originales para claridad
+        $mensaje = auth()->user()->nombre . " registró devolución de {$devolucion->cantidad} docena" . ($devolucion->cantidad > 1 ? 's' : '') . " ({$request->cantidad} unidades) de la prenda '" . ($prenda->nombre ?? 'Desconocida') . "' en el pedido #{$pedido->id_pedido}";
         $this->bitacoraService->registrarActividad(
             'CREATE',
             'PEDIDOS',

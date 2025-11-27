@@ -252,6 +252,12 @@
                                 @if(Auth::user()->id_rol == 1)
                                     <a href="{{ route('pedidos.devoluciones.create', $pedido->id_pedido) }}?prenda_id={{ $prenda->id }}" class="inline-block mt-2 bg-red-500 hover:bg-red-600 text-black px-3 py-1 rounded text-sm">Registrar Devolución</a>
                                 @endif
+                                @php
+                                    $devueltoPorPrenda = $pedido->devoluciones->where('id_prenda', $prenda->id)->sum('cantidad');
+                                @endphp
+                                @if($devueltoPorPrenda > 0)
+                                    <p class="text-sm text-gray-600 mt-2">Devuelto: {{ $devueltoPorPrenda }} unidades</p>
+                                @endif
                             </div>
                         </div>
                         @endforeach
@@ -269,6 +275,7 @@
                                 <p class="text-2xl font-bold text-black">
                                     {{ $pedido->total_formateado }}
                                 </p>
+                                    <p class="text-sm text-boom-text-medium mt-2">Total pagado: Bs. {{ number_format($pedido->pagos->where('anulado', false)->sum('monto'), 2) }}</p>
                             </div>
                         </div>
                     </div>
@@ -324,9 +331,45 @@
                                 Cambiar Estado
                             </button>
                         @endif
+                        @if(Auth::user()->id_rol == 1)
+                            <a href="{{ route('pedidos.pagos.create', $pedido->id_pedido) }}" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
+                                <i class="fas fa-receipt mr-2"></i>
+                                Registrar Pago
+                            </a>
+                        @endif
                     </div>
                 </div>
                 @endif
+                    <!-- Pagos del pedido -->
+                    @if($pedido->pagos && $pedido->pagos->count() > 0)
+                    <div class="bg-white p-6 rounded-lg shadow mt-6">
+                        <h2 class="text-xl font-semibold text-boom-text-dark mb-4">
+                            Pagos del Pedido
+                        </h2>
+                        <div class="space-y-3 text-sm">
+                            @foreach($pedido->pagos as $pago)
+                                <div class="flex items-center justify-between p-3 border rounded-lg">
+                                    <div>
+                                        <p><strong>Monto:</strong> Bs. {{ number_format($pago->monto, 2) }}</p>
+                                        <p class="text-xs text-gray-600">Registrado: {{ $pago->fecha_pago->format('d/m/Y H:i') }} por {{ $pago->registradoPor->nombre ?? 'Sistema' }}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <a href="{{ route('pagos.recibo', $pago->id) }}" class="text-blue-600 hover:underline mr-3">Recibo</a>
+                                        @if(!$pago->anulado)
+                                            <form action="{{ route('pagos.anular', $pago->id) }}" method="POST" class="inline" onsubmit="return confirm('Confirmar anulación del pago?')">
+                                                @csrf
+                                                <input type="hidden" name="motivo" value="Anulado por admin">
+                                                <button class="text-red-600">Anular</button>
+                                            </form>
+                                        @else
+                                            <span class="text-gray-600">ANULADO</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
             </div>
 
             <!-- Información del Cliente -->

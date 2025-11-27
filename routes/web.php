@@ -75,6 +75,10 @@ if (app()->environment('local')) {
         }
     })->name('debug.dompdf.generate');
 
+    // Debug - stream recibo inline for a given pago (admin only) to visually confirm font rendering
+    Route::get('debug/pagos/{id}/recibo/stream', [App\Http\Controllers\PagoController::class, 'emitirReciboStream'])
+        ->name('debug.pagos.recibo.stream');
+
     // Debug route to check export capabilities and generate PDF/CSV without auth for testing
     Route::get('debug/clientes-export-check', function() {
         try {
@@ -350,6 +354,23 @@ Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
     if (!(config('exports.noauth_enabled', false) === true && app()->environment('local'))) {
         Route::get('clientes/exportar-pdf', [App\Http\Controllers\ClienteController::class, 'exportarPdf'])->name('clientes.exportar-pdf');
     }
+});
+
+// Rutas de pagos
+Route::middleware(['auth', 'user.enabled'])->group(function () {
+    // Admin-only payment routes
+    Route::middleware(['admin.role'])->group(function () {
+        Route::get('pedidos/{id}/pagos/create', [App\Http\Controllers\PagoController::class, 'create'])->name('pedidos.pagos.create');
+        Route::post('pedidos/{id}/pagos', [App\Http\Controllers\PagoController::class, 'store'])->name('pedidos.pagos.store');
+        Route::get('pagos', [App\Http\Controllers\PagoController::class, 'index'])->name('pagos.index');
+        Route::post('pagos/{id}/anular', [App\Http\Controllers\PagoController::class, 'anular'])->name('pagos.anular');
+    });
+
+    // Recibo (puede ser solicitado por cliente o admin si está autenticado)
+    Route::get('pagos/{id}/recibo', [App\Http\Controllers\PagoController::class, 'emitirRecibo'])->name('pagos.recibo');
+
+    // Consulta de pagos del cliente (admin)
+    Route::get('clientes/{id}/pagos', [App\Http\Controllers\PagoController::class, 'clientePagos'])->middleware('admin.role')->name('clientes.pagos');
 });
 
 // Rutas para registrar devoluciones - solo administradores

@@ -35,4 +35,16 @@ class Cliente extends Model
     {
         return $this->hasMany(Pedido::class, 'id_cliente', 'id');
     }
+
+    /**
+     * Compute the current debt of the client.
+     * Deuda = sum(pedidos.total) - sum(pagos.monto where anulado = false)
+     */
+    public function deudaActual(): float
+    {
+        $totalPedidos = $this->pedidos()->sum('total') ?? 0;
+        // Use Pago::anulado(false) scope which is driver-aware for boolean values (Postgres vs SQLite)
+        $totalPagado = \App\Models\Pago::where('id_cliente', $this->id)->anulado(false)->sum('monto') ?? 0;
+        return round($totalPedidos - $totalPagado, 2);
+    }
 }

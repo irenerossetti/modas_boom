@@ -110,7 +110,8 @@ return [
         /**
          * Whether to enable font subsetting or not.
          */
-        'enable_font_subsetting' => false,
+        // Habilitamos subsetting para reducir el tamaño del pdf y permitir embebido correcto
+        'enable_font_subsetting' => true,
 
         /**
          * The PDF rendering backend to use
@@ -179,7 +180,8 @@ return [
          *
          * @var string
          */
-        'default_font' => 'serif',
+        // Usamos DejaVu Sans por su amplio soporte de glyphs/UTF-8
+        'default_font' => 'DejaVu Sans',
 
         /**
          * Image DPI setting

@@ -96,6 +96,7 @@
                             <th class="p-3">CI/NIT</th>
                             <th class="p-3">Email</th>
                             <th class="p-3">Teléfono</th>
+                            <th class="p-3">Deuda</th>
                             <th class="p-3">Acciones</th>
                         </tr>
                     </thead>
@@ -107,6 +108,7 @@
                             <td class="p-3">{{ $cliente->ci_nit }}</td>
                             <td class="p-3">{{ $cliente->email ?? 'N/A' }}</td>
                             <td class="p-3">{{ $cliente->telefono ?? 'N/A' }}</td>
+                            <td class="p-3">Bs. {{ number_format($cliente->deudaActual(), 2) }}</td>
                             <td class="p-3">
                                 <div class="flex flex-wrap gap-2">
                                     <!-- Botón para crear pedido - disponible para todos -->
@@ -124,6 +126,16 @@
                                         <i class="fas fa-history mr-1"></i>
                                         Historial
                                     </a>
+
+                                    <!-- Botón para consultar pagos del cliente -->
+                                    @if(Auth::user()->id_rol == 1)
+                                    <a href="{{ route('clientes.pagos', $cliente->id) }}" 
+                                       class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200"
+                                       title="Consultar pagos del cliente">
+                                        <i class="fas fa-file-invoice-dollar mr-1"></i>
+                                        Pagos
+                                    </a>
+                                    @endif
                                     
                                     @if(Auth::user()->id_rol == 1)
                                         <!-- Botones de administrador -->
@@ -200,6 +212,16 @@
                             Historial
                         </a>
                         
+                        <!-- Botón para consultar pagos del cliente -->
+                        @if(Auth::user()->id_rol == 1)
+                        <a href="{{ route('clientes.pagos', $cliente->id) }}" 
+                           class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 rounded text-sm font-medium transition-colors duration-200 flex items-center"
+                           title="Consultar pagos del cliente">
+                            <i class="fas fa-file-invoice-dollar mr-2"></i>
+                            Pagos
+                        </a>
+                        @endif
+                        
                         @if(Auth::user()->id_rol == 1)
                             <!-- Botones de administrador -->
                             <a href="{{ route('clientes.edit', $cliente) }}" 
@@ -220,6 +242,10 @@
                                 </button>
                             </form>
                         @endif
+                    </div>
+                    <div class="mt-3 text-sm">
+                        <span class="text-xs font-medium text-boom-text-medium uppercase tracking-wide">Deuda</span>
+                        <p class="text-sm font-bold">Bs. {{ number_format($cliente->deudaActual(), 2) }}</p>
                     </div>
                 </div>
                 @empty

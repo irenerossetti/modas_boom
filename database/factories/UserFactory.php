@@ -5,6 +5,7 @@ namespace Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use App\Models\Rol;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
@@ -23,8 +24,16 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        // Asegurarnos que existan los roles básicos en todas las ejecuciones de factory
+        Rol::firstOrCreate(['nombre' => 'Administrador'], ['habilitado' => true]);
+        Rol::firstOrCreate(['nombre' => 'Empleado'], ['habilitado' => true]);
+
         return [
-            'id_rol' => 2, // Asumir rol de usuario normal, ajustar si necesario
+            'id_rol' => function () {
+                // Asegurarnos de tener un rol por defecto 'Empleado' cuando se usan factories
+                $rol = Rol::firstOrCreate(['nombre' => 'Empleado'], ['habilitado' => true]);
+                return $rol->id_rol;
+            },
             'nombre' => fake()->name(),
             'telefono' => fake()->optional()->phoneNumber(),
             'direccion' => fake()->optional()->address(),
