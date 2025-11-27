@@ -373,6 +373,18 @@ Route::middleware(['auth', 'user.enabled'])->group(function () {
     Route::get('clientes/{id}/pagos', [App\Http\Controllers\PagoController::class, 'clientePagos'])->middleware('admin.role')->name('clientes.pagos');
 });
 
+// Rutas para telar y stock - solo administradores
+Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
+    Route::get('telas', [App\Http\Controllers\TelaController::class, 'index'])->name('telas.index');
+    Route::get('telas/create', [App\Http\Controllers\TelaController::class, 'create'])->name('telas.create');
+    Route::post('telas', [App\Http\Controllers\TelaController::class, 'store'])->name('telas.store');
+    Route::get('telas/{id}/edit', [App\Http\Controllers\TelaController::class, 'edit'])->name('telas.edit');
+    Route::put('telas/{id}', [App\Http\Controllers\TelaController::class, 'update'])->name('telas.update');
+    // Consumo tras producción (resta stock)
+    Route::post('telas/{id}/consumir', [App\Http\Controllers\TelaController::class, 'consumir'])->name('telas.consumir');
+});
+
+
 // Rutas para registrar devoluciones - solo administradores
 Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
     Route::get('pedidos/{id}/devoluciones/create', [App\Http\Controllers\DevolucionController::class, 'create'])->name('pedidos.devoluciones.create');

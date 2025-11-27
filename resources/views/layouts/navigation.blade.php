@@ -54,6 +54,9 @@
                             <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('pedidos.index') }}">
                                 <i class="fas fa-shopping-bag mr-2"></i>Gestionar Pedidos
                             </a>
+                            <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('telas.index') }}">
+                                <i class="fas fa-tablet-alt mr-2"></i>Inventario
+                            </a>
                         @elseif(Auth::user()->id_rol == 2) <!-- Empleado -->
                             <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('pedidos.index') }}">
                                 <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
