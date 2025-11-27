@@ -69,7 +69,7 @@
                            placeholder="Ingrese nombre, apellido o CI/NIT...">
                 </div>
                 <div class="flex sm:items-end gap-2">
-                    <button type="submit" class="bg-boom-primary hover:bg-boom-primary-dark text-white font-bold py-2 px-4 rounded flex-1 sm:flex-none">
+                    <button type="submit" class="bg-boom-primary hover:bg-boom-primary-dark text-black font-bold py-2 px-4 rounded flex-1 sm:flex-none">
                         <i class="fas fa-search mr-2 sm:mr-1"></i>
                         <span class="sm:hidden">Buscar</span>
                         <span class="hidden sm:inline">Buscar</span>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Prenda;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class PrendaController extends Controller
 {
@@ -188,5 +189,40 @@ class PrendaController extends Controller
 
         return redirect()->route('prendas.index')
             ->with('success', 'Prenda eliminada exitosamente.');
+    }
+
+    /**
+     * Mostrar ranking de productos más vendidos (CU27)
+     */
+    public function ranking(Request $request)
+    {
+        // Filtrar por fecha opcionalmente
+        $fechaDesde = $request->get('fecha_desde');
+        $fechaHasta = $request->get('fecha_hasta');
+
+        $query = DB::table('pedido_prenda as pp')
+            ->join('pedido as p', 'pp.pedido_id', '=', 'p.id_pedido')
+            ->join('prendas as pr', 'pp.prenda_id', '=', 'pr.id')
+            ->select('pp.prenda_id', 'pr.nombre', 'pr.categoria', DB::raw('SUM(pp.cantidad) as total_vendidos'))
+            ->whereNotIn('p.estado', ['Cancelado']);
+
+        if ($fechaDesde) {
+            $query->whereDate('p.created_at', '>=', $fechaDesde);
+        }
+        if ($fechaHasta) {
+            $query->whereDate('p.created_at', '<=', $fechaHasta);
+        }
+
+        $ranking = $query->groupBy('pp.prenda_id', 'pr.nombre', 'pr.categoria')
+            ->orderByDesc('total_vendidos')
+            ->limit(50)
+            ->get();
+
+        // Ofrecer tanto vista HTML como JSON
+        if ($request->wantsJson()) {
+            return response()->json($ranking);
+        }
+
+        return view('prendas.ranking', compact('ranking'));
     }
 }

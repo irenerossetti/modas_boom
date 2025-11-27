@@ -10,7 +10,7 @@
             </h1>
             <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 lg:space-x-3">
                 @if(Auth::user()->id_rol == 1 || Auth::user()->id_rol == 2)
-                    <a href="{{ route('pedidos.empleado-crear') }}" class="bg-boom-rose-dark hover:bg-boom-rose-light text-white font-bold py-2 px-3 sm:py-3 sm:px-4 lg:px-6 rounded-lg shadow-lg transition-all duration-300 text-sm sm:text-base text-center">
+                    <a href="{{ route('pedidos.empleado-crear') }}" class="bg-boom-rose-dark hover:bg-boom-rose-light text-black font-bold py-2 px-3 sm:py-3 sm:px-4 lg:px-6 rounded-lg shadow-lg transition-all duration-300 text-sm sm:text-base text-center">
                         <i class="fas fa-plus mr-1 sm:mr-2"></i>
                         <span class="hidden sm:inline">Crear Nuevo Pedido</span>
                         <span class="sm:hidden">Nuevo Pedido</span>
@@ -163,7 +163,7 @@
                     <span class="text-sm text-gray-600">({{ $pedidos->total() }} pedidos)</span>
                 </h2>
                 @if(Auth::user()->id_rol == 1 || Auth::user()->id_rol == 2)
-                    <a href="{{ route('pedidos.empleado-crear') }}" class="bg-boom-rose-dark hover:bg-boom-rose-light text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
+                    <a href="{{ route('pedidos.empleado-crear') }}" class="bg-boom-rose-dark hover:bg-boom-rose-light text-black font-semibold py-2 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
                         <i class="fas fa-plus mr-2"></i>
                         Nuevo Pedido
                     </a>

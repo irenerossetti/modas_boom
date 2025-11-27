@@ -241,12 +241,17 @@
                                 </div>
                             </div>
                             <div class="text-right">
-                                <p class="font-bold text-boom-rose-dark">
+                                <p class="font-bold text-black">
                                     Bs. {{ number_format($prenda->pivot->precio_unitario * ($prenda->pivot->cantidad / 12), 2) }}
                                 </p>
                                 <p class="text-sm text-boom-text-medium">
                                     Bs. {{ number_format($prenda->pivot->precio_unitario, 2) }} c/docena
                                 </p>
+                            </div>
+                            <div class="mt-3">
+                                @if(Auth::user()->id_rol == 1)
+                                    <a href="{{ route('pedidos.devoluciones.create', $pedido->id_pedido) }}?prenda_id={{ $prenda->id }}" class="inline-block mt-2 bg-red-500 hover:bg-red-600 text-black px-3 py-1 rounded text-sm">Registrar Devolución</a>
+                                @endif
                             </div>
                         </div>
                         @endforeach
@@ -258,9 +263,10 @@
                             <div class="text-boom-text-medium">
                                 <p><strong>Total de productos:</strong> {{ $pedido->prendas->count() }}</p>
                                 <p><strong>Total de unidades:</strong> {{ $pedido->prendas->sum('pivot.cantidad') }}</p>
+                                    <p><strong>Total devuelto:</strong> {{ $pedido->devoluciones->sum('cantidad') }} unidades</p>
                             </div>
                             <div class="text-right">
-                                <p class="text-2xl font-bold text-boom-rose-dark">
+                                <p class="text-2xl font-bold text-black">
                                     {{ $pedido->total_formateado }}
                                 </p>
                             </div>

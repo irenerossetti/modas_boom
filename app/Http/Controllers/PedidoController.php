@@ -228,7 +228,8 @@ class PedidoController extends Controller
      */
     public function show(string $id)
     {
-        $pedido = Pedido::with(['cliente', 'prendas'])->findOrFail($id);
+        // Cargar devoluciones para mostrar conteos y detalles en la vista
+        $pedido = Pedido::with(['cliente', 'prendas', 'devoluciones.prenda', 'devoluciones.registradoPor'])->findOrFail($id);
 
         // Registrar visualización
         $this->bitacoraService->registrarActividad(

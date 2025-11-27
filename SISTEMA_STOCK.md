@@ -16,6 +16,7 @@ El sistema de control de stock se implementó para gestionar automáticamente el
 - ✅ **Al cancelar pedido**: Stock se restaura automáticamente
 - ✅ **Al cambiar estado a "Cancelado"**: Stock se restaura
 - ✅ **Al reactivar pedido cancelado**: Stock se descuenta nuevamente
+ - ✅ **Al registrar una devolución (CU26)**: Stock se restaurará automáticamente según la cantidad devuelta y la causa quedará registrada.
 
 ### **3. Validaciones de Stock**
 - ✅ **Verificación en tiempo real**: AJAX para verificar stock antes de enviar

@@ -86,6 +86,12 @@ php artisan cache:clear
 - [ ] Descuentos y promociones
 - [ ] Productos relacionados
 
+## 🔄 Cambios realizados - Nuevas CU implementadas
+
+- **CU26 – Registrar Devolución de Prenda (admin)**: Se agregó la tabla `devolucion_prenda`, modelo `DevolucionPrenda`, controlador `DevolucionController`, vistas de `index`, `create` y `show` y las rutas correspondientes. Al registrar una devolución, se actualiza el stock de la prenda y se registra la acción en la bitácora.
+- **CU27 – Visualizar Ranking de Productos Más Vendidos (admin/cliente)**: Se agregó acción `ranking` en `PrendaController`, la ruta `prendas/ranking` y la vista `prendas/ranking` que muestra los productos ordenados por unidades vendidas (con opción de filtro por fecha).
+
+
 ---
 
 **¡Importante!** Este cambio es **retrocompatible** y **no afecta** funcionalidades existentes. Solo mejora la consistencia y mantenibilidad del sistema.

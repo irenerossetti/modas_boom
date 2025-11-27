@@ -5,14 +5,19 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
-                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center justify-between mb-6">
                         <div>
                             <h2 class="text-2xl font-bold text-boom-text-dark">Gestión de Prendas</h2>
                             <p class="text-sm text-boom-text-medium mt-1">Administra el catálogo de productos</p>
                         </div>
-                        <a href="{{ route('prendas.create') }}" class="bg-boom-rose-dark hover:bg-boom-rose-light text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                        <div class="flex gap-2">
+                            <a href="{{ route('prendas.ranking') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                                <i class="fas fa-chart-bar mr-2"></i>Ranking de Ventas
+                            </a>
+                            <a href="{{ route('prendas.create') }}" class="bg-boom-rose-dark hover:bg-boom-rose-light text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
                             <i class="fas fa-plus mr-2"></i>Nueva Prenda
-                        </a>
+                            </a>
+                        </div>
                     </div>
 
                     @if(session('success'))

@@ -256,6 +256,14 @@ class Pedido extends Model
     }
 
     /**
+     * Relación con las devoluciones de prendas del pedido
+     */
+    public function devoluciones()
+    {
+        return $this->hasMany(\App\Models\DevolucionPrenda::class, 'id_pedido', 'id_pedido');
+    }
+
+    /**
      * Usuario que reprogramó la entrega
      */
     public function reprogramadoPor()

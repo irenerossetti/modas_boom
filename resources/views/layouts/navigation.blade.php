@@ -101,6 +101,11 @@
                                 <i class="fas fa-plus mr-2"></i>🛍️ Hacer Pedido
                             </a>
                         @endif
+
+                        <div class="border-t border-boom-cream-300 my-1"></div>
+                        <a class="block w-full px-4 py-2 text-start text-sm leading-5 text-boom-text-dark hover:bg-boom-rose-light focus:outline-none focus:bg-boom-rose-light transition duration-150 ease-in-out" href="{{ route('prendas.ranking') }}">
+                            <i class="fas fa-chart-bar mr-2"></i>Ranking de Ventas
+                        </a>
                     </x-slot>
                 </x-dropdown>
             </div>

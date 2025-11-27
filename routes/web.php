@@ -298,6 +298,8 @@ Route::middleware(['auth', 'user.enabled'])->group(function () {
     
     // Ruta del catálogo de productos
     Route::get('catalogo', [CatalogoController::class, 'index'])->name('catalogo.index');
+    // Ranking de productos más vendidos para usuarios autenticados (clientes/empleados/admin)
+    Route::get('prendas/ranking', [App\Http\Controllers\PrendaController::class, 'ranking'])->name('prendas.ranking');
     
     // Rutas de solo lectura para empleados
     Route::get('roles', [RolController::class, 'index'])->name('roles.index.readonly');
@@ -323,6 +325,8 @@ Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
     Route::resource('users', UserController::class);
     Route::resource('roles', RolController::class);
     Route::resource('prendas', PrendaController::class);
+
+    // (Ranking route registered under auth middleware above) 
     
     // Rutas de bitácora - solo para administradores
     Route::get('bitacora', [BitacoraController::class, 'index'])->name('bitacora.index');
@@ -346,6 +350,14 @@ Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
     if (!(config('exports.noauth_enabled', false) === true && app()->environment('local'))) {
         Route::get('clientes/exportar-pdf', [App\Http\Controllers\ClienteController::class, 'exportarPdf'])->name('clientes.exportar-pdf');
     }
+});
+
+// Rutas para registrar devoluciones - solo administradores
+Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
+    Route::get('pedidos/{id}/devoluciones/create', [App\Http\Controllers\DevolucionController::class, 'create'])->name('pedidos.devoluciones.create');
+    Route::post('pedidos/{id}/devoluciones', [App\Http\Controllers\DevolucionController::class, 'store'])->name('pedidos.devoluciones.store');
+    Route::get('devoluciones', [App\Http\Controllers\DevolucionController::class, 'index'])->name('devoluciones.index');
+    Route::get('devoluciones/{id}', [App\Http\Controllers\DevolucionController::class, 'show'])->name('devoluciones.show');
 });
 
 // Ruta de dashboard para empleados - redirige a pedidos
