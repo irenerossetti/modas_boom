@@ -14,6 +14,7 @@ use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Carbon\Carbon;
 
 class PedidoController extends Controller
 {
@@ -112,6 +113,14 @@ class PedidoController extends Controller
             'Usuario accedió a la lista de pedidos'
         );
 
+        try {
+            $this->whatsAppService->enviarConfirmacionPedido($pedido);
+            if ($pedido->fecha_entrega_programada) {
+                $this->whatsAppService->enviarNotificacionEntregaProgramada($pedido, null, Carbon::parse($pedido->fecha_entrega_programada));
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error enviando confirmación por WhatsApp en empleadoStore(): ' . $e->getMessage());
+        }
         return view('pedidos.index', compact('pedidos', 'clientes', 'estados', 'filtros'));
     }
 
@@ -165,6 +174,16 @@ class PedidoController extends Controller
             $pedido->toArray()
         );
 
+        // Enviar confirmación por WhatsApp
+        try {
+            $this->whatsAppService->enviarConfirmacionPedido($pedido);
+            if ($pedido->fecha_entrega_programada) {
+                $this->whatsAppService->enviarNotificacionEntregaProgramada($pedido, null, Carbon::parse($pedido->fecha_entrega_programada));
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error enviando confirmación por WhatsApp en store(): ' . $e->getMessage());
+        }
+
         return redirect()->route('pedidos.index')
             ->with('success', "Pedido #{$pedido->id_pedido} creado exitosamente.");
     }
@@ -208,6 +227,12 @@ class PedidoController extends Controller
                 'origen' => 'catalogo'
             ])
         );
+
+        try {
+            $this->whatsAppService->enviarConfirmacionPedido($pedido);
+        } catch (\Exception $e) {
+            \Log::error('Error enviando confirmación por WhatsApp en createFromCatalog(): ' . $e->getMessage());
+        }
 
         return redirect()->route('catalogo.pedido-confirmado', $pedido->id_pedido)
             ->with('success', "¡Pedido #{$pedido->id_pedido} creado exitosamente!");
@@ -278,7 +303,6 @@ class PedidoController extends Controller
             'id_cliente' => 'required|integer|exists:clientes,id',
             'estado' => 'required|string|in:En proceso,Asignado,En producción,Terminado,Entregado,Cancelado',
             'total' => 'nullable|numeric|min:0',
-            'fecha_entrega_programada' => 'nullable|date|after:today',
         ]);
 
         $datosAnteriores = $pedido->toArray();
@@ -346,6 +370,38 @@ class PedidoController extends Controller
             $datosAnteriores,
             $pedido->fresh()->toArray()
         );
+
+        // Notificar al cliente por WhatsApp acerca de la reprogramación
+        try {
+            $this->whatsAppService->enviarNotificacionEntregaProgramada($pedido, $fechaAnterior ? \Carbon\Carbon::parse($fechaAnterior) : null, \Carbon\Carbon::parse($request->nueva_fecha_entrega), $request->motivo_reprogramacion);
+        } catch (\Exception $e) {
+            \Log::error('Error enviando notificación de reprogramación por WhatsApp: ' . $e->getMessage());
+        }
+
+        // Enviar notificaciones por WhatsApp si hubo cambio de estado
+        if ($estadoAnterior !== $nuevoEstado) {
+            try {
+                if ($nuevoEstado === 'Terminado') {
+                    $this->whatsAppService->enviarNotificacionTerminado($pedido);
+                } elseif ($nuevoEstado === 'Entregado') {
+                    $this->whatsAppService->enviarNotificacionEntregado($pedido);
+                } else {
+                    $this->whatsAppService->enviarNotificacionEstado($pedido, $nuevoEstado);
+                }
+
+                // Notificar si se estableció o cambió fecha de entrega
+                if ($request->has('fecha_entrega_programada') && $request->fecha_entrega_programada) {
+                    $fechaAnterior = $datosAnteriores['fecha_entrega_programada'] ?? null;
+                    $fechaNueva = $pedido->fecha_entrega_programada;
+                    if (!$fechaAnterior || $fechaAnterior != $fechaNueva) {
+                        $this->whatsAppService->enviarNotificacionEntregaProgramada($pedido, $fechaAnterior ? Carbon::parse($fechaAnterior) : null, Carbon::parse($fechaNueva));
+                    }
+                }
+
+            } catch (\Exception $e) {
+                \Log::error('Error enviando notificación por WhatsApp en update(): ' . $e->getMessage());
+            }
+        }
 
         $successMessage = "Pedido #{$pedido->id_pedido} actualizado exitosamente.";
         if ($estadoAnterior !== $nuevoEstado) {
@@ -441,6 +497,13 @@ class PedidoController extends Controller
             $datosAnteriores,
             array_merge($pedido->fresh()->toArray(), ['operario_asignado' => $operario->nombre])
         );
+
+        // Enviar notificación por WhatsApp sobre la asignación
+        try {
+            $this->whatsAppService->enviarNotificacionEstado($pedido, 'Asignado');
+        } catch (\Exception $e) {
+            \Log::error('Error enviando notificación por WhatsApp en asignar(): ' . $e->getMessage());
+        }
 
         return redirect()->route('pedidos.index')
             ->with('success', "Pedido #{$pedido->id_pedido} asignado a {$operario->nombre} exitosamente.");
@@ -678,6 +741,17 @@ class PedidoController extends Controller
                 'tipo_usuario' => $tipoUsuario
             ])
         );
+
+        // Enviar notificación por WhatsApp con confirmación completa y listado de productos
+        try {
+            $pedido = $pedido->fresh();
+            $this->whatsAppService->enviarConfirmacionPedido($pedido);
+            if ($pedido->fecha_entrega_programada) {
+                $this->whatsAppService->enviarNotificacionEntregaProgramada($pedido, null, Carbon::parse($pedido->fecha_entrega_programada));
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error enviando confirmación por WhatsApp en clienteStore(): ' . $e->getMessage());
+        }
 
         return redirect()->route('pedidos.mis-pedidos')
             ->with('success', "¡Pedido #{$pedido->id_pedido} creado exitosamente! Stock actualizado automáticamente. Te contactaremos pronto para confirmar los detalles.");
@@ -1138,6 +1212,13 @@ class PedidoController extends Controller
             $avance->toArray()
         );
 
+        // Enviar notificación por WhatsApp con el avance (porcentaje)
+        try {
+            $this->whatsAppService->enviarNotificacionEstado($pedido->fresh(), 'En producción', $request->porcentaje_avance);
+        } catch (\Exception $e) {
+            \Log::error('Error enviando notificación de avance por WhatsApp: ' . $e->getMessage());
+        }
+
         return redirect()->route('pedidos.show', $pedido->id_pedido)
             ->with('success', "Avance de {$request->etapa} registrado exitosamente ({$request->porcentaje_avance}%)");
     }
@@ -1316,6 +1397,19 @@ class PedidoController extends Controller
             $mensaje .= " Notificación enviada por email a " . $resultadoEmail['email'];
         } else {
             $mensaje .= " Advertencia: No se pudo enviar la notificación por email - " . $resultadoEmail['message'];
+        }
+
+        // Enviar notificación por WhatsApp (intentar siempre)
+        try {
+            if ($estadoNuevo === 'Terminado') {
+                $this->whatsAppService->enviarNotificacionTerminado($pedido);
+            } elseif ($estadoNuevo === 'Entregado') {
+                $this->whatsAppService->enviarNotificacionEntregado($pedido);
+            } else {
+                $this->whatsAppService->enviarNotificacionEstado($pedido, $estadoNuevo);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error enviando notificación por WhatsApp en cambiarEstadoConNotificacion(): ' . $e->getMessage());
         }
 
         return redirect()->route('pedidos.show', $pedido->id_pedido)

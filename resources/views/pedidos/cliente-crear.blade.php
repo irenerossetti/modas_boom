@@ -287,7 +287,7 @@
                                 <div class="border-t border-boom-cream-300 mt-4 pt-4">
                                     <div class="flex justify-between items-center">
                                         <span class="font-semibold text-boom-text-dark">Total del Pedido:</span>
-                                        <span class="text-xl font-bold text-boom-rose-dark" id="total-carrito">Bs. 0.00</span>
+                                        <span class="text-xl font-bold text-black" id="total-carrito">Bs. 0.00</span>
                                     </div>
                                 </div>
                             </div>
@@ -367,7 +367,7 @@
                                 Cancelar
                             </a>
                             <button type="submit" id="btn-crear-pedido" disabled
-                                    class="bg-boom-rose-dark hover:bg-boom-rose-light text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    class="bg-boom-rose-dark hover:bg-boom-rose-light text-black font-semibold py-2 px-6 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
                                 Crear Pedido
                             </button>
                         </div>

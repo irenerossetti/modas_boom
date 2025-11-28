@@ -6,15 +6,18 @@ use App\Models\DevolucionPrenda;
 use App\Models\Pedido;
 use App\Models\Prenda;
 use App\Services\BitacoraService;
+use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 
 class DevolucionController extends Controller
 {
     protected $bitacoraService;
+    protected $whatsAppService;
 
-    public function __construct(BitacoraService $bitacoraService)
+    public function __construct(BitacoraService $bitacoraService, WhatsAppService $whatsAppService)
     {
         $this->bitacoraService = $bitacoraService;
+        $this->whatsAppService = $whatsAppService;
     }
 
     /**
@@ -92,6 +95,13 @@ class DevolucionController extends Controller
             null,
             array_merge($devolucion->toArray(), ['prenda_nombre' => $prenda->nombre ?? null, 'pedido_id' => $pedido->id_pedido])
         );
+
+        // Enviar notificación por WhatsApp al cliente sobre la devolución
+        try {
+            $this->whatsAppService->enviarNotificacionDevolucion($pedido, $prenda, $request->cantidad, $request->motivo ?? null);
+        } catch (\Exception $e) {
+            \Log::error('Error enviando notificación de devolución por WhatsApp: ' . $e->getMessage());
+        }
 
         return redirect()->route('pedidos.show', $pedido->id_pedido)->with('success', 'La devolución ha sido registrada correctamente.');
     }

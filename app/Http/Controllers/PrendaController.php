@@ -6,6 +6,7 @@ use App\Models\Prenda;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PrendaController extends Controller
 {
@@ -62,7 +63,7 @@ class PrendaController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'precio' => 'required|numeric|min:0',
@@ -76,7 +77,8 @@ class PrendaController extends Controller
             'activo' => 'boolean'
         ]);
 
-        $data = $request->all();
+        // Use the validated data only (exclude _token/_method and any other unexpected fields)
+        $data = $validated;
         
         // Procesar imagen si se subió
         if ($request->hasFile('imagen')) {
@@ -93,10 +95,33 @@ class PrendaController extends Controller
             });
         }
 
-        // Asegurar que activo sea boolean
-        $data['activo'] = $request->has('activo');
+        // Asegurar que activo sea booleano para almacenar correctamente en DB
+        $data['activo'] = $request->boolean('activo');
 
-        Prenda::create($data);
+        // Convertir campos JSON a string para insert con query builder (Postgres)
+        $insertData = $data;
+        if (isset($insertData['colores']) && is_array($insertData['colores'])) {
+            $insertData['colores'] = json_encode(array_values($insertData['colores']));
+        }
+        if (isset($insertData['tallas']) && is_array($insertData['tallas'])) {
+            $insertData['tallas'] = json_encode(array_values($insertData['tallas']));
+        }
+
+        // More robust driver check (in case driver name appears differently) and use DB::table
+        if (Str::contains(strtolower(DB::connection()->getDriverName()), 'pg')) {
+            // Use literal boolean expression for PG
+            $insertData['activo'] = DB::raw($insertData['activo'] ? 'true' : 'false');
+            $insertData['created_at'] = now();
+            $insertData['updated_at'] = now();
+
+            // Prevent unexpected fields (e.g. _token, _method) from being passed to DB::table
+            $allowedColumns = array_merge((new Prenda())->getFillable(), ['created_at', 'updated_at']);
+            $insertData = array_intersect_key($insertData, array_flip($allowedColumns));
+
+            DB::table('prendas')->insert($insertData);
+        } else {
+            Prenda::create($data);
+        }
 
         // Limpiar cache
         Cache::forget('productos_catalogo_db');
@@ -126,7 +151,7 @@ class PrendaController extends Controller
      */
     public function update(Request $request, Prenda $prenda)
     {
-        $request->validate([
+        $validated = $request->validate([
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'precio' => 'required|numeric|min:0',
@@ -140,7 +165,8 @@ class PrendaController extends Controller
             'activo' => 'boolean'
         ]);
 
-        $data = $request->all();
+        // Use the validated data only (exclude _token/_method and any other unexpected fields)
+        $data = $validated;
         
         // Procesar imagen si se subió una nueva
         if ($request->hasFile('imagen')) {
@@ -165,10 +191,30 @@ class PrendaController extends Controller
             });
         }
 
-        // Asegurar que activo sea boolean
-        $data['activo'] = $request->has('activo');
+        // Asegurar que activo sea booleano para almacenar correctamente en DB
+        $data['activo'] = $request->boolean('activo');
 
-        $prenda->update($data);
+        // Preparar actualización para Postgres con DB::raw y encoding JSON
+        $updateData = $data;
+        if (isset($updateData['colores']) && is_array($updateData['colores'])) {
+            $updateData['colores'] = json_encode(array_values($updateData['colores']));
+        }
+        if (isset($updateData['tallas']) && is_array($updateData['tallas'])) {
+            $updateData['tallas'] = json_encode(array_values($updateData['tallas']));
+        }
+
+        if (Str::contains(strtolower(DB::connection()->getDriverName()), 'pg')) {
+            $updateData['activo'] = DB::raw($updateData['activo'] ? 'true' : 'false');
+            $updateData['updated_at'] = now();
+
+            // Prevent unexpected fields (e.g. _token, _method) from being passed to DB::table
+            $allowedColumns = array_merge((new Prenda())->getFillable(), ['updated_at']);
+            $updateData = array_intersect_key($updateData, array_flip($allowedColumns));
+
+            DB::table('prendas')->where('id', $prenda->id)->update($updateData);
+        } else {
+            $prenda->update($data);
+        }
 
         // Limpiar cache
         Cache::forget('productos_catalogo_db');

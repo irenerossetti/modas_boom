@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\DB;
 
 class Prenda extends Model
 {
@@ -29,6 +30,46 @@ class Prenda extends Model
         'activo' => 'boolean',
         'stock' => 'integer'
     ];
+
+    /**
+     * Boot model to normalize 'activo' for Postgres during saving.
+     */
+    protected static function booted()
+    {
+        static::saving(function ($model) {
+            try {
+                if (DB::connection()->getDriverName() === 'pgsql' && array_key_exists('activo', $model->attributes)) {
+                    // Use textual boolean literal to avoid driver binding booleans as integers
+                    $model->attributes['activo'] = $model->attributes['activo'] ? 'true' : 'false';
+                }
+            } catch (\Exception $e) {
+                // If DB not available (e.g., in some test setups), keep original value
+            }
+        });
+    }
+
+    /**
+     * Mutator to normalize the 'activo' attribute before DB operations.
+     * Postgres rejects integer literals compared to boolean columns ("activo" = 1).
+     * Ensure we always store as text 'true'/'false' so it's castable to boolean in SQL.
+     */
+    public function setActivoAttribute($value)
+    {
+        // Normalize to actual boolean so DB stores booleans (or numeric 0/1 for Sqlite).
+        if (is_bool($value)) {
+            $this->attributes['activo'] = $value;
+            return;
+        }
+
+        if (is_int($value)) {
+            $this->attributes['activo'] = $value === 1;
+            return;
+        }
+
+        // For strings / other values, use PHP filter_var to parse boolean-like strings
+        $bool = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        $this->attributes['activo'] = (bool)$bool;
+    }
 
     /**
      * Scope para prendas activas

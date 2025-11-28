@@ -174,7 +174,7 @@
 
                                 <div>
                                     <label class="flex items-center">
-                                        <input type="checkbox" name="activo" value="1" {{ old('activo', $prenda->activo) ? 'checked' : '' }}
+                                        <input type="checkbox" name="activo" value="1" {{ (bool) old('activo', $prenda->activo) ? 'checked' : '' }}
                                                class="rounded border-boom-cream-300 text-boom-rose-dark shadow-sm focus:border-boom-rose-dark focus:ring focus:ring-boom-rose-light focus:ring-opacity-50">
                                         <span class="ml-2 text-sm font-medium text-boom-text-dark">Prenda activa</span>
                                     </label>
@@ -189,7 +189,7 @@
                                 Cancelar
                             </a>
                             <button type="submit" 
-                                    class="bg-boom-rose-dark hover:bg-boom-rose-light text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-300">
+                                    class="bg-boom-rose-dark hover:bg-boom-rose-light text-black font-semibold py-2 px-6 rounded-lg transition-colors duration-300">
                                 <i class="fas fa-save mr-2"></i>Actualizar Prenda
                             </button>
                         </div>
