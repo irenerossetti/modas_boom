@@ -397,4 +397,62 @@ class ClienteController extends Controller
         return redirect()->route('clientes.index')
                          ->with('success', 'Cliente eliminado exitosamente.');
     }
+
+    /**
+     * Return a JSON map of clients keyed by phone number (digits only) for AJAX lookup.
+     * Only available to admin users by default (rir route protected by admin middleware).
+     */
+    public function json(Request $request)
+    {
+        $clientes = Cliente::all(['id', 'nombre', 'apellido', 'telefono']);
+        $map = [];
+        foreach ($clientes as $c) {
+            if (!$c->telefono) continue;
+            $phone = preg_replace('/[^0-9]/', '', $c->telefono);
+            if (!$phone) continue;
+            // Create both normalized forms: without country code and with country code (591)
+            $without591 = preg_replace('/^591/', '', $phone);
+            $with591 = preg_replace('/^/', '591', $without591);
+            // Ensure both forms are valid digits-only
+            $entry = [
+                'id' => $c->id,
+                'nombre_completo' => trim(($c->nombre ?? '') . ' ' . ($c->apellido ?? '')),
+                'telefono' => $phone,
+            ];
+            $map[$without591] = $entry;
+            $map[$with591] = $entry;
+        }
+        return response()->json($map);
+    }
+
+    /**
+     * Return JSON map with only the current authenticated client (if any).
+     * This is used by non-admin UIs to personalize chat names without exposing all clients.
+     */
+    public function infoJson(Request $request)
+    {
+        $user = auth()->user();
+        if (!$user) return response()->json([]);
+        // Try to find a Cliente associated with the current user; fallback to user.telefono
+        $cliente = Cliente::where('id_usuario', $user->id_usuario)->first();
+        $phoneRaw = $cliente ? ($cliente->telefono ?? null) : ($user->telefono ?? null);
+        $phone = preg_replace('/[^0-9]/', '', $phoneRaw ?? '');
+        if (!$phone) return response()->json([]);
+        $nombre = trim(($cliente->nombre ?? $user->nombre ?? '') . ' ' . ($cliente->apellido ?? $user->apellido ?? '')) ?: ($user->email ?? null);
+        // Add both keys (with and without 591 prefix) for robustness
+        $without591 = preg_replace('/^591/', '', $phone);
+        $with591 = preg_replace('/^/', '591', $without591);
+        return response()->json([
+            $without591 => [
+                'id' => $cliente ? $cliente->id : null,
+                'nombre_completo' => $nombre,
+                'telefono' => $phone,
+            ],
+            $with591 => [
+                'id' => $cliente ? $cliente->id : null,
+                'nombre_completo' => $nombre,
+                'telefono' => $phone,
+            ],
+        ]);
+    }
 }

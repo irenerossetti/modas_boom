@@ -50,7 +50,8 @@ class UserController extends Controller
             'direccion' => $request->direccion,
             'email' => $request->email,
             'password' => bcrypt($request->password),
-            'habilitado' => $request->boolean('habilitado'),
+            // Ensure we store Postgres-friendly boolean literals (true/false)
+            'habilitado' => $request->boolean('habilitado') ? 'true' : 'false',
         ]);
 
         // Si el rol es Cliente (id_rol = 3), crear cliente automáticamente
@@ -111,7 +112,8 @@ class UserController extends Controller
             'telefono' => $request->telefono,
             'direccion' => $request->direccion,
             'email' => $request->email,
-            'habilitado' => $request->boolean('habilitado'),
+            // Use Postgres boolean literals to avoid datatype-mismatch errors
+            'habilitado' => $request->boolean('habilitado') ? 'true' : 'false',
         ];
 
         if ($request->filled('password')) {

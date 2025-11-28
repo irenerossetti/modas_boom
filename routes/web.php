@@ -243,6 +243,8 @@ Route::middleware(['auth', 'user.enabled'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('clientes', [ClienteController::class, 'index'])->name('clientes.index');
+    // Endpoint for clients to expose their own info for chat name resolution
+    Route::get('clientes/info/json', [ClienteController::class, 'infoJson'])->name('clientes.info.json');
     
     // Rutas de pedidos para empleados y administradores
     Route::resource('pedidos', PedidoController::class);
@@ -412,6 +414,8 @@ Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
         Route::post('block', [App\Http\Controllers\NotificationProxyController::class, 'block']);
         // Route removed: reject-call handled by the notifications layer (Baileys) by default. Not exposing an endpoint.
     });
+    // JSON map to lookup clients by phone (admin-only)
+    Route::get('admin/clientes/json', [App\Http\Controllers\ClienteController::class, 'json'])->name('clientes.json');
 });
 
 

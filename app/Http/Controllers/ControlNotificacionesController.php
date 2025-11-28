@@ -13,6 +13,13 @@ class ControlNotificacionesController extends Controller
         $urlbase = url('/admin/notificaciones');
         // Pass the external socket URL to the view so the client can connect directly to the Node service
         $socketUrl = env('NOTIFICATIONS_SOCKET_URL', env('NOTIFICATIONS_URL_BASE', 'http://localhost:3000'));
-        return view('control_notificaciones.index', compact('urlbase', 'socketUrl'));
+        $authPhone = null;
+        $authName = null;
+        if (auth()->check()) {
+            $u = auth()->user();
+            $authPhone = preg_replace('/[^0-9]/', '', $u->telefono ?? '');
+            $authName = trim(($u->nombre ?? '') . ' ' . ($u->apellido ?? '')) ?: ($u->email ?? null);
+        }
+        return view('control_notificaciones.index', compact('urlbase', 'socketUrl', 'authPhone', 'authName'));
     }
 }

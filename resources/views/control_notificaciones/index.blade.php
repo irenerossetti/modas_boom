@@ -60,7 +60,10 @@
         <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 col-span-1 flex flex-col h-[600px]">
             <h2 class="font-bold text-lg text-gray-800 mb-4 flex items-center gap-2 justify-between">
                 <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                Chats
+                <div class="flex items-center gap-2">
+                    <span>Chats</span>
+                    <span id="chatsCount" class="text-xs text-gray-500">0 chats</span>
+                </div>
             </h2>
             <div class="flex items-center gap-2 mb-2">
                 <span class="text-sm text-gray-500">Mostrar:</span>
@@ -155,7 +158,8 @@ if (!urlbase) {
 }
 
     function apiFetch(endpoint, opts = {}){
-    const base = urlbase || '';
+    // If opts.skipBase is true, don't prepend the socket urlbase (use absolute app path)
+    const base = (opts && opts.skipBase) ? '' : (urlbase || '');
     const url = base + endpoint;
     const csrfMeta = document.querySelector('meta[name="csrf-token"]');
     const csrf = csrfMeta ? csrfMeta.getAttribute('content') : null;
@@ -457,6 +461,79 @@ if (chatFilterActiveBtn) chatFilterActiveBtn.addEventListener('click', () => { s
 
 // Default to all chats
 setChatFilter(false);
+
+// Load mapping from system clients (phone -> registered name). This helps show customer name instead of raw phone.
+let clientsMap = {};
+// Also expose the map on window so the console can inspect it (debug-friendly)
+try { window.clientsMap = clientsMap; } catch(e) {}
+// Normalized lookup function to attempt multiple formats and suffix matching
+function lookupClient(phone) {
+    if (!phone) return null;
+    // normalize digits-only for robust matching (handle JIDs with '-1234' suffix)
+    const normalized = ('' + phone).replace(/\D/g, '');
+    if (!normalized) return null;
+    if (clientsMap[normalized]) return clientsMap[normalized];
+    // try without leading country code (591)
+    const without591 = normalized.replace(/^591/, '');
+    if (clientsMap[without591]) return clientsMap[without591];
+    const with591 = '591' + without591;
+    if (clientsMap[with591]) return clientsMap[with591];
+    // fallback: match by suffix to handle weird formatting
+    for (const k in clientsMap) {
+        if (!k) continue;
+        if (k.endsWith(normalized) || normalized.endsWith(k)) return clientsMap[k];
+    }
+    return null;
+}
+// expose lookupClient for console debugging
+try { window.lookupClient = lookupClient; } catch(e) {}
+const authPhone = @json($authPhone ?? null);
+const authName = @json($authName ?? null);
+async function loadClientsMap(){
+    try {
+        // First try admin endpoint (full clients map) if current user has permissions
+        const res = await apiFetch('/admin/clientes/json', { skipBase: true });
+        if (res && typeof res === 'object' && Object.keys(res).length > 0) {
+            clientsMap = res;
+            console.log('Loaded admin clients map with', Object.keys(res).length, 'entries');
+            try { window.clientsMap = clientsMap; } catch(e) {}
+            return;
+        }
+    } catch (e) {
+        // If this fails, it's probably because the current user is not an admin
+        console.warn('Admin clients map not available (not admin?), trying personal client info...', e);
+    }
+
+    try {
+        // Fallback: fetch only the current user's client info (safe for non-admins)
+        const res2 = await apiFetch('/clientes/info/json', { skipBase: true });
+        if (res2 && typeof res2 === 'object' && Object.keys(res2).length > 0) {
+            clientsMap = res2;
+            console.log('Loaded personal client info for chat resolution');
+            try { window.clientsMap = clientsMap; } catch(e) {}
+            return;
+        }
+    } catch (e) {
+        console.warn('Could not load personal client mapping', e);
+    }
+    // If both attempts failed, clientsMap remains empty
+    // If we have the authenticated user's phone, ensure it's in the clients map so the UI shows the name
+    try {
+        if (authPhone) {
+            const normalizedAuth = ('' + authPhone).replace(/\D/g, '');
+            if (!clientsMap[normalizedAuth]) {
+                clientsMap[normalizedAuth] = { id: null, nombre_completo: (authName || authPhone), telefono: normalizedAuth };
+                // also add version with 591 prefix
+                clientsMap['591' + normalizedAuth] = clientsMap[normalizedAuth];
+                console.log('Inserted authPhone into clientsMap for display:', normalizedAuth);
+                try { window.clientsMap = clientsMap; } catch(e) {}
+            }
+        }
+    } catch (e) { console.warn('Error applying authPhone fallback to clientsMap', e); }
+}
+
+// Try to populate clients map before loading chats
+loadClientsMap();
 try { if (document.getElementById('btnDeleteChat')) document.getElementById('btnDeleteChat').disabled = true; } catch(e) {}
 // Disable the delete chat button initially
 try { if (document.getElementById('btnDeleteChat')) document.getElementById('btnDeleteChat').disabled = true; } catch(e) {}
@@ -514,7 +591,12 @@ async function loadChats(onlyActive = chatFilterOnlyActive){
         const t = document.getElementById('chat-item-template').content.cloneNode(true);
         const root = t.querySelector('.chat-item');
         const jidVal = (c && (c.jid || c.id)) || (typeof c === 'string' ? c : null);
-        const pretty = (c && (c.name || c.pushName || c.contactName)) || jidVal;
+        const phoneFromJid = jidVal && jidVal.includes('@') ? jidVal.split('@')[0] : jidVal;
+        // normalize digits-only (strip hyphen suffixes etc.)
+        const phoneNormalized = phoneFromJid ? (('' + phoneFromJid).replace(/\D/g, '')) : null;
+        // Try to find a client entry in clientsMap with multiple normalization fallbacks
+        const cliente = lookupClient(phoneNormalized || phoneFromJid);
+        const pretty = cliente ? (cliente.nombre_completo || phoneFromJid) : ((c && (c.name || c.pushName || c.contactName)) || phoneFromJid);
         t.querySelector('.chat-jid').innerText = pretty || (typeof c === 'object' ? JSON.stringify(c).slice(0,80) : (c || ''));
         const lastPreview = (c && (c.last_message_preview || c.lastMessage || c.last_message)) || '';
         const unreadCount = (c && c.unread) ? c.unread : 0;
@@ -530,7 +612,7 @@ async function loadChats(onlyActive = chatFilterOnlyActive){
                 ev.stopPropagation();
                 const jid = jidVal || c.jid || c.id || c;
                 const confirmed = await showModal({ title: 'Eliminar chat', body: '¿Está seguro de eliminar este chat? Esta acción borra carpeta y mensajes.' });
-                if (!confirmed) { showToast('info','Acción cancelada'); return; }
+                    if (!confirmed) { showToast('info','Acción cancelada'); return; }
                 try {
                     setLoading(delBtn, true, 'Eliminando');
                     const res = await apiFetch('/chats/' + encodeURIComponent(jid), { method: 'DELETE' });
@@ -559,13 +641,21 @@ async function loadChats(onlyActive = chatFilterOnlyActive){
             console.error('Error rendering chat item:', innerErr, 'item:', c);
         }
     }
-    showToast('success', (chats?.length || 0) + ' chats cargados');
+    // Update subtle badge with chat count instead of showing a success toast continuously
+    try { 
+        const n = (chats?.length || 0);
+        const el = document.getElementById('chatsCount');
+        if (el) el.innerText = n === 1 ? '1 chat' : (n + ' chats');
+    } catch(e) {}
 }
 
 async function selectChat(jid){
     console.log('selectChat called for jid:', jid);
     selectedJid = jid;
-    document.getElementById('chatHeader').innerText = jid;
+    const phone = jid && jid.includes('@') ? jid.split('@')[0] : jid;
+    const phoneNormalized = phone ? (('' + phone).replace(/\D/g, '')) : null;
+    const clientInfo = lookupClient(phoneNormalized || phone);
+    document.getElementById('chatHeader').innerText = clientInfo ? (clientInfo.nombre_completo || phone) : phone;
     try { if (document.getElementById('btnDeleteChat')) document.getElementById('btnDeleteChat').disabled = false; } catch(e) {}
         document.getElementById('chatMeta').innerText = 'Cargando...';
     document.getElementById('chatMessages').innerHTML = 'Cargando...';
@@ -602,7 +692,13 @@ class Poll {
             return;
         }
         try {
-            const msgs = await apiFetch('/chats/' + encodeURIComponent(jid));
+            let msgs = await apiFetch('/chats/' + encodeURIComponent(jid));
+            if (!Array.isArray(msgs) && msgs && msgs.messages && Array.isArray(msgs.messages)) {
+                msgs = msgs.messages;
+            }
+            if (!Array.isArray(msgs) && msgs && msgs.data && Array.isArray(msgs.data)) {
+                msgs = msgs.data;
+            }
             if (msgs && msgs.error) { showToast('error', msgs.message || 'No se pudieron cargar mensajes'); document.getElementById('chatMessages').innerText = 'Error cargando mensajes'; return; }
             const container = document.getElementById('chatMessages');
             if (!Array.isArray(msgs)) {
@@ -616,22 +712,44 @@ class Poll {
             for (const m of msgs) {
                 const el = document.createElement('div');
                 // Simple heuristic: if from contains 'myself' or isMe property exists
-                const isMe = m.fromMe || (m.key && m.key.fromMe);
+                const isMe = (m.sender && m.sender === 'me') || m.fromMe || (m.key && m.key.fromMe) || (m.from && (m.from === 'me'));
                 
                 el.className = `max-w-[85%] p-3 rounded-2xl shadow-sm text-sm ${isMe ? 'bg-blue-100 text-blue-900 self-end rounded-br-none' : 'bg-white text-gray-800 self-start rounded-bl-none border border-gray-100'}`;
                 
-                const sender = m.pushName || m.from || 'Desconocido';
-                const senderName = sender.includes('@') ? sender.split('@')[0] : sender;
-                
-                // Handle message content safely
-                let content = m.message;
-                if (typeof content === 'object' && content !== null) {
-                     content = content.conversation || content.extendedTextMessage?.text || content.imageMessage?.caption || (content.text ? content.text : JSON.stringify(content));
+                // Use client mapping for sender name when available
+                let sender = m.pushName || m.from || m.sender || 'Desconocido';
+                const senderPhone = (sender && sender.includes('@')) ? sender.split('@')[0] : (sender && /^\d+$/.test(sender) ? sender : null);
+                if (!isMe && senderPhone) {
+                    const map = lookupClient(senderPhone);
+                    if (map) sender = map.nombre_completo || senderPhone;
+                } else if (isMe) {
+                    sender = 'Yo';
+                } else if (sender && sender.includes('@')) {
+                    sender = sender.split('@')[0];
                 }
                 
+                // Handle message content safely
+                // Parse message content from multiple shapes: prefer m.content (newer format)
+                let msgContent = m.content || m.message || m.conversation || null;
+                let contentText = '';
+                try {
+                    if (msgContent && typeof msgContent === 'object') {
+                        if (msgContent.type === 'text' && msgContent.text) contentText = msgContent.text;
+                        else if (msgContent.type === 'image' && msgContent.caption) contentText = msgContent.caption;
+                        else if (msgContent.type === 'video' && msgContent.caption) contentText = msgContent.caption;
+                        else if (msgContent.extendedTextMessage && msgContent.extendedTextMessage.text) contentText = msgContent.extendedTextMessage.text;
+                        else if (msgContent.conversation) contentText = msgContent.conversation;
+                        else contentText = JSON.stringify(msgContent);
+                    } else if (typeof msgContent === 'string') {
+                        contentText = msgContent;
+                    }
+                } catch (e) {
+                    contentText = JSON.stringify(msgContent);
+                }
+                
+                // Only show the message text bubble (sender shown in header only)
                 el.innerHTML = `
-                    <div class="text-[10px] ${isMe ? 'text-blue-700' : 'text-gray-500'} mb-1 font-bold uppercase tracking-wider">${isMe ? 'Yo' : senderName}</div>
-                    <div class="leading-relaxed whitespace-pre-wrap break-words">${content}</div>
+                    <div class="leading-relaxed whitespace-pre-wrap break-words">${contentText}</div>
                 `;
                 wrapper.appendChild(el);
             }
@@ -768,7 +886,7 @@ document.getElementById('btnSendFile').addEventListener('click', () => {
     });
 
     // Start polling and load chats on page load
-loadChats().then(()=>{
+loadClientsMap().then(()=> loadChats()).then(()=>{
     Poll.start();
     // Try to load QR automatically on page load
     try { document.getElementById('btnQr').click(); } catch(e) {}

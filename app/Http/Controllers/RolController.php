@@ -37,7 +37,8 @@ class RolController extends Controller
         ]);
 
         Rol::create(array_merge($request->except('habilitado'), [
-            'habilitado' => $request->boolean('habilitado'),
+            // Store boolean as a Postgres-friendly literal
+            'habilitado' => $request->boolean('habilitado') ? 'true' : 'false',
         ]));
 
         return redirect()->route('roles.index')->with('success', 'Rol creado exitosamente.');
@@ -85,7 +86,8 @@ class RolController extends Controller
         ]);
 
         $rol->update(array_merge($request->except('habilitado'), [
-            'habilitado' => $request->boolean('habilitado'),
+            // Use boolean literal strings to ensure correct DB typing
+            'habilitado' => $request->boolean('habilitado') ? 'true' : 'false',
         ]));
 
         return redirect()->route('roles.index')->with('success', 'Rol actualizado exitosamente.');
