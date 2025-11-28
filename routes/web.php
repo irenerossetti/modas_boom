@@ -10,6 +10,7 @@ use App\Http\Controllers\BitacoraController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\CatalogoController;
 use App\Http\Controllers\PrendaController;
+use App\Http\Controllers\ControlNotificacionesController;
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -394,6 +395,23 @@ Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
     Route::resource('proveedores', App\Http\Controllers\ProveedorController::class);
     // Reportes - CU39
     Route::post('reportes/generate', [App\Http\Controllers\ReportController::class, 'generate'])->name('reportes.generate');
+    // Control de Notificaciones - UI admin para controlar la conexión con el servicio de notificaciones/wa
+    Route::get('control-notificaciones', [ControlNotificacionesController::class, 'index'])->name('control-notificaciones');
+    // Proxy endpoints to the notifications service (admin only)
+    Route::prefix('admin/notificaciones')->group(function(){
+        Route::get('status', [App\Http\Controllers\NotificationProxyController::class, 'status']);
+        Route::get('me', [App\Http\Controllers\NotificationProxyController::class, 'me']);
+        Route::get('qr', [App\Http\Controllers\NotificationProxyController::class, 'qr']);
+        Route::post('generate-qr', [App\Http\Controllers\NotificationProxyController::class, 'generateQr']);
+        Route::post('delete-session', [App\Http\Controllers\NotificationProxyController::class, 'deleteSession']);
+        Route::get('chats', [App\Http\Controllers\NotificationProxyController::class, 'chats']);
+        Route::get('chats/{jid}', [App\Http\Controllers\NotificationProxyController::class, 'chatMessages']);
+        Route::delete('chats/{jid}', [App\Http\Controllers\NotificationProxyController::class, 'deleteChat']);
+        Route::post('send', [App\Http\Controllers\NotificationProxyController::class, 'send']);
+        Route::post('send-file', [App\Http\Controllers\NotificationProxyController::class, 'sendFile']);
+        Route::post('block', [App\Http\Controllers\NotificationProxyController::class, 'block']);
+        // Route removed: reject-call handled by the notifications layer (Baileys) by default. Not exposing an endpoint.
+    });
 });
 
 
