@@ -9,6 +9,10 @@ export default defineConfig({
         }),
     ],
     build: {
-        assetsDir: 'build'
+        // Ensure the final build outputs to `public/build` (no nested `build/build`)
+        outDir: 'public/build',
+        // Use empty assetsDir to avoid nested `build/` inside `public/build`.
+        assetsDir: '' ,
+        emptyOutDir: true,
     }
 });
