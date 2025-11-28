@@ -1,27 +1,72 @@
-FROM php:8.3-apache
+# ---------------------------
+# STAGE 1 : Build Frontend (Vite)
+# ---------------------------
+FROM node:20 AS vite-builder
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+
+# ---------------------------
+# STAGE 2 : PHP + Composer
+# ---------------------------
+FROM php:8.3-fpm AS php-builder
+
+# Instalar dependencias necesarias para GD, ZIP y PostgreSQL
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git curl zip unzip libzip-dev libpq-dev \
+    libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
+    libonig-dev libxml2-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd zip pdo pdo_pgsql \
+    && docker-php-ext-enable pdo_pgsql \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copiar solo lo necesario, EXCLUYENDO .env
+# Copiar todo el proyecto primero para que composer detecte artisan
 COPY . .
 
-# Eliminar el .env local si existe
-RUN if [ -f .env ]; then rm .env; fi
+# Instalar dependencias de PHP
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-RUN apt-get update && apt-get install -y \
-    git curl libpng-dev libonig-dev libxml2-dev zip unzip nodejs npm
+# Copiar build de Vite
+COPY --from=vite-builder /app/public/build /var/www/html/public/build
 
-# Instalar dependencias de PostgreSQL
-RUN apt-get install -y libpq-dev
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Ajustar permisos
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd
 
-RUN composer install --no-dev --optimize-autoloader
-RUN npm install && npm run build
+# ---------------------------
+# STAGE 3 : Final (Nginx + PHP-FPM)
+# ---------------------------
+FROM php:8.3-fpm
 
-RUN chmod -R 775 storage bootstrap/cache
+# Instalar solo dependencias necesarias en runtime
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev libzip-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
+    supervisor nginx \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd zip pdo pdo_pgsql \
+    && rm -rf /var/lib/apt/lists/*
 
-EXPOSE 8080
+WORKDIR /var/www/html
 
-CMD ["php", "-S", "0.0.0.0:8080", "-t", "public"]
+# Copiar proyecto ya construido desde php-builder
+COPY --from=php-builder /var/www/html /var/www/html
+
+# Configuración de Nginx y Supervisor
+COPY ./docker/nginx.conf /etc/nginx/sites-available/default
+COPY ./docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+EXPOSE 80
+
+CMD ["/usr/bin/supervisord", "-n"]
