@@ -454,6 +454,9 @@ class WhatsAppService
     /**
      * Send via the Notifications proxy (Baileys/Twilio/other) configured in NOTIFICATIONS_URL_BASE.
      * Falls back to the local simulator if NOTIFICATIONS_URL_BASE is not set.
+     * 
+     * Implements Circuit Breaker pattern with 2-second timeout and graceful failure handling.
+     * The main application flow continues even if notifications fail.
      */
     private function enviarViaProxy(string $telefono, string $mensaje): array
     {
@@ -469,39 +472,127 @@ class WhatsAppService
         $payload = ['to' => $to, 'message' => $mensaje];
 
         try {
-            $client = Http::timeout(10);
+            // Circuit Breaker: 2-second timeout with 1 retry
+            $client = Http::timeout(2)
+                ->connectTimeout(2)
+                ->retry(1, 100); // 1 retry with 100ms delay
+            
             if ($this->notificationsApiKey) {
                 $client = $client->withHeaders(['X-API-KEY' => $this->notificationsApiKey]);
             }
+            
             $res = $client->post($url, $payload);
+
+            // Check if response failed (4xx, 5xx)
+            if ($res->failed()) {
+                Log::warning('WhatsAppService: Notifications proxy returned error status', [
+                    'url' => $url,
+                    'status' => $res->status(),
+                    'telefono' => $telefono
+                ]);
+                
+                // Fail silently - don't block main flow
+                return [
+                    'success' => false,
+                    'message' => 'Servicio de notificaciones no disponible temporalmente, pero el proceso continuó',
+                    'status' => $res->status()
+                ];
+            }
 
             // Try to parse result
             $json = null;
-            try { $json = $res->json(); } catch (\Throwable $t) { $json = null; }
+            try { 
+                $json = $res->json(); 
+            } catch (\Throwable $t) { 
+                $json = null; 
+            }
 
             // If the upstream returned a JSON response with success, use it
             if (is_array($json) || is_object($json)) {
                 $data = (array)$json;
                 if (isset($data['error']) && $data['error']) {
-                    \Log::warning('Notificaciones proxy responded with error', ['url' => $url, 'payload' => $payload, 'response' => $data]);
-                    return ['success' => false, 'message' => $data['message'] ?? 'Upstream reported an error', 'details' => $data];
+                    Log::warning('WhatsAppService: Notifications proxy responded with error', [
+                        'url' => $url,
+                        'telefono' => $telefono,
+                        'response' => $data
+                    ]);
+                    
+                    // Fail silently
+                    return [
+                        'success' => false,
+                        'message' => 'Servicio de notificaciones no disponible temporalmente, pero el proceso continuó',
+                        'details' => $data
+                    ];
                 }
-                return ['success' => true, 'message' => $data['message'] ?? 'OK', 'response' => $data];
+                return [
+                    'success' => true,
+                    'message' => $data['message'] ?? 'Notificación enviada correctamente',
+                    'response' => $data
+                ];
             }
 
             // Otherwise, if raw string or non-json response, consider success when HTTP OK
             if ($res->successful()) {
-                return ['success' => true, 'message' => 'Notificación enviada correctamente (proxy)'];
+                return [
+                    'success' => true,
+                    'message' => 'Notificación enviada correctamente (proxy)'
+                ];
             }
 
-            return ['success' => false, 'message' => 'Error en upstream notifications', 'status' => $res->status()];
+            // Unexpected response format
+            Log::warning('WhatsAppService: Unexpected response format from notifications proxy', [
+                'url' => $url,
+                'status' => $res->status()
+            ]);
+            
+            return [
+                'success' => false,
+                'message' => 'Servicio de notificaciones no disponible temporalmente, pero el proceso continuó',
+                'status' => $res->status()
+            ];
 
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            \Log::error('Connection error sending via notifications proxy: ' . $e->getMessage());
-            return ['success' => false, 'message' => 'Servicio de notificaciones no disponible', 'exception' => $e->getMessage()];
+            // Connection timeout or refused - fail silently
+            Log::error('WhatsAppService: Connection failed to notifications proxy', [
+                'url' => $url,
+                'telefono' => $telefono,
+                'error' => $e->getMessage()
+            ]);
+            
+            return [
+                'success' => false,
+                'message' => 'Servicio de notificaciones no disponible temporalmente, pero el proceso continuó',
+                'reason' => 'connection_timeout'
+            ];
+            
+        } catch (\Illuminate\Http\Client\RequestException $e) {
+            // Request exception - fail silently
+            Log::error('WhatsAppService: Request exception to notifications proxy', [
+                'url' => $url,
+                'telefono' => $telefono,
+                'error' => $e->getMessage()
+            ]);
+            
+            return [
+                'success' => false,
+                'message' => 'Servicio de notificaciones no disponible temporalmente, pero el proceso continuó',
+                'reason' => 'request_failed'
+            ];
+            
         } catch (\Throwable $e) {
-            \Log::error('Error sending via notifications proxy: ' . $e->getMessage());
-            return ['success' => false, 'message' => 'Error interno al enviar notificación', 'exception' => $e->getMessage()];
+            // Unexpected error - fail silently
+            Log::error('WhatsAppService: Unexpected error sending notification', [
+                'url' => $url,
+                'telefono' => $telefono,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return [
+                'success' => false,
+                'message' => 'Servicio de notificaciones no disponible temporalmente, pero el proceso continuó',
+                'reason' => 'unexpected_error'
+            ];
         }
     }
 

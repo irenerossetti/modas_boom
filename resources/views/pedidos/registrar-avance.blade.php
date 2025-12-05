@@ -1,150 +1,133 @@
-﻿@extends('layouts.app')
+﻿<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Registrar Avance de Producción') }} - Pedido #{{ $pedido->id_pedido }}
+        </h2>
+    </x-slot>
 
-@section('content')
-    <div class="container mx-auto px-4 py-6">
-        <div class="max-w-4xl mx-auto">
-            <!-- Header -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h1 class="text-2xl font-bold text-gray-900">
-                                <i class="fas fa-tasks text-orange-600 mr-2"></i>
-                                Registrar Avance de Producción
-                            </h1>
-                            <p class="text-gray-600 mt-1">Pedido #{{ $pedido->id_pedido }} - {{ $pedido->cliente->nombre }}</p>
-                        </div>
-                        <a href="{{ route('pedidos.show', $pedido->id_pedido) }}" 
-                           class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
-                            <i class="fas fa-arrow-left mr-2"></i>Volver
-                        </a>
+    <div class="py-12">
+        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6">
+                    <!-- Información del Pedido -->
+                    <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+                        <h3 class="font-semibold text-blue-900 mb-2">📦 Información del Pedido</h3>
+                        <p class="text-sm text-blue-800">
+                            <strong>Cliente:</strong> {{ $pedido->cliente->nombre }} {{ $pedido->cliente->apellido }}<br>
+                            <strong>Estado:</strong> {{ $pedido->estado }}<br>
+                            <strong>Total:</strong> Bs. {{ number_format($pedido->total, 2) }}
+                        </p>
                     </div>
-                </div>
-            </div>
 
-            <!-- Formulario -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-lg font-semibold text-gray-900">Nuevo Avance</h2>
-                </div>
-                <div class="px-6 py-4">
-                    <form action="{{ route('pedidos.procesar-avance', $pedido->id_pedido) }}" method="POST">
+                    <!-- Formulario -->
+                    <form method="POST" action="{{ route('pedidos.procesar-avance', $pedido->id_pedido) }}" class="space-y-6">
                         @csrf
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <!-- Etapa -->
-                            <div>
-                                <label for="etapa" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Etapa de Producción *
-                                </label>
-                                <select id="etapa" name="etapa" required
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-                                    <option value="">Seleccionar etapa...</option>
-                                    @foreach($etapas as $key => $etapa)
-                                        <option value="{{ $key }}" {{ old('etapa') == $key ? 'selected' : '' }}>
-                                            {{ $etapa }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('etapa')
-                                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
 
-                            <!-- Porcentaje -->
-                            <div>
-                                <label for="porcentaje_avance" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Porcentaje de Avance *
-                                </label>
-                                <div class="relative">
-                                    <input type="number" id="porcentaje_avance" name="porcentaje_avance" 
-                                           min="0" max="100" value="{{ old('porcentaje_avance') }}" required
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-                                    <span class="absolute right-3 top-2 text-gray-500">%</span>
-                                </div>
-                                @error('porcentaje_avance')
-                                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
+                        <!-- Etapa -->
+                        <div>
+                            <label for="etapa" class="block text-sm font-medium text-gray-700">
+                                Etapa de Producción <span class="text-red-500">*</span>
+                            </label>
+                            <select name="etapa" id="etapa" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Seleccione una etapa</option>
+                                @foreach($etapas as $key => $etapa)
+                                    <option value="{{ $key }}">{{ $etapa }}</option>
+                                @endforeach
+                            </select>
+                            @error('etapa')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Operario -->
+                        <div>
+                            <label for="operario_id" class="block text-sm font-medium text-gray-700">
+                                Operario que realizó el trabajo
+                            </label>
+                            <select name="operario_id" id="operario_id"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Sin asignar</option>
+                                @foreach($operarios as $operario)
+                                    <option value="{{ $operario->id_usuario }}">{{ $operario->nombre }}</option>
+                                @endforeach
+                            </select>
+                            @error('operario_id')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Porcentaje de Avance -->
+                        <div>
+                            <label for="porcentaje_avance" class="block text-sm font-medium text-gray-700">
+                                Porcentaje de Avance (%) <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number" name="porcentaje_avance" id="porcentaje_avance" 
+                                min="0" max="100" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            @error('porcentaje_avance')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Costo de Mano de Obra -->
+                        <div>
+                            <label for="costo_mano_obra" class="block text-sm font-medium text-gray-700">
+                                Costo de Mano de Obra (Bs.) - Pago a Destajo
+                            </label>
+                            <input type="number" name="costo_mano_obra" id="costo_mano_obra" 
+                                step="0.01" min="0"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                placeholder="0.00">
+                            @error('costo_mano_obra')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            <p class="mt-1 text-xs text-gray-500">
+                                💡 Ingrese el monto a pagar al operario por este trabajo específico
+                            </p>
                         </div>
 
                         <!-- Descripción -->
-                        <div class="mt-6">
-                            <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-2">
-                                Descripción del Avance *
+                        <div>
+                            <label for="descripcion" class="block text-sm font-medium text-gray-700">
+                                Descripción del Avance <span class="text-red-500">*</span>
                             </label>
-                            <textarea id="descripcion" name="descripcion" rows="3" required
-                                      placeholder="Describe el trabajo realizado en esta etapa..."
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">{{ old('descripcion') }}</textarea>
+                            <textarea name="descripcion" id="descripcion" rows="3" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                placeholder="Describa el trabajo realizado..."></textarea>
                             @error('descripcion')
-                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <!-- Observaciones -->
-                        <div class="mt-6">
-                            <label for="observaciones" class="block text-sm font-medium text-gray-700 mb-2">
-                                Observaciones (Opcional)
+                        <div>
+                            <label for="observaciones" class="block text-sm font-medium text-gray-700">
+                                Observaciones Adicionales
                             </label>
-                            <textarea id="observaciones" name="observaciones" rows="3"
-                                      placeholder="Observaciones adicionales, problemas encontrados, etc..."
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">{{ old('observaciones') }}</textarea>
+                            <textarea name="observaciones" id="observaciones" rows="2"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                placeholder="Observaciones opcionales..."></textarea>
                             @error('observaciones')
-                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <!-- Botones -->
-                        <div class="flex justify-end space-x-4 mt-8">
-                            <a href="{{ route('pedidos.show', $pedido->id_pedido) }}" 
-                               class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors">
-                                Cancelar
-                            </a>
-                            <button type="submit" 
-                                    class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg transition-colors">
-                                <i class="fas fa-save mr-2"></i>Registrar Avance
+                        <div class="flex gap-3">
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                ✅ Registrar Avance
                             </button>
+
+                            <a href="{{ route('pedidos.show', $pedido->id_pedido) }}"
+                                class="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-400 focus:bg-gray-400 active:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                ← Cancelar
+                            </a>
                         </div>
                     </form>
                 </div>
             </div>
-
-            <!-- Avances Anteriores -->
-            @if($avancesAnteriores->count() > 0)
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 mt-6">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-lg font-semibold text-gray-900">Avances Anteriores</h2>
-                </div>
-                <div class="px-6 py-4">
-                    <div class="space-y-4">
-                        @foreach($avancesAnteriores as $avance)
-                        <div class="border border-gray-200 rounded-lg p-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <div class="flex items-center">
-                                    <span class="bg-orange-100 text-orange-800 px-2 py-1 rounded text-sm font-medium">
-                                        {{ $avance->etapa }}
-                                    </span>
-                                    <span class="ml-3 text-lg font-bold text-orange-600">
-                                        {{ $avance->porcentaje_avance }}%
-                                    </span>
-                                </div>
-                                <span class="text-sm text-gray-500">
-                                    {{ $avance->created_at->format('d/m/Y H:i') }}
-                                </span>
-                            </div>
-                            <p class="text-gray-700 mb-2">{{ $avance->descripcion }}</p>
-                            @if($avance->observaciones)
-                            <p class="text-sm text-gray-600 italic">{{ $avance->observaciones }}</p>
-                            @endif
-                            <p class="text-xs text-gray-500 mt-2">
-                                Registrado por: {{ $avance->registradoPor->nombre ?? 'Usuario no encontrado' }}
-                            </p>
-                        </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-            @endif
         </div>
     </div>
-@endsection
+</x-app-layout>

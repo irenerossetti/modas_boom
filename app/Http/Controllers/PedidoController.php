@@ -1162,8 +1162,11 @@ class PedidoController extends Controller
 
         $etapas = AvanceProduccion::getEtapasDisponibles();
         $avancesAnteriores = $pedido->avancesProduccion()->orderBy('created_at', 'desc')->get();
+        
+        // Obtener empleados (operarios) para asignar - NUEVO
+        $operarios = User::where('id_rol', 2)->where('habilitado', true)->orderBy('nombre')->get();
 
-        return view('pedidos.registrar-avance', compact('pedido', 'etapas', 'avancesAnteriores'));
+        return view('pedidos.registrar-avance', compact('pedido', 'etapas', 'avancesAnteriores', 'operarios'));
     }
 
     /**
@@ -1184,6 +1187,8 @@ class PedidoController extends Controller
             'porcentaje_avance' => 'required|integer|min:0|max:100',
             'descripcion' => 'required|string|max:500',
             'observaciones' => 'nullable|string|max:1000',
+            'operario_id' => 'nullable|exists:usuario,id_usuario',  // NUEVO
+            'costo_mano_obra' => 'nullable|numeric|min:0',          // NUEVO
         ]);
 
         $avance = AvanceProduccion::create([
@@ -1193,6 +1198,8 @@ class PedidoController extends Controller
             'descripcion' => $request->descripcion,
             'observaciones' => $request->observaciones,
             'registrado_por' => Auth::user()->id_usuario,
+            'user_id_operario' => $request->operario_id,    // NUEVO
+            'costo_mano_obra' => $request->costo_mano_obra, // NUEVO
         ]);
 
         // Cambiar estado si es necesario
@@ -1200,9 +1207,13 @@ class PedidoController extends Controller
             $pedido->update(['estado' => 'En producción']);
         }
 
-        // Registrar en bitácora
+        // Registrar en bitácora con información del operario y costo
+        $operarioNombre = $request->operario_id ? User::find($request->operario_id)->nombre : 'Sin asignar';
+        $costoTexto = $request->costo_mano_obra ? " - Costo: Bs. " . number_format($request->costo_mano_obra, 2) : '';
+        
         $mensaje = Auth::user()->nombre . " registró avance de producción para el pedido #{$pedido->id_pedido}";
         $mensaje .= " - Etapa: {$request->etapa} ({$request->porcentaje_avance}%)";
+        $mensaje .= " - Operario: {$operarioNombre}{$costoTexto}";
 
         $this->bitacoraService->registrarActividad(
             'CREATE',
@@ -1228,14 +1239,14 @@ class PedidoController extends Controller
      */
     public function historialAvances(string $id)
     {
-        $pedido = Pedido::with(['cliente', 'avancesProduccion.registradoPor'])->findOrFail($id);
+        $pedido = Pedido::with(['cliente', 'avancesProduccion.registradoPor', 'avancesProduccion.operario'])->findOrFail($id);
         // Acceso exclusivo para administradores
         if (Auth::user()->id_rol !== 1) {
             return redirect()->route('pedidos.show', $pedido->id_pedido)
                 ->with('error', 'No tienes permisos para ver el historial de avances.');
         }
 
-        $avances = $pedido->avancesProduccion()->with('registradoPor')->orderBy('created_at', 'desc')->get();
+        $avances = $pedido->avancesProduccion()->with(['registradoPor', 'operario'])->orderBy('created_at', 'desc')->get();
 
         return view('pedidos.historial-avances', compact('pedido', 'avances'));
     }
@@ -1539,4 +1550,43 @@ class PedidoController extends Controller
 
         return redirect()->route('pedidos.show', $pedido->id_pedido)
             ->with('success', $mensaje);
-    }}
+    }
+
+    /**
+     * Obtener datos de pedidos en formato JSON para FullCalendar
+     */
+    public function calendarJson()
+    {
+        // Obtener pedidos con fecha de entrega programada y que no estén cancelados
+        $pedidos = Pedido::with('cliente')
+            ->whereNotNull('fecha_entrega_programada')
+            ->whereNotIn('estado', ['Cancelado'])
+            ->get();
+
+        // Formatear para FullCalendar
+        $events = $pedidos->map(function ($pedido) {
+            return [
+                'id' => $pedido->id_pedido,
+                'title' => 'Pedido #' . $pedido->id_pedido . ' - ' . $pedido->cliente->nombre,
+                'start' => $pedido->fecha_entrega_programada->format('Y-m-d'),
+                'color' => $pedido->calendar_color,
+                'url' => route('pedidos.show', $pedido->id_pedido),
+                'extendedProps' => [
+                    'estado' => $pedido->estado,
+                    'total' => 'Bs. ' . number_format($pedido->total, 2),
+                    'cliente' => $pedido->cliente->nombre . ' ' . $pedido->cliente->apellido,
+                ]
+            ];
+        });
+
+        return response()->json($events);
+    }
+
+    /**
+     * Mostrar vista de calendario de pedidos
+     */
+    public function calendar()
+    {
+        return view('pedidos.calendar');
+    }
+}

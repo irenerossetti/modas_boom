@@ -100,6 +100,11 @@
                                             </div>
                                         </div>
 
+                                        <!-- Barra de Progreso -->
+                                        <div class="mb-6 bg-gradient-to-r from-gray-50 to-white p-4 rounded-lg border border-gray-100">
+                                            <x-pedido-progress :estado="$pedido->estado" />
+                                        </div>
+
                                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                                             <div>
                                                 <p class="text-sm font-medium text-boom-text-dark">Total</p>

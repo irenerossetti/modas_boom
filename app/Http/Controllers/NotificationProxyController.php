@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use App\Events\NewMessage;
 use App\Events\NewChat;
 use App\Events\QrUpdated;
@@ -16,71 +17,192 @@ class NotificationProxyController extends Controller
         return env('NOTIFICATIONS_URL_BASE', '');
     }
 
+    /**
+     * Proxy GET request with Circuit Breaker pattern
+     * Fails silently to prevent blocking main application flow
+     */
     protected function proxyGet($endpoint)
     {
         $url = rtrim($this->baseUrl(), '\\/') . '/' . ltrim($endpoint, '/');
+        
         try {
-            $res = Http::timeout(5)->get($url);
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            // Upstream service unreachable
-            \Log::error('NotificationProxyController: ConnectionException to ' . $url . ' - ' . $e->getMessage());
-            return ['error' => 'notifications_unavailable', 'message' => 'No se pudo conectar al servicio de notificaciones: ' . $url, 'code' => 503];
-        } catch (\Throwable $e) {
-            \Log::error('NotificationProxyController: Error requesting ' . $url . ' - ' . $e->getMessage());
-            return ['error' => 'notifications_error', 'message' => 'Error al solicitar servicio de notificaciones: ' . $e->getMessage(), 'code' => 500];
-        }
-        $json = null;
-        try {
-            $json = $res->json();
-        } catch (\Throwable $t) {
+            $res = Http::timeout(2)
+                ->connectTimeout(2)
+                ->retry(1, 100) // 1 retry with 100ms delay
+                ->get($url);
+            
+            // Check if response is successful
+            if ($res->failed()) {
+                \Log::warning("NotificationProxyController: HTTP {$res->status()} from {$url}");
+                return $this->failSilentlyResponse('GET', $url, "HTTP {$res->status()}");
+            }
+            
+            // Try to parse JSON response
             $json = null;
+            try {
+                $json = $res->json();
+            } catch (\Throwable $t) {
+                $json = null;
+            }
+            
+            if ($json !== null) return $json;
+            return $res->body();
+            
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            \Log::error("NotificationProxyController [GET]: Connection failed to {$url}", [
+                'error' => $e->getMessage(),
+                'endpoint' => $endpoint
+            ]);
+            return $this->failSilentlyResponse('GET', $url, 'Connection timeout or refused');
+            
+        } catch (\Illuminate\Http\Client\RequestException $e) {
+            \Log::error("NotificationProxyController [GET]: Request exception to {$url}", [
+                'error' => $e->getMessage(),
+                'endpoint' => $endpoint
+            ]);
+            return $this->failSilentlyResponse('GET', $url, 'Request failed');
+            
+        } catch (\Throwable $e) {
+            \Log::error("NotificationProxyController [GET]: Unexpected error to {$url}", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'endpoint' => $endpoint
+            ]);
+            return $this->failSilentlyResponse('GET', $url, 'Unexpected error');
         }
-        if ($json !== null) return $json;
-        return $res->body();
     }
 
+    /**
+     * Proxy POST request with Circuit Breaker pattern
+     * Fails silently to prevent blocking main application flow
+     */
     protected function proxyPost($endpoint, $payload = [])
     {
         $url = rtrim($this->baseUrl(), '\\/') . '/' . ltrim($endpoint, '/');
+        
         try {
-            $res = Http::timeout(5)->post($url, $payload);
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            \Log::error('NotificationProxyController: ConnectionException to ' . $url . ' - ' . $e->getMessage());
-            return ['error' => 'notifications_unavailable', 'message' => 'No se pudo conectar al servicio de notificaciones: ' . $url, 'code' => 503];
-        } catch (\Throwable $e) {
-            \Log::error('NotificationProxyController: Error posting to ' . $url . ' - ' . $e->getMessage());
-            return ['error' => 'notifications_error', 'message' => 'Error al solicitar servicio de notificaciones: ' . $e->getMessage(), 'code' => 500];
-        }
-        $json = null;
-        try {
-            $json = $res->json();
-        } catch (\Throwable $t) {
+            $res = Http::timeout(2)
+                ->connectTimeout(2)
+                ->retry(1, 100) // 1 retry with 100ms delay
+                ->post($url, $payload);
+            
+            // Check if response is successful
+            if ($res->failed()) {
+                \Log::warning("NotificationProxyController: HTTP {$res->status()} from {$url}");
+                return $this->failSilentlyResponse('POST', $url, "HTTP {$res->status()}");
+            }
+            
+            // Try to parse JSON response
             $json = null;
+            try {
+                $json = $res->json();
+            } catch (\Throwable $t) {
+                $json = null;
+            }
+            
+            if ($json !== null) return $json;
+            return $res->body();
+            
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            \Log::error("NotificationProxyController [POST]: Connection failed to {$url}", [
+                'error' => $e->getMessage(),
+                'endpoint' => $endpoint,
+                'payload_keys' => array_keys($payload)
+            ]);
+            return $this->failSilentlyResponse('POST', $url, 'Connection timeout or refused');
+            
+        } catch (\Illuminate\Http\Client\RequestException $e) {
+            \Log::error("NotificationProxyController [POST]: Request exception to {$url}", [
+                'error' => $e->getMessage(),
+                'endpoint' => $endpoint,
+                'payload_keys' => array_keys($payload)
+            ]);
+            return $this->failSilentlyResponse('POST', $url, 'Request failed');
+            
+        } catch (\Throwable $e) {
+            \Log::error("NotificationProxyController [POST]: Unexpected error to {$url}", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'endpoint' => $endpoint,
+                'payload_keys' => array_keys($payload)
+            ]);
+            return $this->failSilentlyResponse('POST', $url, 'Unexpected error');
         }
-        if ($json !== null) return $json;
-        return $res->body();
     }
 
+    /**
+     * Proxy DELETE request with Circuit Breaker pattern
+     * Fails silently to prevent blocking main application flow
+     */
     protected function proxyDelete($endpoint)
     {
         $url = rtrim($this->baseUrl(), '\\/') . '/' . ltrim($endpoint, '/');
+        
         try {
-            $res = Http::timeout(5)->delete($url);
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            \Log::error('NotificationProxyController: ConnectionException to ' . $url . ' - ' . $e->getMessage());
-            return ['error' => 'notifications_unavailable', 'message' => 'No se pudo conectar al servicio de notificaciones: ' . $url, 'code' => 503];
-        } catch (\Throwable $e) {
-            \Log::error('NotificationProxyController: Error deleting ' . $url . ' - ' . $e->getMessage());
-            return ['error' => 'notifications_error', 'message' => 'Error al solicitar servicio de notificaciones: ' . $e->getMessage(), 'code' => 500];
-        }
-        $json = null;
-        try {
-            $json = $res->json();
-        } catch (\Throwable $t) {
+            $res = Http::timeout(2)
+                ->connectTimeout(2)
+                ->retry(1, 100) // 1 retry with 100ms delay
+                ->delete($url);
+            
+            // Check if response is successful
+            if ($res->failed()) {
+                \Log::warning("NotificationProxyController: HTTP {$res->status()} from {$url}");
+                return $this->failSilentlyResponse('DELETE', $url, "HTTP {$res->status()}");
+            }
+            
+            // Try to parse JSON response
             $json = null;
+            try {
+                $json = $res->json();
+            } catch (\Throwable $t) {
+                $json = null;
+            }
+            
+            if ($json !== null) return $json;
+            return $res->body();
+            
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            \Log::error("NotificationProxyController [DELETE]: Connection failed to {$url}", [
+                'error' => $e->getMessage(),
+                'endpoint' => $endpoint
+            ]);
+            return $this->failSilentlyResponse('DELETE', $url, 'Connection timeout or refused');
+            
+        } catch (\Illuminate\Http\Client\RequestException $e) {
+            \Log::error("NotificationProxyController [DELETE]: Request exception to {$url}", [
+                'error' => $e->getMessage(),
+                'endpoint' => $endpoint
+            ]);
+            return $this->failSilentlyResponse('DELETE', $url, 'Request failed');
+            
+        } catch (\Throwable $e) {
+            \Log::error("NotificationProxyController [DELETE]: Unexpected error to {$url}", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'endpoint' => $endpoint
+            ]);
+            return $this->failSilentlyResponse('DELETE', $url, 'Unexpected error');
         }
-        if ($json !== null) return $json;
-        return $res->body();
+    }
+
+    /**
+     * Generate a graceful failure response
+     * Allows the main application flow to continue even when notifications fail
+     */
+    protected function failSilentlyResponse($method, $url, $reason)
+    {
+        return [
+            'success' => false,
+            'error' => 'notifications_unavailable',
+            'message' => 'Servicio de notificaciones no disponible temporalmente, pero el proceso continuó',
+            'code' => 503,
+            '_debug' => [
+                'method' => $method,
+                'url' => $url,
+                'reason' => $reason,
+                'timestamp' => now()->toIso8601String()
+            ]
+        ];
     }
 
     public function status()

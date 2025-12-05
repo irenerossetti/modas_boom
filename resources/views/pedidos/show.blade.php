@@ -872,6 +872,21 @@
                             </select>
                         </div>
                         
+                        <!-- Operario que realizó el trabajo -->
+                        <div class="mb-6">
+                            <label for="operario_id_modal" class="block text-sm font-medium text-gray-700 mb-2">
+                                👷 Operario que realizó el trabajo
+                            </label>
+                            <select id="operario_id_modal" name="operario_id"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50">
+                                <option value="">Sin asignar</option>
+                                @foreach(App\Models\User::where('id_rol', 2)->orderBy('nombre')->get()->filter(function($u) { return $u->habilitado; }) as $operario)
+                                    <option value="{{ $operario->id_usuario }}">{{ $operario->nombre }}</option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500">Selecciona el empleado que realizó físicamente este trabajo</p>
+                        </div>
+                        
                         <!-- Porcentaje de Avance -->
                         <div class="mb-6">
                             <label for="porcentaje_avance_modal" class="block text-sm font-medium text-gray-700 mb-3">
@@ -885,6 +900,21 @@
                                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb"
                                        oninput="document.getElementById('porcentaje_display').textContent = this.value + '%'">
                             </div>
+                        </div>
+                        
+                        <!-- Costo de Mano de Obra (Pago a Destajo) -->
+                        <div class="mb-6">
+                            <label for="costo_mano_obra_modal" class="block text-sm font-medium text-gray-700 mb-2">
+                                💰 Costo de Mano de Obra (Bs.) - Pago a Destajo
+                            </label>
+                            <input type="number" 
+                                   id="costo_mano_obra_modal" 
+                                   name="costo_mano_obra" 
+                                   step="0.01" 
+                                   min="0"
+                                   placeholder="0.00"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <p class="mt-1 text-xs text-gray-500">💡 Ingrese el monto a pagar al operario por este trabajo específico</p>
                         </div>
                         
                         <!-- Notas -->

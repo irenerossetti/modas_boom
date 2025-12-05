@@ -248,6 +248,8 @@ Route::middleware(['auth', 'user.enabled'])->group(function () {
     
     // Rutas de pedidos para empleados y administradores
     Route::resource('pedidos', PedidoController::class);
+    Route::get('pedidos-calendario', [PedidoController::class, 'calendar'])->name('pedidos.calendar');
+    Route::get('pedidos-calendario/json', [PedidoController::class, 'calendarJson'])->name('pedidos.calendar-json');
     Route::get('pedidos/{id}/historial', [PedidoController::class, 'historial'])->name('pedidos.historial');
     Route::get('clientes/{id}/pedidos', [PedidoController::class, 'clienteHistorial'])->name('pedidos.cliente-historial');
     
@@ -397,6 +399,16 @@ Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
     Route::resource('proveedores', App\Http\Controllers\ProveedorController::class);
     // Reportes - CU39
     Route::post('reportes/generate', [App\Http\Controllers\ReportController::class, 'generate'])->name('reportes.generate');
+    
+    // Análisis de Productos Estrella y Hueso
+    Route::get('reportes/analisis-productos', [App\Http\Controllers\ReportController::class, 'analisisProductos'])->name('reportes.analisis-productos');
+    
+    // Reportes de Producción - Pago a Destajo
+    Route::get('reportes/produccion', [App\Http\Controllers\ReporteProduccionController::class, 'index'])->name('reportes.produccion.index');
+    Route::get('reportes/produccion/rendimiento', [App\Http\Controllers\ReporteProduccionController::class, 'rendimientoPorOperario'])->name('reportes.produccion.rendimiento');
+    Route::get('reportes/produccion/exportar-pdf', [App\Http\Controllers\ReporteProduccionController::class, 'exportarPDF'])->name('reportes.produccion.exportar-pdf');
+    Route::get('reportes/produccion/exportar-csv', [App\Http\Controllers\ReporteProduccionController::class, 'exportarCSV'])->name('reportes.produccion.exportar-csv');
+    Route::get('reportes/produccion/exportar-excel', [App\Http\Controllers\ReporteProduccionController::class, 'exportarExcel'])->name('reportes.produccion.exportar-excel');
     // Control de Notificaciones - UI admin para controlar la conexión con el servicio de notificaciones/wa
     Route::get('control-notificaciones', [ControlNotificacionesController::class, 'index'])->name('control-notificaciones');
     // Proxy endpoints to the notifications service (admin only)

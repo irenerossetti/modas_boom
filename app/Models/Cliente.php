@@ -21,6 +21,11 @@ class Cliente extends Model
         'telefono',
         'email',
         'direccion',
+        'ultimo_aviso_inactividad',
+    ];
+
+    protected $casts = [
+        'ultimo_aviso_inactividad' => 'datetime',
     ];
 
     // Un Cliente está asociado a un Usuario
@@ -34,6 +39,34 @@ class Cliente extends Model
     public function pedidos()
     {
         return $this->hasMany(Pedido::class, 'id_cliente', 'id');
+    }
+
+    /**
+     * Scope para clientes inactivos (sin pedidos en los últimos 90 días)
+     */
+    public function scopeInactivos($query, $dias = 90)
+    {
+        $fechaLimite = now()->subDays($dias);
+        
+        return $query->whereDoesntHave('pedidos', function($q) use ($fechaLimite) {
+            $q->where('created_at', '>=', $fechaLimite);
+        })
+        // Opcional: solo clientes que SÍ tienen pedidos antiguos (han comprado antes)
+        ->whereHas('pedidos');
+    }
+
+    /**
+     * Scope para clientes que necesitan reactivación
+     * (inactivos y que no han recibido aviso recientemente)
+     */
+    public function scopeParaReactivar($query, $diasInactividad = 90, $diasEntreAvisos = 30)
+    {
+        return $query->inactivos($diasInactividad)
+            ->where(function($q) use ($diasEntreAvisos) {
+                $q->whereNull('ultimo_aviso_inactividad')
+                  ->orWhere('ultimo_aviso_inactividad', '<=', now()->subDays($diasEntreAvisos));
+            })
+            ->whereNotNull('telefono'); // Solo clientes con teléfono
     }
 
     /**

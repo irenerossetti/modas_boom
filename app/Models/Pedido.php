@@ -59,6 +59,17 @@ class Pedido extends Model
     ];
 
     /**
+     * Atributos que deben ser agregados a los arrays del modelo
+     */
+    protected $appends = [
+        'calendar_color',
+        'estado_color',
+        'estado_icono',
+        'nombre_completo_cliente',
+        'total_formateado'
+    ];
+
+    /**
      * Get the route key for the model.
      */
     public function getRouteKeyName()
@@ -334,5 +345,22 @@ class Pedido extends Model
     public function setEntregadoPorAttribute($value)
     {
         $this->attributes['confirmado_por'] = $value;
+    }
+
+    /**
+     * Obtener el color hexadecimal para el calendario según el estado
+     */
+    public function getCalendarColorAttribute(): string
+    {
+        $colores = [
+            'En proceso' => '#3b82f6',      // Azul
+            'Asignado' => '#eab308',        // Amarillo
+            'En producción' => '#f97316',   // Naranja
+            'Terminado' => '#22c55e',       // Verde
+            'Entregado' => '#a855f7',       // Púrpura
+            'Cancelado' => '#ef4444'        // Rojo
+        ];
+        
+        return $colores[$this->estado] ?? '#6b7280'; // Gris por defecto
     }
 }

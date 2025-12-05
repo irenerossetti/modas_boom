@@ -17,7 +17,9 @@ class AvanceProduccion extends Model
         'porcentaje_avance',
         'descripcion',
         'observaciones',
-        'registrado_por'
+        'registrado_por',
+        'user_id_operario',
+        'costo_mano_obra'
     ];
 
     protected $casts = [
@@ -39,6 +41,14 @@ class AvanceProduccion extends Model
     public function registradoPor()
     {
         return $this->belongsTo(User::class, 'registrado_por', 'id_usuario');
+    }
+
+    /**
+     * Relación con Usuario operario que realizó el trabajo físico
+     */
+    public function operario()
+    {
+        return $this->belongsTo(User::class, 'user_id_operario', 'id_usuario');
     }
 
     /**
