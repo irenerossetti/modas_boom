@@ -30,7 +30,7 @@
                                         <form action="{{ route('pagos.anular', $pago->id) }}" method="POST" class="inline" onsubmit="return confirmAndSetMotivo(this)">
                                             @csrf
                                             <input type="hidden" name="motivo" value="Anulado por admin">
-                                            <button class="text-red-600">Anular</button>
+                                            <button class="text-red-600">Reembolsar / Anular</button>
                                         </form>
                                     @else
                                         <span class="text-gray-600">Anulado</span>

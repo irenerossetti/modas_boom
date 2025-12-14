@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('content')
     <div class="p-2 sm:p-4 lg:p-6">
@@ -10,37 +10,112 @@
             </h1>
         </div>
 
-        <!-- Filtros de categoría -->
-        <div class="bg-white p-3 sm:p-4 rounded-lg shadow mb-4 lg:mb-6">
-            <div class="flex flex-wrap gap-2 sm:gap-3">
-                <button onclick="filtrarCategoria('todos')" 
-                        class="categoria-btn bg-boom-primary text-white px-3 sm:px-4 py-2 rounded font-medium transition-colors duration-200 text-sm sm:text-base"
-                        data-categoria="todos">
-                    <i class="fas fa-th-large mr-1"></i>
-                    Todos
-                </button>
-                @foreach($categorias as $categoria)
-                    <button onclick="filtrarCategoria('{{ strtolower($categoria) }}')" 
-                            class="categoria-btn bg-gray-200 text-gray-700 hover:bg-boom-primary hover:text-white px-3 sm:px-4 py-2 rounded font-medium transition-colors duration-200 text-sm sm:text-base"
-                            data-categoria="{{ strtolower($categoria) }}">
-                        @if(strtolower($categoria) == 'formal')
-                            <i class="fas fa-user-tie mr-1"></i>
-                        @elseif(strtolower($categoria) == 'informal')
-                            <i class="fas fa-tshirt mr-1"></i>
-                        @else
-                            <i class="fas fa-tag mr-1"></i>
-                        @endif
-                        {{ $categoria }}
+        <!-- Buscador y Filtros -->
+        <div class="bg-white p-4 rounded-lg shadow mb-6">
+            <form method="GET" action="{{ route('catalogo.index') }}" class="space-y-4">
+                <!-- Barra de búsqueda principal -->
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="flex-1">
+                        <input type="text" name="busqueda" value="{{ $filtros['busqueda'] ?? '' }}" 
+                               placeholder="Buscar productos por nombre, descripción..." 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-boom-primary focus:border-transparent">
+                    </div>
+                    <button type="submit" class="bg-boom-primary hover:bg-boom-primary-dark text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200">
+                        <i class="fas fa-search mr-2"></i>Buscar
                     </button>
-                @endforeach
-            </div>
+                </div>
+
+                <!-- Filtros avanzados -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                        <select name="categoria" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-boom-primary focus:border-transparent">
+                            <option value="">Todas las categorías</option>
+                            @foreach($categorias as $categoria)
+                                <option value="{{ $categoria }}" {{ ($filtros['categoria'] ?? '') == $categoria ? 'selected' : '' }}>
+                                    {{ $categoria }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Precio mínimo</label>
+                        <input type="number" name="precio_min" value="{{ $filtros['precio_min'] ?? '' }}" 
+                               placeholder="Bs. 0" min="0" step="0.01"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-boom-primary focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Precio máximo</label>
+                        <input type="number" name="precio_max" value="{{ $filtros['precio_max'] ?? '' }}" 
+                               placeholder="Bs. 1000" min="0" step="0.01"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-boom-primary focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ordenar por</label>
+                        <select name="ordenar" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-boom-primary focus:border-transparent">
+                            <option value="categoria" {{ ($filtros['ordenar'] ?? '') == 'categoria' ? 'selected' : '' }}>Categoría</option>
+                            <option value="nombre_asc" {{ ($filtros['ordenar'] ?? '') == 'nombre_asc' ? 'selected' : '' }}>Nombre A-Z</option>
+                            <option value="nombre_desc" {{ ($filtros['ordenar'] ?? '') == 'nombre_desc' ? 'selected' : '' }}>Nombre Z-A</option>
+                            <option value="precio_asc" {{ ($filtros['ordenar'] ?? '') == 'precio_asc' ? 'selected' : '' }}>Precio menor a mayor</option>
+                            <option value="precio_desc" {{ ($filtros['ordenar'] ?? '') == 'precio_desc' ? 'selected' : '' }}>Precio mayor a menor</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Botones de acción y estadísticas -->
+                <div class="flex flex-wrap gap-2 justify-between items-center">
+                    <div class="flex gap-2">
+                        <a href="{{ route('catalogo.index') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200">
+                            <i class="fas fa-times mr-1"></i>Limpiar filtros
+                        </a>
+                    </div>
+                    
+                    <!-- Estadísticas de búsqueda -->
+                    @if(isset($estadisticas))
+                        <div class="text-sm text-gray-600">
+                            @if(($filtros['busqueda'] ?? '') || ($filtros['categoria'] ?? '') || ($filtros['precio_min'] ?? '') || ($filtros['precio_max'] ?? ''))
+                                Mostrando {{ $productos->count() }} de {{ $estadisticas['productos_filtrados'] }} productos
+                            @else
+                                {{ $estadisticas['total_productos'] }} productos disponibles
+                            @endif
+                        </div>
+                    @endif
+                </div>
+            </form>
         </div>
+
+        <!-- Filtros rápidos por categoría -->
+        @if($categorias->count() > 0)
+            <div class="bg-white p-3 rounded-lg shadow mb-4">
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ route('catalogo.index') }}" 
+                       class="px-3 py-1 rounded-full text-sm font-medium transition-colors {{ !($filtros['categoria'] ?? '') ? 'bg-boom-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-boom-primary hover:text-white' }}">
+                        <i class="fas fa-th-large mr-1"></i>Todos
+                    </a>
+                    @foreach($categorias as $categoria)
+                        <a href="{{ route('catalogo.index', ['categoria' => $categoria]) }}" 
+                           class="px-3 py-1 rounded-full text-sm font-medium transition-colors {{ ($filtros['categoria'] ?? '') == $categoria ? 'bg-boom-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-boom-primary hover:text-white' }}">
+                            @if(strtolower($categoria) == 'formal')
+                                <i class="fas fa-user-tie mr-1"></i>
+                            @elseif(strtolower($categoria) == 'informal')
+                                <i class="fas fa-tshirt mr-1"></i>
+                            @else
+                                <i class="fas fa-tag mr-1"></i>
+                            @endif
+                            {{ $categoria }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        @endif
 
         <!-- Catálogo de productos -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
             @forelse($productos as $producto)
-                <div class="producto-card bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300" 
-                     data-categoria="{{ strtolower($producto->categoria) }}">
+                <div class="producto-card bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
                     <div class="relative">
                         @if($producto->imagen && file_exists(public_path($producto->imagen)))
                             <img src="{{ asset($producto->imagen) }}" 
@@ -88,57 +163,73 @@
                             <span class="text-sm text-gray-500">Stock: {{ $producto->stock }}</span>
                         </div>
                         
-                        @if($producto->stock > 0)
-                            <button onclick="seleccionarProducto('{{ $producto->nombre }}', {{ $producto->precio }}, '{{ strtolower($producto->categoria) }}')" 
-                                    class="w-full bg-boom-primary hover:bg-boom-primary-dark text-white font-bold py-2 px-4 rounded transition-colors duration-200">
-                                <i class="fas fa-shopping-cart mr-2"></i>
-                                Hacer Pedido
-                            </button>
+                        @if(auth()->check() && auth()->user()->id_rol == 3)
+                            {{-- Vista para clientes: sin botón de pedido --}}
+                            @if($producto->stock > 0)
+                                <div class="w-full bg-gray-100 text-gray-600 font-bold py-2 px-4 rounded text-center">
+                                    <i class="fas fa-eye mr-2"></i>
+                                    Disponible
+                                </div>
+                            @else
+                                <div class="w-full bg-gray-400 text-white font-bold py-2 px-4 rounded text-center">
+                                    <i class="fas fa-times mr-2"></i>
+                                    Sin Stock
+                                </div>
+                            @endif
                         @else
-                            <button disabled 
-                                    class="w-full bg-gray-400 text-white font-bold py-2 px-4 rounded cursor-not-allowed">
-                                <i class="fas fa-times mr-2"></i>
-                                Sin Stock
-                            </button>
+                            {{-- Vista para admin/empleados: con botón de pedido --}}
+                            @if($producto->stock > 0)
+                                <button onclick="seleccionarProducto('{{ $producto->nombre }}', {{ $producto->precio }}, '{{ strtolower($producto->categoria) }}')" 
+                                        class="w-full bg-boom-primary hover:bg-boom-primary-dark text-white font-bold py-2 px-4 rounded transition-colors duration-200">
+                                    <i class="fas fa-shopping-cart mr-2"></i>
+                                    Hacer Pedido
+                                </button>
+                            @else
+                                <button disabled 
+                                        class="w-full bg-gray-400 text-white font-bold py-2 px-4 rounded cursor-not-allowed">
+                                    <i class="fas fa-times mr-2"></i>
+                                    Sin Stock
+                                </button>
+                            @endif
                         @endif
                     </div>
                 </div>
             @empty
                 <div class="col-span-full text-center py-12">
                     <div class="bg-boom-cream-100 rounded-lg p-8">
-                        <i class="fas fa-tshirt text-6xl text-boom-text-medium mb-4"></i>
-                        <h3 class="text-xl font-semibold text-boom-text-dark mb-2">No hay productos disponibles</h3>
-                        <p class="text-boom-text-medium">Actualmente no tenemos productos en el catálogo.</p>
+                        <i class="fas fa-search text-6xl text-boom-text-medium mb-4"></i>
+                        <h3 class="text-xl font-semibold text-boom-text-dark mb-2">
+                            @if(($filtros['busqueda'] ?? '') || ($filtros['categoria'] ?? '') || ($filtros['precio_min'] ?? '') || ($filtros['precio_max'] ?? ''))
+                                No se encontraron productos
+                            @else
+                                No hay productos disponibles
+                            @endif
+                        </h3>
+                        <p class="text-boom-text-medium mb-4">
+                            @if(($filtros['busqueda'] ?? '') || ($filtros['categoria'] ?? '') || ($filtros['precio_min'] ?? '') || ($filtros['precio_max'] ?? ''))
+                                Intenta ajustar los filtros de búsqueda para encontrar más productos.
+                            @else
+                                Actualmente no tenemos productos en el catálogo.
+                            @endif
+                        </p>
+                        @if(($filtros['busqueda'] ?? '') || ($filtros['categoria'] ?? '') || ($filtros['precio_min'] ?? '') || ($filtros['precio_max'] ?? ''))
+                            <a href="{{ route('catalogo.index') }}" class="bg-boom-primary hover:bg-boom-primary-dark text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                <i class="fas fa-times mr-2"></i>Limpiar filtros
+                            </a>
+                        @endif
                     </div>
                 </div>
             @endforelse
-
-            <!-- Vestido Casual -->
-            <div class="producto-card bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300" data-categoria="vestidos">
-                <div class="relative">
-                    <img src="https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&h=500&fit=crop" 
-                         alt="Vestido Casual" class="w-full h-64 object-cover">
-                    <div class="absolute top-2 right-2">
-                        <span class="bg-pink-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                            Casual
-                        </span>
-                    </div>
-                </div>
-                <div class="p-4">
-                    <h3 class="text-lg font-semibold text-boom-text-dark mb-2">Vestido Casual Chic</h3>
-                    <p class="text-gray-600 text-sm mb-3">Comodidad y estilo para el día a día. Versatilidad en cada ocasión.</p>
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-2xl font-bold text-boom-primary">Bs. 380</span>
-                        <span class="text-sm text-gray-500">Desde</span>
-                    </div>
-                    <button onclick="seleccionarProducto('Vestido Casual Chic', 380, 'vestidos')" 
-                            class="w-full bg-boom-primary hover:bg-boom-primary-dark text-white font-bold py-2 px-4 rounded transition-colors duration-200">
-                        <i class="fas fa-shopping-cart mr-2"></i>
-                        Hacer Pedido
-                    </button>
-                </div>
-            </div>
         </div>
+
+        <!-- Paginación -->
+        @if($productos->hasPages())
+            <div class="mt-8">
+                {{ $productos->links() }}
+            </div>
+        @endif
+
+
     </div>
 
     <!-- Modal para seleccionar cliente -->
@@ -199,26 +290,6 @@
 
     @push('scripts')
     <script>
-        function filtrarCategoria(categoria) {
-            // Actualizar botones
-            document.querySelectorAll('.categoria-btn').forEach(btn => {
-                if (btn.dataset.categoria === categoria) {
-                    btn.className = 'categoria-btn bg-boom-primary text-white px-4 py-2 rounded font-medium transition-colors duration-200';
-                } else {
-                    btn.className = 'categoria-btn bg-gray-200 text-gray-700 hover:bg-boom-primary hover:text-white px-4 py-2 rounded font-medium transition-colors duration-200';
-                }
-            });
-            
-            // Mostrar/ocultar productos
-            document.querySelectorAll('.producto-card').forEach(card => {
-                if (categoria === 'todos' || card.dataset.categoria === categoria) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        }
-        
         function seleccionarProducto(nombre, precio, categoria) {
             // Mostrar información del producto en el modal
             document.getElementById('productoSeleccionado').innerHTML = `
@@ -249,6 +320,23 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 cerrarModalCliente();
+            }
+        });
+
+        // Búsqueda en tiempo real (opcional)
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.querySelector('input[name="busqueda"]');
+            if (searchInput) {
+                let searchTimeout;
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => {
+                        // Auto-submit después de 1 segundo de inactividad
+                        if (this.value.length >= 3 || this.value.length === 0) {
+                            this.form.submit();
+                        }
+                    }, 1000);
+                });
             }
         });
     </script>

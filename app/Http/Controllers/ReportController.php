@@ -395,4 +395,31 @@ class ReportController extends Controller
         $filename = 'analisis_productos_' . now()->format('Ymd_His') . '.pdf';
         return $pdf->download($filename);
     }
+    // CU: Reporte de Rentabilidad
+    public function rentabilidad(Request $request)
+    {
+        $prendas = Prenda::orderBy('categoria')->orderBy('nombre')->get();
+        
+        $data = $prendas->map(function($prenda) {
+            $margen = $prenda->precio - $prenda->costo;
+            $margenPorcentaje = $prenda->precio > 0 ? ($margen / $prenda->precio) * 100 : 0;
+            return [
+                'id' => $prenda->id,
+                'nombre' => $prenda->nombre,
+                'categoria' => $prenda->categoria,
+                'precio' => $prenda->precio,
+                'costo' => $prenda->costo,
+                'margen' => $margen,
+                'margen_porcentaje' => $margenPorcentaje
+            ];
+        });
+
+        if ($request->has('download')) {
+            $pdf = app()->make('dompdf.wrapper');
+            $pdf->loadView('reportes.rentabilidad', compact('data'));
+            return $pdf->download('rentabilidad.pdf');
+        }
+
+        return view('reportes.rentabilidad-web', compact('data'));
+    }
 }

@@ -39,4 +39,10 @@ return [
         'api_key' => env('NOTIFICATIONS_API_KEY'),
     ],
 
+    'stripe' => [
+        'publishable' => env('STRIPE_PUBLISHABLE_KEY'),
+        'secret' => env('STRIPE_SECRET_KEY'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+    ],
+
 ];

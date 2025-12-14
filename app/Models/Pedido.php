@@ -41,7 +41,10 @@ class Pedido extends Model
         'confirmado_por',
         'recepcion_confirmada',
         'observaciones_recepcion',
-        'notificacion_whatsapp_enviada'
+        'notificacion_whatsapp_enviada',
+        'calificacion',
+        'comentario_calificacion',
+        'fecha_calificacion'
     ];
 
     /**
@@ -56,6 +59,8 @@ class Pedido extends Model
         'fecha_confirmacion_recepcion' => 'datetime',
         'recepcion_confirmada' => 'boolean',
         'notificacion_whatsapp_enviada' => 'boolean',
+        'calificacion' => 'integer',
+        'fecha_calificacion' => 'datetime',
     ];
 
     /**
@@ -238,6 +243,42 @@ class Pedido extends Model
     public function getTotalFormateadoAttribute(): string
     {
         return $this->total ? 'Bs. ' . number_format($this->total, 2) : 'No especificado';
+    }
+
+    /**
+     * Verificar si el pedido puede ser calificado
+     */
+    public function puedeSerCalificado(): bool
+    {
+        return $this->estado === 'Entregado';
+    }
+
+    /**
+     * Verificar si el pedido ya fue calificado
+     */
+    public function yaFueCalificado(): bool
+    {
+        return !is_null($this->calificacion);
+    }
+
+    /**
+     * Obtener el texto de la calificación
+     */
+    public function getCalificacionTextoAttribute(): string
+    {
+        if (is_null($this->calificacion)) {
+            return 'Sin calificar';
+        }
+
+        $textos = [
+            1 => 'Muy Malo',
+            2 => 'Malo', 
+            3 => 'Regular',
+            4 => 'Bueno',
+            5 => 'Excelente'
+        ];
+
+        return $textos[$this->calificacion] ?? 'Sin calificar';
     }
 
     // ========== NUEVAS RELACIONES CU19-CU23 ==========

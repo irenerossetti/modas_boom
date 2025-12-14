@@ -84,9 +84,14 @@ class PedidoController extends Controller
         }
 
         // Construir consulta con filtros optimizada
-        $query = Pedido::with(['cliente' => function($query) {
-                $query->select('id', 'nombre', 'apellido', 'ci_nit');
-            }])
+        $query = Pedido::with([
+                'cliente' => function($query) {
+                    $query->select('id', 'nombre', 'apellido', 'ci_nit');
+                },
+                'pagos' => function($query) {
+                    $query->select('id', 'id_pedido', 'monto', 'anulado');
+                }
+            ])
             ->select('id_pedido', 'id_cliente', 'estado', 'total', 'created_at', 'updated_at')
             ->byEstado($filtros['estado'] ?? null)
             ->byCliente($filtros['id_cliente'] ?? null)
@@ -184,8 +189,8 @@ class PedidoController extends Controller
             \Log::error('Error enviando confirmación por WhatsApp en store(): ' . $e->getMessage());
         }
 
-        return redirect()->route('pedidos.index')
-            ->with('success', "Pedido #{$pedido->id_pedido} creado exitosamente.");
+        return redirect()->route('pagos.checkout', $pedido->id_pedido)
+            ->with('success', "Pedido #{$pedido->id_pedido} creado exitosamente. Procede con el pago.");
     }
 
     /**
@@ -753,8 +758,8 @@ class PedidoController extends Controller
             \Log::error('Error enviando confirmación por WhatsApp en clienteStore(): ' . $e->getMessage());
         }
 
-        return redirect()->route('pedidos.mis-pedidos')
-            ->with('success', "¡Pedido #{$pedido->id_pedido} creado exitosamente! Stock actualizado automáticamente. Te contactaremos pronto para confirmar los detalles.");
+        return redirect()->route('pagos.checkout', $pedido->id_pedido)
+            ->with('success', "¡Pedido #{$pedido->id_pedido} creado exitosamente! Procede con el pago.");
     }
 
     /**
@@ -792,7 +797,7 @@ class PedidoController extends Controller
         });
 
         // Obtener pedidos del cliente con filtros (optimizado)
-        $query = Pedido::select('id_pedido', 'id_cliente', 'estado', 'total', 'created_at', 'updated_at')
+        $query = Pedido::select('id_pedido', 'id_cliente', 'estado', 'total', 'created_at', 'updated_at', 'calificacion', 'comentario_calificacion', 'fecha_calificacion')
             ->where('id_cliente', $cliente->id)
             ->when($filtros['estado'] ?? null, function($q, $estado) {
                 return $q->where('estado', $estado);
@@ -976,8 +981,9 @@ class PedidoController extends Controller
             $successMessage .= " Stock actualizado automáticamente.";
         }
 
-        return redirect()->route('pedidos.index')
-            ->with('success', $successMessage);
+        return redirect()->route('pagos.pasarela')
+            ->with('success', $successMessage . " Procede con el pago.")
+            ->with('pedido_creado', $pedido->id_pedido);
     }
 
     /**
@@ -1585,8 +1591,77 @@ class PedidoController extends Controller
     /**
      * Mostrar vista de calendario de pedidos
      */
+       /**
+     * Mostrar vista de calendario de pedidos
+     */
     public function calendar()
     {
         return view('pedidos.calendar');
+    }
+
+    /**
+     * Calificar un pedido (solo clientes)
+     */
+    public function calificar(Request $request, $id)
+    {
+        $user = Auth::user();
+        
+        // Verificar que sea un cliente
+        if ($user->id_rol !== 3) {
+            return redirect()->back()->with('error', 'No tienes permisos para realizar esta acción.');
+        }
+
+        $cliente = Cliente::where('id_usuario', $user->id_usuario)->first();
+        if (!$cliente) {
+            return redirect()->back()->with('error', 'No se encontró información del cliente.');
+        }
+
+        $pedido = Pedido::where('id_pedido', $id)
+            ->where('id_cliente', $cliente->id)
+            ->first();
+
+        if (!$pedido) {
+            return redirect()->back()->with('error', 'Pedido no encontrado.');
+        }
+
+        // Verificar que el pedido esté entregado y no haya sido calificado
+        if (!$pedido->puedeSerCalificado()) {
+            return redirect()->back()->with('error', 'Este pedido no puede ser calificado en este momento.');
+        }
+
+        $request->validate([
+            'calificacion' => 'required|integer|min:1|max:5',
+            'comentario_calificacion' => 'nullable|string|max:500'
+        ]);
+
+        $pedido->update([
+            'calificacion' => $request->calificacion,
+            'comentario_calificacion' => $request->comentario_calificacion,
+            'fecha_calificacion' => now()
+        ]);
+
+        // Log para debug
+        \Log::info('Calificación guardada', [
+            'pedido_id' => $pedido->id_pedido,
+            'calificacion' => $request->calificacion,
+            'comentario' => $request->comentario_calificacion,
+            'pedido_calificacion' => $pedido->calificacion,
+            'pedido_comentario' => $pedido->comentario_calificacion
+        ]);
+
+        // Registrar en bitácora
+        $this->bitacoraService->registrarActividad(
+            'UPDATE',
+            'PEDIDOS',
+            "Cliente calificó el pedido #{$pedido->id_pedido} con {$request->calificacion} estrellas: {$pedido->calificacion_texto}",
+            null,
+            $pedido->toArray()
+        );
+
+        $mensaje = $pedido->yaFueCalificado() ? 
+            '¡Calificación actualizada exitosamente! Gracias por tu feedback.' : 
+            '¡Gracias por tu calificación! Tu opinión nos ayuda a mejorar.';
+            
+        return redirect()->back()->with('success', $mensaje);
     }
 }

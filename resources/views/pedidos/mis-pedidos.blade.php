@@ -142,6 +142,110 @@
                                             </div>
                                         </div>
 
+                                        <!-- Calificación del pedido -->
+                                        @if($pedido->puedeSerCalificado())
+                                            @if($pedido->yaFueCalificado())
+                                                <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                                                    <div class="flex items-center justify-between mb-3">
+                                                        <div>
+                                                            <h4 class="font-medium text-green-800 mb-1">
+                                                                <i class="fas fa-star text-yellow-500 mr-1"></i>
+                                                                Tu Calificación: {{ $pedido->calificacion_texto }}
+                                                            </h4>
+                                                            <div class="flex items-center space-x-1 mb-2">
+                                                                @for($i = 1; $i <= 5; $i++)
+                                                                    <i class="fas fa-star text-sm {{ $i <= $pedido->calificacion ? 'text-yellow-400' : 'text-gray-300' }}"></i>
+                                                                @endfor
+                                                                <span class="text-sm text-green-700 ml-2">{{ $pedido->calificacion }}/5</span>
+                                                            </div>
+                                                            @if($pedido->comentario_calificacion)
+                                                                <p class="text-sm text-green-700 italic">"{{ $pedido->comentario_calificacion }}"</p>
+                                                            @endif
+                                                        </div>
+                                                        <div class="text-right">
+                                                            <div class="text-xs text-green-600 mb-2">
+                                                                {{ $pedido->fecha_calificacion->format('d/m/Y H:i') }}
+                                                            </div>
+                                                            <button onclick="editarCalificacion({{ $pedido->id_pedido }})" 
+                                                                    class="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded transition-colors">
+                                                                <i class="fas fa-edit mr-1"></i>Editar
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Formulario de edición (oculto inicialmente) -->
+                                                    <div id="form-editar-{{ $pedido->id_pedido }}" class="hidden border-t border-green-300 pt-3">
+                                                        <form action="{{ route('pedidos.calificar', $pedido->id_pedido) }}" method="POST" class="space-y-3">
+                                                            @csrf
+                                                            <div>
+                                                                <label class="block text-sm font-medium text-green-800 mb-2">Nueva Calificación</label>
+                                                                <div class="flex items-center space-x-2">
+                                                                    @for($i = 1; $i <= 5; $i++)
+                                                                        <label class="cursor-pointer">
+                                                                            <input type="radio" name="calificacion" value="{{ $i }}" 
+                                                                                   {{ $pedido->calificacion == $i ? 'checked' : '' }}
+                                                                                   class="sr-only peer" required>
+                                                                            <i class="fas fa-star text-2xl {{ $i <= $pedido->calificacion ? 'text-yellow-400' : 'text-gray-300' }} peer-checked:text-yellow-400 hover:text-yellow-300 transition-colors"></i>
+                                                                        </label>
+                                                                    @endfor
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <label class="block text-sm font-medium text-green-800 mb-1">Comentario</label>
+                                                                <textarea name="comentario_calificacion" rows="2" 
+                                                                          class="w-full px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                                                                          placeholder="Actualiza tu comentario...">{{ $pedido->comentario_calificacion }}</textarea>
+                                                            </div>
+                                                            <div class="flex justify-end space-x-2">
+                                                                <button type="button" onclick="cancelarEdicion({{ $pedido->id_pedido }})" 
+                                                                        class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 text-sm">
+                                                                    Cancelar
+                                                                </button>
+                                                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 text-sm">
+                                                                    <i class="fas fa-save mr-1"></i>Actualizar
+                                                                </button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            @else
+                                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                                                <h4 class="font-medium text-yellow-800 mb-3">
+                                                    <i class="fas fa-star mr-1"></i>
+                                                    ¿Cómo fue tu experiencia con este pedido?
+                                                </h4>
+                                                <form action="{{ route('pedidos.calificar', $pedido->id_pedido) }}" method="POST" class="space-y-3">
+                                                    @csrf
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-yellow-800 mb-2">Calificación</label>
+                                                        <div class="flex items-center space-x-2">
+                                                            @for($i = 1; $i <= 5; $i++)
+                                                                <label class="cursor-pointer">
+                                                                    <input type="radio" name="calificacion" value="{{ $i }}" class="sr-only peer" required>
+                                                                    <i class="fas fa-star text-2xl text-gray-300 peer-checked:text-yellow-400 hover:text-yellow-300 transition-colors"></i>
+                                                                </label>
+                                                            @endfor
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label for="comentario_{{ $pedido->id_pedido }}" class="block text-sm font-medium text-yellow-800 mb-1">
+                                                            Comentario (opcional)
+                                                        </label>
+                                                        <textarea name="comentario_calificacion" id="comentario_{{ $pedido->id_pedido }}" rows="2" 
+                                                                  class="w-full px-3 py-2 border border-yellow-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm"
+                                                                  placeholder="Cuéntanos sobre tu experiencia..."></textarea>
+                                                    </div>
+                                                    <div class="flex justify-end space-x-2">
+                                                        <button type="submit" class="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 text-sm">
+                                                            <i class="fas fa-star mr-1"></i>Calificar
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        @endif
+                                    @endif
+
+
                                         <div class="flex justify-end">
                                             <a href="{{ route('pedidos.show', $pedido->id_pedido) }}" 
                                                class="bg-boom-cream-200 hover:bg-boom-cream-300 text-boom-text-dark font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
@@ -185,3 +289,64 @@
         </div>
     </div>
 @endsection
+<script>
+// Funciones para editar calificación
+function editarCalificacion(pedidoId) {
+    document.getElementById('form-editar-' + pedidoId).classList.remove('hidden');
+}
+
+function cancelarEdicion(pedidoId) {
+    document.getElementById('form-editar-' + pedidoId).classList.add('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Mejorar interacción con estrellas de calificación
+    const starContainers = document.querySelectorAll('form[action*="calificar"]');
+    
+    starContainers.forEach(container => {
+        const stars = container.querySelectorAll('input[name="calificacion"]');
+        const starIcons = container.querySelectorAll('i.fa-star');
+        
+        // Efecto hover
+        starIcons.forEach((star, index) => {
+            star.addEventListener('mouseenter', function() {
+                for (let i = 0; i <= index; i++) {
+                    starIcons[i].classList.remove('text-gray-300');
+                    starIcons[i].classList.add('text-yellow-300');
+                }
+                for (let i = index + 1; i < starIcons.length; i++) {
+                    starIcons[i].classList.remove('text-yellow-300', 'text-yellow-400');
+                    starIcons[i].classList.add('text-gray-300');
+                }
+            });
+            
+            star.addEventListener('mouseleave', function() {
+                // Restaurar estado basado en selección actual
+                const selectedValue = container.querySelector('input[name="calificacion"]:checked')?.value || 0;
+                starIcons.forEach((s, i) => {
+                    if (i < selectedValue) {
+                        s.classList.remove('text-gray-300', 'text-yellow-300');
+                        s.classList.add('text-yellow-400');
+                    } else {
+                        s.classList.remove('text-yellow-300', 'text-yellow-400');
+                        s.classList.add('text-gray-300');
+                    }
+                });
+            });
+            
+            star.addEventListener('click', function() {
+                stars[index].checked = true;
+                // Actualizar visualización
+                for (let i = 0; i <= index; i++) {
+                    starIcons[i].classList.remove('text-gray-300', 'text-yellow-300');
+                    starIcons[i].classList.add('text-yellow-400');
+                }
+                for (let i = index + 1; i < starIcons.length; i++) {
+                    starIcons[i].classList.remove('text-yellow-300', 'text-yellow-400');
+                    starIcons[i].classList.add('text-gray-300');
+                }
+            });
+        });
+    });
+});
+</script>

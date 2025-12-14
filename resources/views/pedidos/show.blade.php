@@ -249,12 +249,147 @@
                                 </p>
                             </div>
                             <div class="mt-3">
-                                @if(Auth::user()->id_rol == 1)
-                                    <a href="{{ route('pedidos.devoluciones.create', $pedido->id_pedido) }}?prenda_id={{ $prenda->id }}" class="inline-block mt-2 bg-red-500 hover:bg-red-600 text-black px-3 py-1 rounded text-sm">Registrar Devolución</a>
-                                @endif
                                 @php
+                                    // Verificar si hay reembolso para este pedido (incluyendo pagos anulados si tienen reembolso)
+                                    $reembolso = null;
+                                    foreach($pedido->pagos as $pago) {
+                                        $reembolsoExistente = \App\Models\SolicitudReembolso::where('pago_id', $pago->id)->first();
+                                        if ($reembolsoExistente) {
+                                            $reembolso = $reembolsoExistente;
+                                            break;
+                                        }
+                                    }
                                     $devueltoPorPrenda = $pedido->devoluciones->where('id_prenda', $prenda->id)->sum('cantidad');
                                 @endphp
+                                
+                                @if($reembolso)
+                                    <!-- Botón Registrar Devolución con información del reembolso -->
+                                    <button onclick="toggleDevolucionInfo({{ $prenda->id }})" 
+                                            class="w-full flex items-center justify-between p-3 {{ $reembolso->estado === 'procesado' ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700' : ($reembolso->estado === 'rechazado' ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700' : 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600') }} text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-105 mt-2">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-money-bill-wave mr-2"></i>
+                                            <span class="text-sm">
+                                                {{ $reembolso->estado === 'pendiente' ? 'Gestionar Reembolso' : 'Ver Reembolso (' . ucfirst($reembolso->estado) . ')' }}
+                                            </span>
+                                        </div>
+                                        <i id="devolucionChevron{{ $prenda->id }}" class="fas fa-chevron-down transition-transform duration-200"></i>
+                                    </button>
+                                    
+                                    <!-- Contenido expandible del reembolso -->
+                                    <div id="devolucionContent{{ $prenda->id }}" class="hidden mt-3 p-3 border rounded-lg {{ $reembolso->metodo_reembolso === 'efectivo' ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200' }}">
+                                        <div class="space-y-2">
+                                            <div class="flex items-center justify-between">
+                                                @if($reembolso->metodo_reembolso === 'efectivo')
+                                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                                        <i class="fas fa-money-bill-wave mr-1"></i>
+                                                        Efectivo
+                                                    </span>
+                                                @else
+                                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                                                        <i class="fas fa-university mr-1"></i>
+                                                        Transferencia Bancaria
+                                                    </span>
+                                                @endif
+                                                <span class="text-xs text-gray-600">
+                                                    Bs. {{ number_format($reembolso->monto, 2) }}
+                                                </span>
+                                            </div>
+                                            
+                                            <div class="text-xs text-gray-700 space-y-1">
+                                                <p><strong>Beneficiario:</strong> {{ $reembolso->beneficiario_nombre }}</p>
+                                                <p><strong>CI:</strong> {{ $reembolso->beneficiario_ci }}</p>
+                                                <p><strong>Teléfono:</strong> {{ $reembolso->beneficiario_telefono }}</p>
+                                                
+                                                @if($reembolso->metodo_reembolso === 'transferencia')
+                                                    <div class="mt-2 p-2 bg-white rounded border">
+                                                        <p class="font-medium text-gray-800 text-xs">Datos Bancarios:</p>
+                                                        <p class="text-xs"><strong>Banco:</strong> {{ $reembolso->banco }}</p>
+                                                        <p class="text-xs"><strong>Cuenta:</strong> {{ $reembolso->numero_cuenta }}</p>
+                                                        @if($reembolso->estado === 'pendiente')
+                                                            <div class="flex items-center justify-between mt-2">
+                                                                <p class="text-orange-600 text-xs">
+                                                                    <i class="fas fa-clock mr-1"></i>
+                                                                    Pendiente de procesamiento
+                                                                </p>
+                                                            </div>
+                                                        @elseif($reembolso->estado === 'rechazado')
+                                                            <div class="flex items-center justify-between mt-1">
+                                                                <p class="text-red-600 text-xs">
+                                                                    <i class="fas fa-times-circle mr-1"></i>
+                                                                    Reembolso rechazado
+                                                                </p>
+                                                            </div>
+                                                        @else
+                                                            <div class="flex items-center justify-between mt-1">
+                                                                <p class="text-green-600 text-xs">
+                                                                    <i class="fas fa-check-circle mr-1"></i>
+                                                                    Reembolso completado
+                                                                </p>
+                                                            </div>
+                                                        @endif
+
+                                                        <!-- Botones de Acción (Admin) -->
+                                                        @if(Auth::user()->id_rol == 1)
+                                                            <div class="flex items-center justify-end gap-2 mt-2 border-t pt-2">
+                                                                @if($reembolso->estado === 'pendiente')
+                                                                    <button type="button" 
+                                                                            onclick="marcarReembolsoCompletado({{ $reembolso->id }})"
+                                                                            class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded transition-colors duration-200 shadow-sm flex items-center">
+                                                                        <i class="fas fa-check-double mr-1"></i>
+                                                                        Validar
+                                                                    </button>
+                                                                @endif
+                                                                <button type="button" 
+                                                                        onclick="mostrarModalCambiarEstadoReembolso({{ $reembolso->id }}, '{{ $reembolso->estado }}')"
+                                                                        class="px-2 py-1 bg-gray-500 hover:bg-gray-600 text-white text-xs rounded transition-colors duration-200" title="Cambiar Estado">
+                                                                    <i class="fas fa-edit"></i>
+                                                                </button>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                @else
+                                                    <!-- Sección EFECTIVO -->
+                                                    @if($reembolso->estado === 'procesado')
+                                                        <div class="flex items-center justify-between mt-1">
+                                                            <p class="text-green-600 text-xs">
+                                                                <i class="fas fa-check-circle mr-1"></i>
+                                                                Reembolso completado
+                                                            </p>
+                                                        </div>
+                                                    @elseif($reembolso->estado === 'rechazado')
+                                                        <div class="flex items-center justify-between mt-1">
+                                                            <p class="text-red-600 text-xs">
+                                                                <i class="fas fa-times-circle mr-1"></i>
+                                                                Reembolso rechazado
+                                                            </p>
+                                                        </div>
+                                                    @else
+                                                        <div class="flex items-center justify-between mt-1">
+                                                            <p class="text-orange-600 text-xs">
+                                                                <i class="fas fa-clock mr-1"></i>
+                                                                Pendiente
+                                                            </p>
+                                                        </div>
+                                                    @endif
+
+                                                    <!-- Botón Cambiar Estado (Admin) para Efectivo -->
+                                                    @if(Auth::user()->id_rol == 1)
+                                                        <div class="flex justify-end mt-2 border-t pt-2">
+                                                            <button type="button" 
+                                                                    onclick="mostrarModalCambiarEstadoReembolso({{ $reembolso->id }}, '{{ $reembolso->estado }}')"
+                                                                    class="px-2 py-1 bg-gray-500 hover:bg-gray-600 text-white text-xs rounded transition-colors duration-200" title="Cambiar Estado">
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
+                                                        </div>
+                                                    @endif
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @elseif(Auth::user()->id_rol == 1)
+                                    <a href="{{ route('pedidos.devoluciones.create', $pedido->id_pedido) }}?prenda_id={{ $prenda->id }}" class="inline-block mt-2 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">Registrar Devolución</a>
+                                @endif
+                                
                                 @if($devueltoPorPrenda > 0)
                                     <p class="text-sm text-gray-600 mt-2">Devuelto: {{ $devueltoPorPrenda }} unidades</p>
                                 @endif
@@ -354,7 +489,9 @@
                                         <p class="text-xs text-gray-600">Registrado: {{ $pago->fecha_pago->format('d/m/Y H:i') }} por {{ $pago->registradoPor->nombre ?? 'Sistema' }}</p>
                                     </div>
                                     <div class="text-right">
-                                        <a href="{{ route('pagos.recibo', $pago->id) }}" class="text-blue-600 hover:underline mr-3">Recibo</a>
+                                        <a href="{{ route('pagos.recibo', $pago->id) }}" class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md text-sm font-medium transition-colors mr-3">
+                                            <i class="fas fa-download mr-1"></i> Recibo
+                                        </a>
                                         @if(!$pago->anulado)
                                             <form action="{{ route('pagos.anular', $pago->id) }}" method="POST" class="inline" onsubmit="return confirm('Confirmar anulación del pago?')">
                                                 @csrf
@@ -370,6 +507,8 @@
                         </div>
                     </div>
                     @endif
+
+
             </div>
 
             <!-- Información del Cliente -->
@@ -525,6 +664,41 @@
     </div>
     @endif
 
+    <!-- Modal para cambiar estado de reembolso -->
+    <div id="modalCambiarEstadoReembolso" class="fixed inset-0 bg-black bg-opacity-30 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4" onclick="event.stopPropagation()">
+            <div class="bg-gray-800 text-white p-3 rounded-t-lg flex justify-between items-center">
+                <h3 class="text-sm font-bold">Cambiar Estado Reembolso</h3>
+                <button type="button" onclick="cerrarModalCambiarEstadoReembolso()" class="text-gray-300 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="formCambiarEstadoReembolso" method="POST" class="p-4">
+                @csrf
+                @method('PATCH')
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-xs font-bold mb-2">Nuevo Estado:</label>
+                    <select name="estado" id="nuevo_estado_reembolso" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm">
+                        <option value="pendiente">Pendiente</option>
+                        <option value="procesado">Procesado (Completado)</option>
+                        <option value="rechazado">Rechazado</option>
+                    </select>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-xs font-bold mb-2">Notas (Opcional):</label>
+                    <textarea name="notas" rows="2" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm" placeholder="Motivo del cambio..."></textarea>
+                </div>
+                
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="cerrarModalCambiarEstadoReembolso()" class="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-xs font-bold">Cancelar</button>
+                    <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs font-bold">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     @push('styles')
     <style>
         /* Estilos para el slider personalizado */
@@ -572,6 +746,48 @@
         
         function cerrarModalAsignar() {
             document.getElementById('modalAsignar').classList.add('hidden');
+        }
+
+        // ========== TOGGLE DEVOLUCIÓN INFO ==========
+        function toggleDevolucionInfo(prendaId) {
+            const content = document.getElementById('devolucionContent' + prendaId);
+            const chevron = document.getElementById('devolucionChevron' + prendaId);
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                chevron.classList.add('rotate-180');
+            } else {
+                content.classList.add('hidden');
+                chevron.classList.remove('rotate-180');
+            }
+        }
+
+        // ========== MARCAR REEMBOLSO COMPLETADO ==========
+        function marcarReembolsoCompletado(reembolsoId) {
+            if (confirm('¿Está seguro de que desea VALIDAR este reembolso?\n\nEsta acción:\n1. Marcará la transferencia como COMPLETADA.\n2. ANULARÁ el pago asociado automáticamente.\n\n¿Desea continuar?')) {
+                // Crear formulario dinámico para enviar la petición
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/reembolsos/' + reembolsoId + '/completar';
+                
+                // Agregar token CSRF
+                const csrfToken = document.createElement('input');
+                csrfToken.type = 'hidden';
+                csrfToken.name = '_token';
+                csrfToken.value = '{{ csrf_token() }}';
+                form.appendChild(csrfToken);
+                
+                // Agregar método PATCH
+                const methodField = document.createElement('input');
+                methodField.type = 'hidden';
+                methodField.name = '_method';
+                methodField.value = 'PATCH';
+                form.appendChild(methodField);
+                
+                // Enviar formulario
+                document.body.appendChild(form);
+                form.submit();
+            }
         }
         
         // Cerrar modal con tecla Escape
@@ -662,6 +878,21 @@
                 }
             }
         });
+        // ========== MODAL CAMBIAR ESTADO REEMBOLSO ==========
+        function mostrarModalCambiarEstadoReembolso(id, estadoActual) {
+            const modal = document.getElementById('modalCambiarEstadoReembolso');
+            const form = document.getElementById('formCambiarEstadoReembolso');
+            const select = document.getElementById('nuevo_estado_reembolso');
+            
+            form.action = '/reembolsos/' + id + '/cambiar-estado';
+            select.value = estadoActual;
+            
+            modal.classList.remove('hidden');
+        }
+
+        function cerrarModalCambiarEstadoReembolso() {
+            document.getElementById('modalCambiarEstadoReembolso').classList.add('hidden');
+        }
     </script>
     @endpush
 
@@ -1058,6 +1289,59 @@
             </div>
         </div>
     </div>
+    @endif
+
+    <!-- Sección de Calificación del Cliente (solo para admin/empleados) -->
+    @if(in_array(Auth::user()->id_rol, [1, 2]) && $pedido->estado === 'Entregado')
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold text-boom-text-dark mb-4">
+                <i class="fas fa-star mr-2"></i>Calificación del Cliente
+            </h2>
+            
+            @if($pedido->yaFueCalificado())
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <h4 class="font-medium text-blue-800 mb-2">Calificación Recibida</h4>
+                            <div class="flex items-center space-x-2 mb-3">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <i class="fas fa-star text-lg {{ $i <= $pedido->calificacion ? 'text-yellow-400' : 'text-gray-300' }}"></i>
+                                @endfor
+                                <span class="text-lg font-semibold text-blue-800 ml-2">
+                                    {{ $pedido->calificacion }}/5 - {{ $pedido->calificacion_texto }}
+                                </span>
+                            </div>
+                            @if($pedido->comentario_calificacion)
+                                <div>
+                                    <h5 class="font-medium text-blue-800 mb-1">Comentario del Cliente:</h5>
+                                    <p class="text-blue-700 italic bg-blue-100 p-3 rounded">
+                                        "{{ $pedido->comentario_calificacion }}"
+                                    </p>
+                                </div>
+                            @endif
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm text-blue-600">
+                                <strong>Fecha de calificación:</strong><br>
+                                {{ $pedido->fecha_calificacion->format('d/m/Y H:i') }}
+                            </div>
+                            <div class="text-sm text-blue-600 mt-2">
+                                <strong>Cliente:</strong><br>
+                                {{ $pedido->cliente->nombre }} {{ $pedido->cliente->apellido }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @else
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                    <i class="fas fa-clock text-yellow-600 text-2xl mb-2"></i>
+                    <p class="text-yellow-800 font-medium">El cliente aún no ha calificado este pedido</p>
+                    <p class="text-yellow-700 text-sm mt-1">
+                        Los clientes pueden calificar pedidos entregados desde su panel "Mis Pedidos"
+                    </p>
+                </div>
+            @endif
+        </div>
     @endif
 
 </div>

@@ -12,6 +12,7 @@ use App\Http\Controllers\CatalogoController;
 use App\Http\Controllers\PrendaController;
 use App\Http\Controllers\ControlNotificacionesController;
 
+
 Route::get('/', function () {
     if (auth()->check()) {
         $user = auth()->user();
@@ -257,6 +258,11 @@ Route::middleware(['auth', 'user.enabled'])->group(function () {
     Route::get('crear-pedido-cliente', [PedidoController::class, 'empleadoCrear'])->name('pedidos.empleado-crear');
     Route::post('crear-pedido-cliente', [PedidoController::class, 'empleadoStore'])->name('pedidos.empleado-store');
     
+    // Presupuestos de Producción - Gestión de costos de confección (Admin y Empleados)
+    Route::resource('presupuestos-produccion', App\Http\Controllers\PresupuestoProduccionController::class);
+    Route::post('presupuestos-produccion/{id}/cambiar-estado', [App\Http\Controllers\PresupuestoProduccionController::class, 'cambiarEstado'])->name('presupuestos-produccion.cambiar-estado');
+    Route::get('presupuestos-produccion/{id}/duplicar', [App\Http\Controllers\PresupuestoProduccionController::class, 'duplicar'])->name('presupuestos-produccion.duplicar');
+    
     // Dashboard específico para clientes
     Route::get('cliente/dashboard', [App\Http\Controllers\ClienteDashboardController::class, 'index'])
         ->middleware('redirect.role')->name('cliente.dashboard');
@@ -265,6 +271,7 @@ Route::middleware(['auth', 'user.enabled'])->group(function () {
     Route::get('hacer-pedido', [PedidoController::class, 'clienteCrear'])->name('pedidos.cliente-crear');
     Route::post('hacer-pedido', [PedidoController::class, 'clienteStore'])->name('pedidos.cliente-store');
     Route::get('mis-pedidos', [PedidoController::class, 'misPedidos'])->name('pedidos.mis-pedidos');
+    Route::post('pedidos/{id}/calificar', [PedidoController::class, 'calificar'])->name('pedidos.calificar');
     
     // Rutas AJAX para verificación de stock
     Route::post('pedidos/verificar-stock', [PedidoController::class, 'verificarStock'])->name('pedidos.verificar-stock');
@@ -363,19 +370,69 @@ Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
 
 // Rutas de pagos
 Route::middleware(['auth', 'user.enabled'])->group(function () {
+    // Rutas para empleados y administradores
+    // Rutas para empleados, administradores y clientes (Proceso de Pago)
+    Route::middleware(['role:Administrador,Empleado,Cliente'])->group(function () {
+        Route::get('pagos/pasarela', [App\Http\Controllers\PagoController::class, 'pasarela'])->name('pagos.pasarela');
+        Route::get('pagos/checkout/{pedido}', [App\Http\Controllers\PagoController::class, 'checkout'])->name('pagos.checkout');
+        Route::post('pagos/procesar-pasarela', [App\Http\Controllers\PagoController::class, 'procesarPagoPasarela'])->name('pagos.procesar-pasarela');
+        
+        // APIs de pago
+        Route::get('api/pedidos/buscar/{numero}', [App\Http\Controllers\PagoController::class, 'buscarPedido'])->name('api.pedidos.buscar');
+        Route::post('api/stripe/create-payment-intent', [App\Http\Controllers\PagoController::class, 'createPaymentIntent'])->name('api.stripe.create-payment-intent');
+        Route::post('api/stripe/generate-qr', [App\Http\Controllers\PagoController::class, 'generatePaymentQR'])->name('api.stripe.generate-qr');
+        Route::post('api/stripe/confirm-payment', [App\Http\Controllers\PagoController::class, 'confirmStripePayment'])->name('api.stripe.confirm-payment');
+    });
+
+    // Rutas exclusivas para empleados y administradores (Gestión y Reembolsos)
+    Route::middleware(['role:Administrador,Empleado'])->group(function () {
+        Route::get('pagos/reembolso/{pedido}', [App\Http\Controllers\PagoController::class, 'mostrarReembolso'])->name('pagos.reembolso');
+        Route::post('pagos/{pago}/reembolsar', [App\Http\Controllers\PagoController::class, 'procesarReembolso'])->name('pagos.procesar-reembolso');
+        Route::post('pagos/limpiar-duplicados/{pedido}', [App\Http\Controllers\PagoController::class, 'limpiarPagosDuplicados'])->name('pagos.limpiar-duplicados');
+        Route::get('api/pedidos/{id}/pagos', [App\Http\Controllers\PagoController::class, 'obtenerPagosPedido'])->name('api.pedidos.pagos');
+        
+        // Debug temporal
+        Route::post('debug/stripe-data', function(Request $request) {
+            return response()->json([
+                'method' => $request->method(),
+                'all' => $request->all(),
+                'input' => $request->input(),
+                'json' => $request->json() ? $request->json()->all() : null,
+                'content_type' => $request->header('Content-Type'),
+                'raw_content' => $request->getContent()
+            ]);
+        })->name('debug.stripe-data');
+        Route::get('pagos/test-stripe', function() { return view('pagos.test-stripe'); })->name('pagos.test-stripe');
+    });
+    
     // Admin-only payment routes
     Route::middleware(['admin.role'])->group(function () {
         Route::get('pedidos/{id}/pagos/create', [App\Http\Controllers\PagoController::class, 'create'])->name('pedidos.pagos.create');
         Route::post('pedidos/{id}/pagos', [App\Http\Controllers\PagoController::class, 'store'])->name('pedidos.pagos.store');
         Route::get('pagos', [App\Http\Controllers\PagoController::class, 'index'])->name('pagos.index');
         Route::post('pagos/{id}/anular', [App\Http\Controllers\PagoController::class, 'anular'])->name('pagos.anular');
+        
+        // CRUD Métodos de Pago
+        Route::resource('metodos-pago', App\Http\Controllers\MetodoPagoController::class);
+        Route::patch('metodos-pago/{metodos_pago}/toggle-active', [App\Http\Controllers\MetodoPagoController::class, 'toggleActive'])->name('metodos-pago.toggle-active');
+        
+        // Gestión de Solicitudes de Reembolso
+        Route::get('solicitudes-reembolso', [App\Http\Controllers\SolicitudReembolsoController::class, 'index'])->name('solicitudes-reembolso.index');
+        Route::get('solicitudes-reembolso/{id}', [App\Http\Controllers\SolicitudReembolsoController::class, 'show'])->name('solicitudes-reembolso.show');
+        Route::post('solicitudes-reembolso/{id}/procesar', [App\Http\Controllers\SolicitudReembolsoController::class, 'marcarProcesada'])->name('solicitudes-reembolso.procesar');
+        Route::patch('reembolsos/{id}/completar', [App\Http\Controllers\SolicitudReembolsoController::class, 'marcarCompletado'])->name('reembolsos.completar');
+        Route::patch('reembolsos/{id}/cambiar-estado', [App\Http\Controllers\SolicitudReembolsoController::class, 'cambiarEstado'])->name('reembolsos.cambiar-estado');
     });
+    
+    // Ver mis pagos (Cliente)
+    Route::get('mis-pagos', [App\Http\Controllers\PagoController::class, 'misPagos'])->name('pagos.mis-pagos');
 
     // Recibo (puede ser solicitado por cliente o admin si está autenticado)
     Route::get('pagos/{id}/recibo', [App\Http\Controllers\PagoController::class, 'emitirRecibo'])->name('pagos.recibo');
 
     // Consulta de pagos del cliente (admin)
     Route::get('clientes/{id}/pagos', [App\Http\Controllers\PagoController::class, 'clientePagos'])->middleware('admin.role')->name('clientes.pagos');
+    Route::get('clientes/{id}/recibo-consolidado', [App\Http\Controllers\PagoController::class, 'emitirReciboConsolidado'])->middleware('admin.role')->name('clientes.recibo-consolidado');
 });
 
 // Rutas para telar y stock - solo administradores
@@ -402,6 +459,7 @@ Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
     
     // Análisis de Productos Estrella y Hueso
     Route::get('reportes/analisis-productos', [App\Http\Controllers\ReportController::class, 'analisisProductos'])->name('reportes.analisis-productos');
+    Route::get('reportes/rentabilidad', [App\Http\Controllers\ReportController::class, 'rentabilidad'])->name('reportes.rentabilidad');
     
     // Reportes de Producción - Pago a Destajo
     Route::get('reportes/produccion', [App\Http\Controllers\ReporteProduccionController::class, 'index'])->name('reportes.produccion.index');
@@ -409,6 +467,11 @@ Route::middleware(['auth', 'user.enabled', 'admin.role'])->group(function () {
     Route::get('reportes/produccion/exportar-pdf', [App\Http\Controllers\ReporteProduccionController::class, 'exportarPDF'])->name('reportes.produccion.exportar-pdf');
     Route::get('reportes/produccion/exportar-csv', [App\Http\Controllers\ReporteProduccionController::class, 'exportarCSV'])->name('reportes.produccion.exportar-csv');
     Route::get('reportes/produccion/exportar-excel', [App\Http\Controllers\ReporteProduccionController::class, 'exportarExcel'])->name('reportes.produccion.exportar-excel');
+    
+    // Reporte de Pedidos Entregados
+    Route::get('reportes/pedidos-entregados', [App\Http\Controllers\ReportePedidosEntregadosController::class, 'index'])->name('reportes.pedidos-entregados');
+    Route::get('reportes/pedidos-entregados/pdf', [App\Http\Controllers\ReportePedidosEntregadosController::class, 'exportarPDF'])->name('reportes.pedidos-entregados.pdf');
+    Route::get('reportes/pedidos-entregados/csv', [App\Http\Controllers\ReportePedidosEntregadosController::class, 'exportarCSV'])->name('reportes.pedidos-entregados.csv');
     // Control de Notificaciones - UI admin para controlar la conexión con el servicio de notificaciones/wa
     Route::get('control-notificaciones', [ControlNotificacionesController::class, 'index'])->name('control-notificaciones');
     // Proxy endpoints to the notifications service (admin only)
@@ -444,6 +507,23 @@ Route::get('/empleado-dashboard', function () {
     return redirect()->route('pedidos.index');
 })->middleware(['auth', 'verified', 'user.enabled'])->name('empleado.dashboard');
 
-
-
 require __DIR__.'/auth.php';
+// Rutas para QR de Banco Ganadero
+Route::get('/admin/upload-qr', [App\Http\Controllers\QRController::class, 'showUploadForm'])->name('admin.upload-qr.form')->middleware(['auth', 'admin.role']);
+Route::post('/admin/upload-qr', [App\Http\Controllers\QRController::class, 'uploadQR'])->name('admin.upload-qr')->middleware(['auth', 'admin.role']);
+// Rutas para confirmación de pagos
+Route::get('/pago-exitoso', function() {
+    return view('pagos.pago-exitoso');
+})->name('pago.exitoso')->middleware('auth');
+
+Route::get('/pago-error', function() {
+    return view('pagos.pago-error');
+})->name('pago.error')->middleware('auth');
+
+Route::get('/reembolso-exitoso', function() {
+    return view('pagos.reembolso-exitoso');
+})->name('reembolso.exitoso')->middleware('auth');
+
+Route::get('/reembolso-error', function() {
+    return view('pagos.reembolso-error');
+})->name('reembolso.error')->middleware('auth');

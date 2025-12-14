@@ -116,7 +116,7 @@
         </div>
 
         <!-- Estadísticas rápidas -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 lg:mb-6">
+        <div class="grid grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-4 mb-4 lg:mb-6">
             <div class="bg-yellow-100 border border-yellow-300 rounded-lg p-2 sm:p-4">
                 <div class="flex items-center">
                     <i class="fas fa-clock text-yellow-600 text-lg sm:text-2xl mr-2 sm:mr-3"></i>
@@ -153,6 +153,37 @@
                     </div>
                 </div>
             </div>
+            @php
+                $pedidosPagados = 0;
+                $pedidosPendientes = 0;
+                foreach($pedidos as $pedido) {
+                    $totalPagado = $pedido->pagos->where('anulado', false)->sum('monto');
+                    $totalPedido = $pedido->total ?? 0;
+                    if ($totalPagado >= $totalPedido && $totalPedido > 0) {
+                        $pedidosPagados++;
+                    } else {
+                        $pedidosPendientes++;
+                    }
+                }
+            @endphp
+            <div class="bg-emerald-100 border border-emerald-300 rounded-lg p-2 sm:p-4">
+                <div class="flex items-center">
+                    <i class="fas fa-check-double text-emerald-600 text-lg sm:text-2xl mr-2 sm:mr-3"></i>
+                    <div>
+                        <p class="text-xs sm:text-sm text-emerald-800">Pagados</p>
+                        <p class="text-lg sm:text-xl font-bold text-emerald-900">{{ $pedidosPagados }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-red-100 border border-red-300 rounded-lg p-2 sm:p-4">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-lg sm:text-2xl mr-2 sm:mr-3"></i>
+                    <div>
+                        <p class="text-xs sm:text-sm text-red-800">Sin Pagar</p>
+                        <p class="text-lg sm:text-xl font-bold text-red-900">{{ $pedidosPendientes }}</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Tabla de pedidos -->
@@ -179,6 +210,7 @@
                             <th class="p-3 lg:p-4 font-semibold text-sm lg:text-base">Cliente</th>
                             <th class="p-3 lg:p-4 font-semibold text-sm lg:text-base">Estado</th>
                             <th class="p-3 lg:p-4 font-semibold text-sm lg:text-base">Total</th>
+                            <th class="p-3 lg:p-4 font-semibold text-sm lg:text-base">Estado Pago</th>
                             <th class="p-3 lg:p-4 font-semibold text-sm lg:text-base">Fecha</th>
                             <th class="p-3 lg:p-4 font-semibold text-center text-sm lg:text-base">Acciones</th>
                         </tr>
@@ -219,6 +251,59 @@
                                 </div>
                             </td>
                             <td class="p-4">
+                                @php
+                                    $totalPagado = $pedido->pagos->where('anulado', false)->sum('monto');
+                                    $totalPedido = $pedido->total ?? 0;
+                                    
+                                    // Verificar si hay reembolso
+                                    $reembolso = null;
+                                    foreach($pedido->pagos->where('anulado', false) as $pago) {
+                                        $reembolsoExistente = \App\Models\SolicitudReembolso::where('pago_id', $pago->id)->first();
+                                        if ($reembolsoExistente) {
+                                            $reembolso = $reembolsoExistente;
+                                            break;
+                                        }
+                                    }
+                                    
+                                    if ($reembolso && $reembolso->estado !== 'rechazado') {
+                                        if ($reembolso->estado === 'procesado') {
+                                            $estadoPago = 'Reembolsado';
+                                            $colorPago = 'bg-emerald-100 text-emerald-800';
+                                            $icono = 'fas fa-money-bill-wave';
+                                        } else {
+                                            $estadoPago = 'Reembolso Pendiente';
+                                            $colorPago = 'bg-orange-100 text-orange-800';
+                                            $icono = 'fas fa-clock';
+                                        }
+                                    } else {
+                                        // Si no hay reembolso o está rechazado, mostrar estado normal del pago
+                                        // Si está rechazado, el pago debería haber sido restaurado (anulado=false)
+                                        if ($totalPagado >= $totalPedido && $totalPedido > 0) {
+                                            $estadoPago = 'Pagado';
+                                            $colorPago = 'bg-green-100 text-green-800';
+                                            $icono = 'fas fa-check-circle';
+                                        } elseif ($totalPagado > 0) {
+                                            $estadoPago = 'Parcial';
+                                            $colorPago = 'bg-yellow-100 text-yellow-800';
+                                            $icono = 'fas fa-clock';
+                                        } else {
+                                            $estadoPago = 'Sin pagar';
+                                            $colorPago = 'bg-red-100 text-red-800';
+                                            $icono = 'fas fa-times-circle';
+                                        }
+                                    }
+                                @endphp
+                                <span class="px-2 py-1 text-xs font-medium rounded-full {{ $colorPago }}">
+                                    <i class="{{ $icono }} mr-1"></i>
+                                    {{ $estadoPago }}
+                                </span>
+                                @if($totalPagado > 0 && !$reembolso)
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        Bs. {{ number_format($totalPagado, 2) }}
+                                    </div>
+                                @endif
+                            </td>
+                            <td class="p-4">
                                 <div class="text-sm">
                                     <div class="font-semibold text-boom-text-dark">
                                         {{ $pedido->created_at->format('d/m/Y') }}
@@ -230,16 +315,47 @@
                                 </div>
                             </td>
                             <td class="p-4 text-center">
-                                <div class="flex justify-center space-x-2">
+                                <div class="flex justify-center space-x-1 flex-wrap">
                                     <a href="{{ route('pedidos.show', $pedido->id_pedido) }}" 
-                                       class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200"
+                                       class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200 mb-1"
                                        title="Ver detalles">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     
+                                    @if(Auth::user()->id_rol == 1 || Auth::user()->id_rol == 2)
+                                        @php
+                                            $totalPagadoBtn = $pedido->pagos->where('anulado', false)->sum('monto');
+                                            $totalPedidoBtn = $pedido->total ?? 0;
+                                            $estaPagado = $totalPagadoBtn >= $totalPedidoBtn && $totalPedidoBtn > 0;
+                                            
+                                            // Verificar si ya tiene reembolso
+                                            $tieneReembolso = false;
+                                            foreach($pedido->pagos->where('anulado', false) as $pago) {
+                                                if (\App\Models\SolicitudReembolso::where('pago_id', $pago->id)->exists()) {
+                                                    $tieneReembolso = true;
+                                                    break;
+                                                }
+                                            }
+                                        @endphp
+                                        
+                                        @if($estaPagado && !$tieneReembolso)
+                                            <a href="{{ route('pagos.reembolso', $pedido->id_pedido) }}" 
+                                               class="bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200 mb-1"
+                                               title="Reembolsar">
+                                                <i class="fas fa-undo"></i>
+                                            </a>
+                                        @elseif(!$estaPagado)
+                                            <a href="{{ route('pagos.checkout', $pedido->id_pedido) }}" 
+                                               class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200 mb-1"
+                                               title="Pagar">
+                                                <i class="fas fa-dollar-sign"></i>
+                                            </a>
+                                        @endif
+                                    @endif
+                                    
                                     @if($pedido->puedeSerEditado())
                                         <a href="{{ route('pedidos.edit', $pedido->id_pedido) }}" 
-                                           class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200"
+                                           class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200 mb-1"
                                            title="Editar">
                                             <i class="fas fa-edit"></i>
                                         </a>
@@ -247,7 +363,7 @@
                                     
                                     @if(Auth::user()->rol && Auth::user()->rol->nombre === 'Administrador' && $pedido->puedeSerAsignado())
                                         <button onclick="mostrarModalAsignar({{ $pedido->id_pedido }})" 
-                                                class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200"
+                                                class="bg-indigo-500 hover:bg-indigo-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200 mb-1"
                                                 title="Asignar operario">
                                             <i class="fas fa-user-plus"></i>
                                         </button>
@@ -259,7 +375,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" 
-                                                    class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200"
+                                                    class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200 mb-1"
                                                     title="Cancelar pedido">
                                                 <i class="fas fa-times"></i>
                                             </button>
@@ -267,7 +383,7 @@
                                     @endif
                                     
                                     <a href="{{ route('pedidos.historial', $pedido->id_pedido) }}" 
-                                       class="bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200"
+                                       class="bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200 mb-1"
                                        title="Ver historial">
                                         <i class="fas fa-history"></i>
                                     </a>
@@ -276,7 +392,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="p-12 text-center">
+                            <td colspan="7" class="p-12 text-center">
                                 <div class="bg-boom-cream-50 rounded-lg p-8">
                                     <i class="fas fa-shopping-bag text-6xl text-boom-text-medium mb-4"></i>
                                     <h3 class="text-xl font-semibold text-boom-text-dark mb-2">No hay pedidos</h3>
@@ -318,10 +434,30 @@
                                 </div>
                             </div>
                         </div>
-                        <span class="px-2 py-1 text-xs font-medium rounded-full {{ $pedido->estado_color }}">
-                            <i class="{{ $pedido->estado_icono }} mr-1"></i>
-                            {{ $pedido->estado }}
-                        </span>
+                        <div class="flex flex-col items-end space-y-1">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full {{ $pedido->estado_color }}">
+                                <i class="{{ $pedido->estado_icono }} mr-1"></i>
+                                {{ $pedido->estado }}
+                            </span>
+                            @php
+                                $totalPagado = $pedido->pagos->where('anulado', false)->sum('monto');
+                                $totalPedido = $pedido->total ?? 0;
+                                $estadoPago = 'Sin pagar';
+                                $colorPago = 'bg-red-100 text-red-800';
+                                
+                                if ($totalPagado >= $totalPedido && $totalPedido > 0) {
+                                    $estadoPago = 'Pagado';
+                                    $colorPago = 'bg-green-100 text-green-800';
+                                } elseif ($totalPagado > 0) {
+                                    $estadoPago = 'Parcial';
+                                    $colorPago = 'bg-yellow-100 text-yellow-800';
+                                }
+                            @endphp
+                            <span class="px-2 py-1 text-xs font-medium rounded-full {{ $colorPago }}">
+                                <i class="fas fa-credit-card mr-1"></i>
+                                {{ $estadoPago }}
+                            </span>
+                        </div>
                     </div>
                     
                     <div class="mb-3">
@@ -335,26 +471,49 @@
                     </div>
                     
                     <div class="flex justify-between items-center">
-                        <div class="font-semibold text-boom-text-dark">
-                            {{ $pedido->total_formateado }}
+                        <div>
+                            <div class="font-semibold text-boom-text-dark">
+                                {{ $pedido->total_formateado }}
+                            </div>
+                            @if($totalPagado > 0)
+                                <div class="text-xs text-gray-500">
+                                    Pagado: Bs. {{ number_format($totalPagado, 2) }}
+                                </div>
+                            @endif
                         </div>
-                        <div class="flex space-x-1">
+                        <div class="flex space-x-1 flex-wrap">
                             <a href="{{ route('pedidos.show', $pedido->id_pedido) }}" 
-                               class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200"
+                               class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200 mb-1"
                                title="Ver detalles">
                                 <i class="fas fa-eye"></i>
                             </a>
                             
+                            @if(Auth::user()->id_rol == 1 || Auth::user()->id_rol == 2)
+                                @if($estaPagado && !$tieneReembolso)
+                                    <a href="{{ route('pagos.reembolso', $pedido->id_pedido) }}" 
+                                       class="bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200 mb-1"
+                                       title="Reembolsar">
+                                        <i class="fas fa-undo"></i>
+                                    </a>
+                                @elseif(!$estaPagado)
+                                    <a href="{{ route('pagos.checkout', $pedido->id_pedido) }}" 
+                                       class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200 mb-1"
+                                       title="Pagar">
+                                        <i class="fas fa-dollar-sign"></i>
+                                    </a>
+                                @endif
+                            @endif
+                            
                             @if($pedido->puedeSerEditado())
                                 <a href="{{ route('pedidos.edit', $pedido->id_pedido) }}" 
-                                   class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200"
+                                   class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200 mb-1"
                                    title="Editar">
                                     <i class="fas fa-edit"></i>
                                 </a>
                             @endif
                             
                             <a href="{{ route('pedidos.historial', $pedido->id_pedido) }}" 
-                               class="bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200"
+                               class="bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200 mb-1"
                                title="Ver historial">
                                 <i class="fas fa-history"></i>
                             </a>
@@ -434,6 +593,8 @@
         </div>
     </div>
     @endif
+
+
 
     @push('scripts')
     <script>

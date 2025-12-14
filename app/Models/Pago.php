@@ -13,7 +13,7 @@ class Pago extends Model
     protected $table = 'pago';
 
     protected $fillable = [
-        'id_pedido', 'id_cliente', 'monto', 'metodo', 'referencia', 'fecha_pago', 'registrado_por', 'anulado', 'anulado_por', 'anulado_motivo', 'recibo_path'
+        'id_pedido', 'id_cliente', 'monto', 'metodo', 'referencia', 'fecha_pago', 'registrado_por', 'anulado', 'anulado_por', 'anulado_motivo', 'recibo_path', 'notas'
     ];
 
     protected $casts = [

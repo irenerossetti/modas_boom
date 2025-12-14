@@ -10,6 +10,9 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        
+        <!-- Alpine.js CDN -->
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
 
         @if(!app()->environment('testing'))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -167,7 +170,31 @@
                             <svg class="w-4 h-4 lg:w-5 lg:h-5 mr-2 lg:mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
-                            <span class="text-sm lg:text-base">⭐ Análisis Productos</span>
+                            <span class="text-sm lg:text-base">📈 Análisis Productos</span>
+                        </a>
+                        <a href="{{ route('reportes.pedidos-entregados') }}" class="flex items-center p-2 lg:p-3 rounded-lg font-semibold transition-all duration-300 {{ request()->routeIs('reportes.pedidos-entregados*') ? 'text-boom-text-dark bg-boom-rose-light border border-boom-rose-dark shadow-md' : 'text-boom-text-medium hover:bg-boom-cream-200 border border-boom-cream-300 shadow-sm hover:shadow-md' }}">
+                            <svg class="w-4 h-4 lg:w-5 lg:h-5 mr-2 lg:mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="text-sm lg:text-base">⭐ Pedidos Entregados</span>
+                        </a>
+                        <a href="{{ route('presupuestos-produccion.index') }}" class="flex items-center p-2 lg:p-3 rounded-lg font-semibold transition-all duration-300 {{ request()->routeIs('presupuestos-produccion.*') ? 'text-boom-text-dark bg-boom-rose-light border border-boom-rose-dark shadow-md' : 'text-boom-text-medium hover:bg-boom-cream-200 border border-boom-cream-300 shadow-sm hover:shadow-md' }}">
+                            <svg class="w-4 h-4 lg:w-5 lg:h-5 mr-2 lg:mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                            <span class="text-sm lg:text-base">💰 Presupuestos</span>
+                        </a>
+                        <a href="{{ route('reportes.rentabilidad') }}" class="flex items-center p-2 lg:p-3 rounded-lg font-semibold transition-all duration-300 {{ request()->routeIs('reportes.rentabilidad') ? 'text-boom-text-dark bg-boom-rose-light border border-boom-rose-dark shadow-md' : 'text-boom-text-medium hover:bg-boom-cream-200 border border-boom-cream-300 shadow-sm hover:shadow-md' }}">
+                            <svg class="w-4 h-4 lg:w-5 lg:h-5 mr-2 lg:mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="text-sm lg:text-base">💰 Análisis Rentabilidad</span>
+                        </a>
+                        <a href="{{ route('metodos-pago.index') }}" class="flex items-center p-2 lg:p-3 rounded-lg font-semibold transition-all duration-300 {{ request()->routeIs('metodos-pago.*') ? 'text-boom-text-dark bg-boom-rose-light border border-boom-rose-dark shadow-md' : 'text-boom-text-medium hover:bg-boom-cream-200 border border-boom-cream-300 shadow-sm hover:shadow-md' }}">
+                            <svg class="w-4 h-4 lg:w-5 lg:h-5 mr-2 lg:mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                            </svg>
+                            <span class="text-sm lg:text-base">Métodos de Pago</span>
                         </a>
                         <a href="{{ route('sistema.index') }}" class="flex items-center p-2 lg:p-3 rounded-lg font-semibold transition-all duration-300 {{ request()->routeIs('sistema.*') ? 'text-boom-text-dark bg-boom-rose-light border border-boom-rose-dark shadow-md' : 'text-boom-text-medium hover:bg-boom-cream-200 border border-boom-cream-300 shadow-sm hover:shadow-md' }}">
                             <svg class="w-4 h-4 lg:w-5 lg:h-5 mr-2 lg:mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -222,6 +249,12 @@
                             </svg>
                             <span class="text-sm lg:text-base">Gestionar Pedidos</span>
                         </a>
+                        <a href="{{ route('presupuestos-produccion.index') }}" class="flex items-center p-2 lg:p-3 rounded-lg font-semibold transition-all duration-300 {{ request()->routeIs('presupuestos-produccion.*') ? 'text-boom-text-dark bg-boom-rose-light border border-boom-rose-dark shadow-md' : 'text-boom-text-medium hover:bg-boom-cream-200 border border-boom-cream-300 shadow-sm hover:shadow-md' }}">
+                            <svg class="w-4 h-4 lg:w-5 lg:h-5 mr-2 lg:mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                            <span class="text-sm lg:text-base">💰 Presupuestos</span>
+                        </a>
                     @elseif(Auth::user()->id_rol == 3) <!-- Cliente -->
                         <a href="{{ route('cliente.dashboard') }}" class="flex items-center p-2 lg:p-3 rounded-lg font-semibold transition-all duration-300 {{ request()->routeIs('cliente.dashboard') ? 'text-boom-text-dark bg-boom-rose-light border border-boom-rose-dark shadow-md' : 'text-boom-text-medium hover:bg-boom-cream-200 border border-boom-cream-300 shadow-sm hover:shadow-md' }}">
                             <svg class="w-4 h-4 lg:w-5 lg:h-5 mr-2 lg:mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -244,6 +277,13 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                             </svg>
                             <span class="text-sm lg:text-base">Mis Pedidos</span>
+                        </a>
+                        
+                        <a href="{{ route('pagos.mis-pagos') }}" class="flex items-center p-2 lg:p-3 rounded-lg font-semibold transition-all duration-300 {{ request()->routeIs('pagos.mis-pagos') ? 'text-boom-text-dark bg-boom-rose-light border border-boom-rose-dark shadow-md' : 'text-boom-text-medium hover:bg-boom-cream-200 border border-boom-cream-300 shadow-sm hover:shadow-md' }}">
+                            <svg class="w-4 h-4 lg:w-5 lg:h-5 mr-2 lg:mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span class="text-sm lg:text-base">Mis Pagos</span>
                         </a>
                         
                         <a href="{{ route('catalogo.index') }}" class="flex items-center p-2 lg:p-3 rounded-lg font-semibold transition-all duration-300 {{ request()->routeIs('catalogo.*') ? 'text-boom-text-dark bg-boom-rose-light border border-boom-rose-dark shadow-md' : 'text-boom-text-medium hover:bg-boom-cream-200 border border-boom-cream-300 shadow-sm hover:shadow-md' }}">

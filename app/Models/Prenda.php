@@ -15,6 +15,7 @@ class Prenda extends Model
         'nombre',
         'descripcion',
         'precio',
+        'costo',
         'categoria',
         'imagen',
         'colores',
@@ -25,6 +26,7 @@ class Prenda extends Model
 
     protected $casts = [
         'precio' => 'decimal:2',
+        'costo' => 'decimal:2',
         'colores' => 'array',
         'tallas' => 'array',
         'activo' => 'boolean',

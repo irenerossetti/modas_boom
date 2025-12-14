@@ -41,6 +41,8 @@ class Cliente extends Model
         return $this->hasMany(Pedido::class, 'id_cliente', 'id');
     }
 
+
+
     /**
      * Scope para clientes inactivos (sin pedidos en los últimos 90 días)
      */

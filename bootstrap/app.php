@@ -13,6 +13,13 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
 
+        // Excluir rutas de autenticación del CSRF temporalmente
+        $middleware->validateCsrfTokens(except: [
+            'login',
+            'register',
+            'password/*',
+        ]);
+
         $middleware->alias([
             'login.throttle' => \App\Http\Middleware\LoginAttemptThrottle::class,
             'user.enabled' => \App\Http\Middleware\CheckUserEnabled::class,
@@ -21,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'redirect.role' => \App\Http\Middleware\RedirectByRole::class,
             'vendedor.role' => \App\Http\Middleware\VendedorRoleMiddleware::class,
             'admin.cliente.role' => \App\Http\Middleware\AdminOrClienteRole::class,
+            'role' => \App\Http\Middleware\CheckMultipleRoles::class,
         ]);
         
         // Aplicar middleware de auditoría a rutas web autenticadas

@@ -1,25 +1,12 @@
 <!doctype html>
 <html lang="es">
 <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Recibo de Pago #{{ $pago->id }}</title>
     <style>
-        /* Incluir la fuente DejaVu embebida para DomPDF */
-        @font-face {
-            font-family: 'DejaVu Sans';
-            font-style: normal;
-            font-weight: 400;
-            /* Prefer project's storage fonts if present for config/dompdf font_dir; otherwise fallback to vendor dompdf fonts.
-               Use normalized paths for Windows */
-            @php
-                $storageDejaVu = str_replace('\\', '/', storage_path('fonts/DejaVuSans.ttf'));
-                $vendorDejaVu = str_replace('\\', '/', base_path('vendor/dompdf/dompdf/lib/fonts/DejaVuSans.ttf'));
-                $fontPath = file_exists($storageDejaVu) ? $storageDejaVu : $vendorDejaVu;
-            @endphp
-            src: url('{{ $fontPath }}') format('truetype');
-        }
-        body { font-family: 'DejaVu Sans', DejaVu Sans, sans-serif; }
+        body { font-family: sans-serif; }
         .header { text-align: center; margin-bottom: 20px; }
         .content { margin: 0 20px; }
         .footer { position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 12px; }

@@ -24,3 +24,7 @@ Homestead.yaml
 Thumbs.db
 rr
 .rr.yaml
+
+.env
+.env.local
+.env.*.local
