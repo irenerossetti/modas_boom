@@ -7,6 +7,7 @@ use App\Models\Pedido;
 use App\Models\Cliente;
 use App\Services\BitacoraService;
 use App\Services\StripeServiceFallback;
+use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -17,11 +18,13 @@ class PagoController extends Controller
 {
     protected $bitacoraService;
     protected $stripeService;
+    protected $whatsAppService;
 
-    public function __construct(BitacoraService $bitacoraService, StripeServiceFallback $stripeService)
+    public function __construct(BitacoraService $bitacoraService, StripeServiceFallback $stripeService, WhatsAppService $whatsAppService)
     {
         $this->bitacoraService = $bitacoraService;
         $this->stripeService = $stripeService;
+        $this->whatsAppService = $whatsAppService;
     }
 
     // CU29: Registrar pago del pedido (admin)
@@ -86,6 +89,13 @@ class PagoController extends Controller
             null,
             array_merge($pago->toArray(), ['pedido_id' => $pedido->id_pedido])
         );
+
+        // Enviar notificación por WhatsApp informando que el pago fue recibido y el pedido aceptado
+        try {
+            $this->whatsAppService->enviarNotificacionPagoRecibido($pedido, $pago);
+        } catch (\Exception $e) {
+            \Log::error('Error enviando notificación de pago por WhatsApp en store(): ' . $e->getMessage());
+        }
 
         // Redirigir según origen (pasarela o vista tradicional)
         if ($request->has('from_pasarela') || $request->header('referer') && str_contains($request->header('referer'), 'pasarela')) {
@@ -154,6 +164,13 @@ class PagoController extends Controller
                 null,
                 $pago->toArray()
             );
+
+            // Enviar notificación por WhatsApp informando que el pago fue recibido y el pedido aceptado
+            try {
+                $this->whatsAppService->enviarNotificacionPagoRecibido($pedido, $pago);
+            } catch (\Exception $e) {
+                \Log::error('Error enviando notificación de pago por WhatsApp en procesarPagoPasarela(): ' . $e->getMessage());
+            }
 
             // Redirigir a página de éxito con detalles del pago
             return redirect()->route('pago.exitoso')
@@ -352,6 +369,16 @@ class PagoController extends Controller
             null,
             array_merge($pago->toArray(), ['pedido_id' => $pago->id_pedido])
         );
+
+        // Notificar al cliente si corresponde que el pago fue anulado
+        try {
+            $pedido = $pago->pedido;
+            if ($pedido) {
+                $this->whatsAppService->enviarNotificacionPagoAnulado($pedido, $pago, $motivo);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error enviando notificación de pago anulado por WhatsApp en anular(): ' . $e->getMessage());
+        }
 
         // Si es una petición AJAX, devolver JSON
         if ($request->expectsJson() || $request->ajax()) {
@@ -893,6 +920,13 @@ class PagoController extends Controller
                     null,
                     $pago->toArray()
                 );
+
+                // Enviar notificación por WhatsApp informando que el pago fue recibido y el pedido aceptado
+                try {
+                    $this->whatsAppService->enviarNotificacionPagoRecibido($pedido, $pago);
+                } catch (\Exception $e) {
+                    \Log::error('Error enviando notificación de pago por WhatsApp en confirmStripePayment(): ' . $e->getMessage());
+                }
 
                 return response()->json([
                     'success' => true,

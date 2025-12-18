@@ -4,9 +4,11 @@ namespace App\Services;
 
 use App\Models\Pedido;
 use App\Models\Prenda;
+use App\Models\Pago;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 
 class WhatsAppService
 {
@@ -30,7 +32,7 @@ class WhatsAppService
     /**
      * Enviar notificación cuando el pedido está terminado
      */
-    public function enviarNotificacionTerminado(Pedido $pedido): array
+    public function enviarNotificacionTerminado(Pedido $pedido, array $camposCambiados = []): array
     {
         try {
             if (!$pedido->cliente || !$pedido->cliente->telefono) {
@@ -40,7 +42,7 @@ class WhatsAppService
                 ];
             }
 
-            $mensaje = $this->prepararMensajeTerminado($pedido);
+            $mensaje = $this->prepararMensajeTerminado($pedido, $camposCambiados);
             $telefono = $this->formatearTelefono($pedido->cliente->telefono);
             
             $resultado = $this->enviarViaProxy($telefono, $mensaje);
@@ -49,7 +51,8 @@ class WhatsAppService
                 Log::info("Notificación 'Terminado' enviada", [
                     'pedido_id' => $pedido->id_pedido,
                     'cliente' => $pedido->cliente->nombre,
-                    'telefono' => $telefono
+                    'telefono' => $telefono,
+                    'campos_cambiados' => array_keys($camposCambiados)
                 ]);
             }
 
@@ -71,7 +74,7 @@ class WhatsAppService
     /**
      * Enviar notificación cuando el pedido está entregado
      */
-    public function enviarNotificacionEntregado(Pedido $pedido): array
+    public function enviarNotificacionEntregado(Pedido $pedido, array $camposCambiados = []): array
     {
         try {
             if (!$pedido->cliente || !$pedido->cliente->telefono) {
@@ -81,7 +84,7 @@ class WhatsAppService
                 ];
             }
 
-            $mensaje = $this->prepararMensajeEntregado($pedido);
+            $mensaje = $this->prepararMensajeEntregado($pedido, $camposCambiados);
             $telefono = $this->formatearTelefono($pedido->cliente->telefono);
             
             $resultado = $this->enviarViaProxy($telefono, $mensaje);
@@ -90,7 +93,8 @@ class WhatsAppService
                 Log::info("Notificación 'Entregado' enviada", [
                     'pedido_id' => $pedido->id_pedido,
                     'cliente' => $pedido->cliente->nombre,
-                    'telefono' => $telefono
+                    'telefono' => $telefono,
+                    'campos_cambiados' => array_keys($camposCambiados)
                 ]);
             }
 
@@ -151,6 +155,114 @@ class WhatsAppService
     }
 
     /**
+     * Notificar al cliente que su pago fue recibido y el pedido aceptado
+     */
+    public function enviarNotificacionPagoRecibido(Pedido $pedido, Pago $pago): array
+    {
+        try {
+            if (!$pedido->cliente || !$pedido->cliente->telefono) {
+                return ['success' => false, 'message' => 'El cliente no tiene teléfono registrado.'];
+            }
+
+            // Calcular total pagado hasta ahora (sin anulados)
+            $totalPagado = DB::table('pago')
+                ->where('id_pedido', $pedido->id_pedido)
+                ->where(DB::raw('CAST(anulado AS INTEGER)'), 0)
+                ->sum('monto');
+
+            $saldo = max(0, $pedido->total - $totalPagado);
+
+            $mensaje = "✅ *Pago recibido* ✅\n\n";
+            $mensaje .= "Hola {$pedido->cliente->nombre},\n\n";
+            $mensaje .= "Hemos recibido su pago de *Bs. " . number_format($pago->monto, 2) . "* para el pedido #{$pedido->id_pedido}.\n";
+            $mensaje .= "• Método: " . ($pago->metodo ?? 'N/A') . "\n";
+            $mensaje .= "• Referencia: " . ($pago->referencia ?? 'N/A') . "\n\n";
+            $mensaje .= "• Total pedido: Bs. " . number_format($pedido->total, 2) . "\n";
+            $mensaje .= "• Total pagado: Bs. " . number_format($totalPagado, 2) . "\n";
+            $mensaje .= "• Saldo pendiente: Bs. " . number_format($saldo, 2) . "\n\n";
+            $mensaje .= "Su pedido ha sido aceptado y está en proceso. ¡Gracias por su pago!\n\n";
+            $mensaje .= "---\n*Modas Boom*\n📞 +591 76720864";
+
+            $telefono = $this->formatearTelefono($pedido->cliente->telefono);
+            $resultado = $this->enviarViaProxy($telefono, $mensaje);
+
+            if ($resultado['success']) {
+                Log::info('Notificación de pago recibido enviada', ['pedido_id' => $pedido->id_pedido, 'pago_id' => $pago->id]);
+                // Marcar que se envió notificación de WhatsApp para este pedido (no crítico)
+                try { $pedido->update(['notificacion_whatsapp_enviada' => true]); } catch (\Throwable $e) { /* ignorar */ }
+            }
+
+            return $resultado;
+        } catch (\Exception $e) {
+            Log::error('Error en enviarNotificacionPagoRecibido', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => 'Error interno: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Notificar al cliente que el pago fue anulado/reembolsado
+     */
+    public function enviarNotificacionPagoAnulado(Pedido $pedido, Pago $pago, string $motivo = null): array
+    {
+        try {
+            if (!$pedido->cliente || !$pedido->cliente->telefono) {
+                return ['success' => false, 'message' => 'El cliente no tiene teléfono registrado.'];
+            }
+
+            $mensaje = "⚠️ *Pago anulado/reembolsado* ⚠️\n\n";
+            $mensaje .= "Hola {$pedido->cliente->nombre},\n\n";
+            $mensaje .= "El pago de *Bs. " . number_format($pago->monto, 2) . "* para el pedido #{$pedido->id_pedido} ha sido anulado/reembolsado.\n";
+            if ($motivo) $mensaje .= "Motivo: {$motivo}\n\n";
+            $mensaje .= "Si tienes dudas, por favor contáctanos.\n\n";
+            $mensaje .= "---\n*Modas Boom*\n📞 +591 76720864";
+
+            $telefono = $this->formatearTelefono($pedido->cliente->telefono);
+            $resultado = $this->enviarViaProxy($telefono, $mensaje);
+
+            if ($resultado['success']) {
+                Log::info('Notificación de pago anulado enviada', ['pedido_id' => $pedido->id_pedido, 'pago_id' => $pago->id]);
+            }
+
+            return $resultado;
+        } catch (\Exception $e) {
+            Log::error('Error en enviarNotificacionPagoAnulado', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => 'Error interno: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Notificar al cliente que su pedido fue cancelado
+     */
+    public function enviarNotificacionPedidoCancelado(Pedido $pedido, string $motivo = null): array
+    {
+        try {
+            if (!$pedido->cliente || !$pedido->cliente->telefono) {
+                return ['success' => false, 'message' => 'El cliente no tiene teléfono registrado.'];
+            }
+
+            $mensaje = "⚠️ *Pedido cancelado* ⚠️\n\n";
+            $mensaje .= "Hola {$pedido->cliente->nombre},\n\n";
+            $mensaje .= "Lamentamos informarle que su pedido #{$pedido->id_pedido} ha sido cancelado.\n";
+            if ($motivo) $mensaje .= "Motivo: {$motivo}\n\n";
+            $mensaje .= "Si necesitas más información, contáctanos y con gusto te ayudaremos.\n\n";
+            $mensaje .= "---\n*Modas Boom*\n📞 +591 76720864";
+
+            $telefono = $this->formatearTelefono($pedido->cliente->telefono);
+            $resultado = $this->enviarViaProxy($telefono, $mensaje);
+
+            if ($resultado['success']) {
+                Log::info('Notificación de pedido cancelado enviada', ['pedido_id' => $pedido->id_pedido]);
+                try { $pedido->update(['notificacion_whatsapp_enviada' => true]); } catch (\Throwable $e) { /* ignorar */ }
+            }
+
+            return $resultado;
+        } catch (\Exception $e) {
+            Log::error('Error en enviarNotificacionPedidoCancelado', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => 'Error interno: ' . $e->getMessage()];
+        }
+    }
+
+    /**
      * Enviar confirmación de recepción
      */
     public function enviarConfirmacionRecepcion(Pedido $pedido): array
@@ -204,15 +316,27 @@ class WhatsAppService
     /**
      * Preparar mensaje para pedido terminado
      */
-    private function prepararMensajeTerminado(Pedido $pedido): string
+    private function prepararMensajeTerminado(Pedido $pedido, array $camposCambiados = []): string
     {
         $mensaje = "🎉 *¡Tu pedido está listo!* 🎉\n\n";
         $mensaje .= "Hola {$pedido->cliente->nombre},\n\n";
         $mensaje .= "Te tenemos excelentes noticias. Tu pedido #{$pedido->id_pedido} está completamente terminado y se ve increíble.\n\n";
         $mensaje .= "📋 *Detalles:*\n";
         $mensaje .= "• Pedido: #{$pedido->id_pedido}\n";
-        $mensaje .= "• Total: {$pedido->total_formateado}\n";
+
+        if (empty($camposCambiados) || isset($camposCambiados['total'])) {
+            $mensaje .= "• Total: {$pedido->total_formateado}\n";
+        }
+
         $mensaje .= "• Estado: ✅ Terminado\n\n";
+
+        // Incluir fecha estimada de entrega solo si no se pasó campos (compatibilidad) o si la fecha cambió
+        if (empty($camposCambiados) || isset($camposCambiados['fecha_entrega_programada'])) {
+            if ($pedido->fecha_entrega_programada) {
+                $mensaje .= "• Fecha estimada de entrega: " . $pedido->fecha_entrega_programada->setTimezone('America/La_Paz')->format('d/m/Y') . "\n\n";
+            }
+        }
+
         $mensaje .= "🏪 *¿Cómo recoger tu pedido?*\n";
         $mensaje .= "• Puedes pasar cuando gustes\n";
         $mensaje .= "• Horarios: Lun-Sáb 9:00-18:00\n";
@@ -228,16 +352,25 @@ class WhatsAppService
     /**
      * Preparar mensaje para pedido entregado
      */
-    private function prepararMensajeEntregado(Pedido $pedido): string
+    private function prepararMensajeEntregado(Pedido $pedido, array $camposCambiados = []): string
     {
         $mensaje = "🚚 *¡Pedido entregado exitosamente!* 🎉\n\n";
         $mensaje .= "Hola {$pedido->cliente->nombre},\n\n";
         $mensaje .= "Confirmamos que tu pedido #{$pedido->id_pedido} ha sido entregado exitosamente.\n\n";
         $mensaje .= "📋 *Detalles de la entrega:*\n";
         $mensaje .= "• Pedido: #{$pedido->id_pedido}\n";
-        $mensaje .= "• Total: {$pedido->total_formateado}\n";
+
+        if (empty($camposCambiados) || isset($camposCambiados['total'])) {
+            $mensaje .= "• Total: {$pedido->total_formateado}\n";
+        }
+
         $mensaje .= "• Estado: ✅ Entregado\n";
-        $mensaje .= "• Fecha: " . now('America/La_Paz')->format('d/m/Y H:i') . "\n\n";
+
+        if (empty($camposCambiados) || isset($camposCambiados['fecha_entrega_programada'])) {
+            $mensaje .= "• Fecha: " . now('America/La_Paz')->format('d/m/Y H:i') . "\n\n";
+        } else {
+            $mensaje .= "\n";
+        }
         
         if ($pedido->observaciones_recepcion) {
             $mensaje .= "📝 *Observaciones:*\n";
@@ -309,7 +442,7 @@ class WhatsAppService
     /**
      * Enviar notificación genérica por cambio de estado
      */
-    public function enviarNotificacionEstado(Pedido $pedido, string $estado, int $porcentaje = null): array
+    public function enviarNotificacionEstado(Pedido $pedido, string $estado, int $porcentaje = null, array $camposCambiados = []): array
     {
         try {
             if (!$pedido->cliente || !$pedido->cliente->telefono) {
@@ -325,14 +458,25 @@ class WhatsAppService
             }
 
             $mensaje .= "\n📋 Detalles: \n";
-            $mensaje .= "• Total: {$pedido->total_formateado}\n";
-            $mensaje .= "• Fecha de creación: " . $pedido->created_at->setTimezone('America/La_Paz')->format('d/m/Y H:i') . "\n";
+
+            // Sólo incluir campos si no se pasó $camposCambiados (compatibilidad) o si están dentro de los campos cambiados
+            if (empty($camposCambiados) || isset($camposCambiados['total'])) {
+                $mensaje .= "• Total: {$pedido->total_formateado}\n";
+            }
+
+            if (empty($camposCambiados) || isset($camposCambiados['fecha_entrega_programada'])) {
+                // Mostrar la fecha de entrega programada solo cuando tiene sentido
+                if ($pedido->fecha_entrega_programada) {
+                    $mensaje .= "• Fecha de entrega estimada: " . $pedido->fecha_entrega_programada->setTimezone('America/La_Paz')->format('d/m/Y') . "\n";
+                }
+            }
+
             $mensaje .= "\n---\n*Modas Boom*\n📞 +591 76720864";
 
             $telefono = $this->formatearTelefono($pedido->cliente->telefono);
             $resultado = $this->enviarViaProxy($telefono, $mensaje);
             if ($resultado['success']) {
-                Log::info("Notificación de estado enviada", ['pedido_id' => $pedido->id_pedido, 'estado' => $estado]);
+                Log::info("Notificación de estado enviada", ['pedido_id' => $pedido->id_pedido, 'estado' => $estado, 'campos_cambiados' => array_keys($camposCambiados)]);
             }
 
             return $resultado;

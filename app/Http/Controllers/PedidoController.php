@@ -386,12 +386,22 @@ class PedidoController extends Controller
         // Enviar notificaciones por WhatsApp si hubo cambio de estado
         if ($estadoAnterior !== $nuevoEstado) {
             try {
+                // Construir lista de campos cambiados exactos
+                $camposCambiados = [];
+                $changes = $pedido->getChanges();
+                foreach ($changes as $field => $newVal) {
+                    $camposCambiados[$field] = [
+                        'antes' => $datosAnteriores[$field] ?? null,
+                        'despues' => $newVal
+                    ];
+                }
+
                 if ($nuevoEstado === 'Terminado') {
-                    $this->whatsAppService->enviarNotificacionTerminado($pedido);
+                    $this->whatsAppService->enviarNotificacionTerminado($pedido, $camposCambiados);
                 } elseif ($nuevoEstado === 'Entregado') {
-                    $this->whatsAppService->enviarNotificacionEntregado($pedido);
+                    $this->whatsAppService->enviarNotificacionEntregado($pedido, $camposCambiados);
                 } else {
-                    $this->whatsAppService->enviarNotificacionEstado($pedido, $nuevoEstado);
+                    $this->whatsAppService->enviarNotificacionEstado($pedido, $nuevoEstado, null, $camposCambiados);
                 }
 
                 // Notificar si se estableció o cambió fecha de entrega
@@ -464,6 +474,13 @@ class PedidoController extends Controller
             $pedido->fresh()->toArray()
         );
 
+        // Notificar al cliente por WhatsApp sobre la cancelación
+        try {
+            $this->whatsAppService->enviarNotificacionPedidoCancelado($pedido);
+        } catch (\Exception $e) {
+            \Log::error('Error enviando notificación de cancelación por WhatsApp en destroy(): ' . $e->getMessage());
+        }
+
         return redirect()->route('pedidos.index')
             ->with('success', "Pedido #{$pedido->id_pedido} cancelado exitosamente. Stock restaurado automáticamente.");
     }
@@ -505,7 +522,15 @@ class PedidoController extends Controller
 
         // Enviar notificación por WhatsApp sobre la asignación
         try {
-            $this->whatsAppService->enviarNotificacionEstado($pedido, 'Asignado');
+            $camposCambiados = [];
+            $changes = $pedido->getChanges();
+            foreach ($changes as $field => $newVal) {
+                $camposCambiados[$field] = [
+                    'antes' => $datosAnteriores[$field] ?? null,
+                    'despues' => $newVal
+                ];
+            }
+            $this->whatsAppService->enviarNotificacionEstado($pedido, 'Asignado', null, $camposCambiados);
         } catch (\Exception $e) {
             \Log::error('Error enviando notificación por WhatsApp en asignar(): ' . $e->getMessage());
         }
@@ -1231,7 +1256,15 @@ class PedidoController extends Controller
 
         // Enviar notificación por WhatsApp con el avance (porcentaje)
         try {
-            $this->whatsAppService->enviarNotificacionEstado($pedido->fresh(), 'En producción', $request->porcentaje_avance);
+            $camposCambiados = [];
+            $changes = $pedido->getChanges();
+            foreach ($changes as $field => $newVal) {
+                $camposCambiados[$field] = [
+                    'antes' => $pedido->getOriginal($field) ?? null,
+                    'despues' => $newVal
+                ];
+            }
+            $this->whatsAppService->enviarNotificacionEstado($pedido->fresh(), 'En producción', $request->porcentaje_avance, $camposCambiados);
         } catch (\Exception $e) {
             \Log::error('Error enviando notificación de avance por WhatsApp: ' . $e->getMessage());
         }
@@ -1416,14 +1449,24 @@ class PedidoController extends Controller
             $mensaje .= " Advertencia: No se pudo enviar la notificación por email - " . $resultadoEmail['message'];
         }
 
+        // Determinar campos que cambiaron para enviar sólo lo necesario por WhatsApp
+        $camposCambiados = [];
+        $changes = $pedido->getChanges();
+        foreach ($changes as $field => $newVal) {
+            $camposCambiados[$field] = [
+                'antes' => $pedido->getOriginal($field) ?? null,
+                'despues' => $newVal
+            ];
+        }
+
         // Enviar notificación por WhatsApp (intentar siempre)
         try {
             if ($estadoNuevo === 'Terminado') {
-                $this->whatsAppService->enviarNotificacionTerminado($pedido);
+                $this->whatsAppService->enviarNotificacionTerminado($pedido, $camposCambiados);
             } elseif ($estadoNuevo === 'Entregado') {
-                $this->whatsAppService->enviarNotificacionEntregado($pedido);
+                $this->whatsAppService->enviarNotificacionEntregado($pedido, $camposCambiados);
             } else {
-                $this->whatsAppService->enviarNotificacionEstado($pedido, $estadoNuevo);
+                $this->whatsAppService->enviarNotificacionEstado($pedido, $estadoNuevo, null, $camposCambiados);
             }
         } catch (\Exception $e) {
             \Log::error('Error enviando notificación por WhatsApp en cambiarEstadoConNotificacion(): ' . $e->getMessage());
