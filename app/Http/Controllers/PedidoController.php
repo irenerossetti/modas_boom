@@ -283,6 +283,12 @@ class PedidoController extends Controller
                 ->with('error', 'Este pedido no puede ser editado debido a su estado actual.');
         }
 
+        // Bloquear acceso al formulario de edición para clientes (rol 3)
+        if (Auth::check() && Auth::user()->id_rol === 3) {
+            return redirect()->route('pedidos.show', $pedido->id_pedido)
+                ->with('error', 'No tienes permiso para editar el pedido. Si necesitas cambiar la fecha usa "Reprogramar Entrega".');
+        }
+
         $clientes = Cliente::select('id', 'nombre', 'apellido', 'ci_nit')
             ->orderBy('nombre')
             ->get();
@@ -302,6 +308,13 @@ class PedidoController extends Controller
         if (!$pedido->puedeSerEditado()) {
             return redirect()->route('pedidos.index')
                 ->with('error', 'Este pedido no puede ser editado debido a su estado actual.');
+        }
+
+        // Los clientes (rol 3) no están permitidos para editar el pedido desde este formulario.
+        // Deben usar la opción de 'Reprogramar Entrega' para cambiar la fecha y la opción de cancelar si procede.
+        if (Auth::check() && Auth::user()->id_rol === 3) {
+            return redirect()->route('pedidos.show', $pedido->id_pedido)
+                ->with('error', 'No tienes permiso para editar el pedido desde aquí. Usa "Reprogramar Entrega" para cambiar la fecha o solicita la cancelación.');
         }
 
         $request->validate([
@@ -383,19 +396,34 @@ class PedidoController extends Controller
             \Log::error('Error enviando notificación de reprogramación por WhatsApp: ' . $e->getMessage());
         }
 
+        // Construir lista de campos cambiados exactos
+        $camposCambiados = [];
+        $changes = $pedido->getChanges();
+        foreach ($changes as $field => $newVal) {
+            $camposCambiados[$field] = [
+                'antes' => $datosAnteriores[$field] ?? null,
+                'despues' => $newVal
+            ];
+        }
+
+        // Si solo cambió la fecha de entrega (sin cambio de estado), enviar únicamente notificación de reprogramación
+        if ($estadoAnterior === $nuevoEstado) {
+            try {
+                if (isset($camposCambiados['fecha_entrega_programada'])) {
+                    $fechaAnterior = $datosAnteriores['fecha_entrega_programada'] ?? null;
+                    $fechaNueva = $pedido->fecha_entrega_programada;
+                    if (!$fechaAnterior || $fechaAnterior != $fechaNueva) {
+                        $this->whatsAppService->enviarNotificacionEntregaProgramada($pedido, $fechaAnterior ? Carbon::parse($fechaAnterior) : null, Carbon::parse($fechaNueva));
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::error('Error enviando notificación de reprogramación por WhatsApp en update(): ' . $e->getMessage());
+            }
+        }
+
         // Enviar notificaciones por WhatsApp si hubo cambio de estado
         if ($estadoAnterior !== $nuevoEstado) {
             try {
-                // Construir lista de campos cambiados exactos
-                $camposCambiados = [];
-                $changes = $pedido->getChanges();
-                foreach ($changes as $field => $newVal) {
-                    $camposCambiados[$field] = [
-                        'antes' => $datosAnteriores[$field] ?? null,
-                        'despues' => $newVal
-                    ];
-                }
-
                 if ($nuevoEstado === 'Terminado') {
                     $this->whatsAppService->enviarNotificacionTerminado($pedido, $camposCambiados);
                 } elseif ($nuevoEstado === 'Entregado') {
@@ -404,7 +432,7 @@ class PedidoController extends Controller
                     $this->whatsAppService->enviarNotificacionEstado($pedido, $nuevoEstado, null, $camposCambiados);
                 }
 
-                // Notificar si se estableció o cambió fecha de entrega
+                // Notificar si se estableció o cambió fecha de entrega (cuando además se cambia estado)
                 if ($request->has('fecha_entrega_programada') && $request->fecha_entrega_programada) {
                     $fechaAnterior = $datosAnteriores['fecha_entrega_programada'] ?? null;
                     $fechaNueva = $pedido->fecha_entrega_programada;
@@ -441,6 +469,36 @@ class PedidoController extends Controller
         if (!$pedido->puedeSerCancelado()) {
             return redirect()->route('pedidos.index')
                 ->with('error', 'Este pedido no puede ser eliminado debido a su estado actual.');
+        }
+
+        // Authorization: only admins (id_rol == 1) or the owning client may cancel a pedido
+        if (Auth::check()) {
+            $user = Auth::user();
+
+            // If user is a client, ensure they are the owner of the pedido (by id_usuario or email fallback)
+            if ($user->id_rol === 3) {
+                $isOwner = false;
+                if ($pedido->cliente) {
+                    if (isset($pedido->cliente->id_usuario) && $pedido->cliente->id_usuario == $user->id_usuario) {
+                        $isOwner = true;
+                    } elseif (isset($pedido->cliente->email) && strtolower($pedido->cliente->email) == strtolower($user->email)) {
+                        $isOwner = true;
+                    }
+                }
+
+                if (!$isOwner) {
+                    return redirect()->route('pedidos.index')
+                        ->with('error', 'No tienes permiso para cancelar este pedido.');
+                }
+
+            // Otherwise, only admin users are allowed to cancel (prevent other roles like employees)
+            } elseif ($user->id_rol !== 1) {
+                return redirect()->route('pedidos.index')
+                    ->with('error', 'No tienes permiso para cancelar este pedido.');
+            }
+        } else {
+            return redirect()->route('pedidos.index')
+                ->with('error', 'Debes iniciar sesión para cancelar pedidos.');
         }
 
         $datosAnteriores = $pedido->toArray();
@@ -530,6 +588,11 @@ class PedidoController extends Controller
                     'despues' => $newVal
                 ];
             }
+            // Añadir operario al payload de contexto si está disponible para ofrecer más detalle en la notificación
+            $camposCambiados['operario_asignado'] = [
+                'antes' => null,
+                'despues' => $operario->nombre
+            ];
             $this->whatsAppService->enviarNotificacionEstado($pedido, 'Asignado', null, $camposCambiados);
         } catch (\Exception $e) {
             \Log::error('Error enviando notificación por WhatsApp en asignar(): ' . $e->getMessage());
@@ -1131,6 +1194,23 @@ class PedidoController extends Controller
             'nueva_fecha_entrega' => 'required|date|after:today',
             'motivo_reprogramacion' => 'required|string|max:500',
         ]);
+
+        // Si el usuario es cliente (rol 3) y ya existe una fecha programada, exigir que la nueva fecha
+        // sea *posterior* a la fecha actual del pedido (evitar que el cliente reduzca la fecha fijada por admin)
+        try {
+            if (Auth::check() && Auth::user()->id_rol === 3 && $pedido->fecha_entrega_programada) {
+                $nueva = \Carbon\Carbon::parse($request->nueva_fecha_entrega);
+                $actual = \Carbon\Carbon::parse($pedido->fecha_entrega_programada);
+                if (!$nueva->gt($actual)) {
+                    return redirect()->route('pedidos.show', $pedido->id_pedido)
+                        ->with('error', 'La nueva fecha debe ser posterior a la fecha de entrega actual (' . $actual->format('d/m/Y') . ').');
+                }
+            }
+        } catch (\Exception $e) {
+            // Si hay problemas al parsear las fechas, fallar con mensaje genérico
+            return redirect()->route('pedidos.show', $pedido->id_pedido)
+                ->with('error', 'No se pudo validar la nueva fecha de entrega. Intente nuevamente.');
+        }
 
         $fechaAnterior = $pedido->fecha_entrega_programada;
         

@@ -9,7 +9,14 @@
                 <span class="sm:hidden">#{{ $pedido->id_pedido }}</span>
             </h1>
             <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                @if($pedido->puedeSerEditado())
+                @if(Auth::check() && Auth::user()->id_rol == 3 && $pedido->cliente && ( (isset($pedido->cliente->id_usuario) && $pedido->cliente->id_usuario == Auth::user()->id_usuario) || (isset($pedido->cliente->email) && strtolower($pedido->cliente->email) == strtolower(Auth::user()->email)) ))
+                <div class="w-full mb-2 sm:mb-0">
+                    <div class="rounded-md bg-blue-50 border-l-4 border-blue-400 p-3 text-sm text-blue-800">
+                        <strong>Nota:</strong> Como cliente sólo puedes <strong>reprogramar la fecha de entrega</strong> (la nueva fecha debe ser posterior a la actual) o <strong>cancelar</strong> tu pedido si procede. No puedes editar otros datos del pedido desde aquí.
+                    </div>
+                </div>
+                @endif
+                @if($pedido->puedeSerEditado() && in_array(Auth::user()->id_rol, [1,2]))
                     <a href="{{ route('pedidos.edit', $pedido->id_pedido) }}" 
                        class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-3 sm:px-4 rounded text-sm sm:text-base text-center">
                         <i class="fas fa-edit mr-1"></i>
@@ -47,7 +54,15 @@
                 </a>
                 
                 <!-- Botón Más Opciones -->
-                @if($pedido->puedeReprogramarEntrega() || $pedido->estado == 'Terminado' || $pedido->puedeSerAsignado() || $pedido->puedeSerCancelado())
+                @php
+                    $headerTieneOpciones = (
+                        ($pedido->puedeReprogramarEntrega() && (Auth::check() && (Auth::user()->id_rol == 1 || (Auth::user()->id_rol == 3 && $pedido->cliente && ( (isset($pedido->cliente->id_usuario) && $pedido->cliente->id_usuario == Auth::user()->id_usuario) || (isset($pedido->cliente->email) && strtolower($pedido->cliente->email) == strtolower(Auth::user()->email)) ) ))))
+                        || ($pedido->estado == 'Terminado' && (Auth::check() && (Auth::user()->id_rol == 1 || (Auth::user()->id_rol == 3 && $pedido->cliente && $pedido->cliente->id_usuario == Auth::user()->id_usuario))))
+                        || ($pedido->puedeSerAsignado() && Auth::check() && Auth::user()->rol && Auth::user()->rol->nombre === 'Administrador')
+                        || ($pedido->puedeSerCancelado() && (Auth::check() && (Auth::user()->id_rol == 1 || (Auth::user()->id_rol == 3 && $pedido->cliente && $pedido->cliente->id_usuario == Auth::user()->id_usuario))))
+                    );
+                @endphp
+                @if($headerTieneOpciones)
                 <div class="relative inline-block text-left">
                     <button onclick="toggleHeaderDropdown()" 
                             class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
@@ -58,7 +73,7 @@
                     
                     <div id="headerDropdownMenu" class="hidden absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
                         <div class="py-1">
-                            @if($pedido->puedeReprogramarEntrega() && (Auth::user()->id_rol == 1 || (Auth::user()->id_rol == 3 && $pedido->id_cliente == Auth::user()->id_usuario)))
+                            @if($pedido->puedeReprogramarEntrega() && (Auth::user()->id_rol == 1 || (Auth::user()->id_rol == 3 && $pedido->cliente && $pedido->cliente->id_usuario == Auth::user()->id_usuario)))
                                 <button onclick="mostrarModalReprogramar(); toggleHeaderDropdown();" 
                                         class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 flex items-center">
                                     <i class="fas fa-calendar-alt mr-3 text-blue-500"></i>
@@ -71,7 +86,7 @@
                                 </a>
                             @endif
                             
-                            @if($pedido->estado == 'Terminado' && (Auth::user()->id_rol == 1 || (Auth::user()->id_rol == 3 && $pedido->id_cliente == Auth::user()->id_usuario)))
+                            @if($pedido->estado == 'Terminado' && (Auth::user()->id_rol == 1 || (Auth::user()->id_rol == 3 && $pedido->cliente && ( (isset($pedido->cliente->id_usuario) && $pedido->cliente->id_usuario == Auth::user()->id_usuario) || (isset($pedido->cliente->email) && strtolower($pedido->cliente->email) == strtolower(Auth::user()->email)) ) )))
                                 <button onclick="mostrarModalConfirmarRecepcion(); toggleHeaderDropdown();" 
                                         class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-900 flex items-center">
                                     <i class="fas fa-check-circle mr-3 text-green-500"></i>
@@ -87,7 +102,7 @@
                                 </button>
                             @endif
                             
-                            @if($pedido->puedeSerCancelado())
+                            @if($pedido->puedeSerCancelado() && (Auth::user()->id_rol == 1 || (Auth::user()->id_rol == 3 && $pedido->cliente && ( (isset($pedido->cliente->id_usuario) && $pedido->cliente->id_usuario == Auth::user()->id_usuario) || (isset($pedido->cliente->email) && strtolower($pedido->cliente->email) == strtolower(Auth::user()->email)) ) )))
                                 <form action="{{ route('pedidos.destroy', $pedido->id_pedido) }}" method="POST" class="inline w-full" 
                                       onsubmit="return confirm('¿Está seguro de que desea cancelar este pedido?\n\nEsta acción no se puede deshacer.')">
                                     @csrf
@@ -427,12 +442,33 @@
                     
                     <div class="flex flex-wrap gap-3">
                         <!-- Botones Principales -->
-                        @if($pedido->puedeSerEditado())
+                        @if($pedido->puedeSerEditado() && in_array(Auth::user()->id_rol, [1,2]))
                             <a href="{{ route('pedidos.edit', $pedido->id_pedido) }}" 
                                class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
                                 <i class="fas fa-edit mr-2"></i>
                                 Editar
                             </a>
+                        @endif
+
+                        {{-- Reprogramar entrega (clientes propietarios y admins) --}}
+                        @if($pedido->puedeReprogramarEntrega() && (Auth::check() && (Auth::user()->id_rol == 1 || (Auth::user()->id_rol == 3 && $pedido->cliente && ( (isset($pedido->cliente->id_usuario) && $pedido->cliente->id_usuario == Auth::user()->id_usuario) || (isset($pedido->cliente->email) && strtolower($pedido->cliente->email) == strtolower(Auth::user()->email)) ) ))))
+                            <button onclick="mostrarModalReprogramar();" 
+                                class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
+                                <i class="fas fa-calendar-alt mr-2"></i>
+                                Reprogramar Entrega
+                            </button>
+                        @endif
+
+                        {{-- Cancelar pedido (clientes propietarios y admins) --}}
+                        @if($pedido->puedeSerCancelado() && (Auth::check() && (Auth::user()->id_rol == 1 || (Auth::user()->id_rol == 3 && $pedido->cliente && ( (isset($pedido->cliente->id_usuario) && $pedido->cliente->id_usuario == Auth::user()->id_usuario) || (isset($pedido->cliente->email) && strtolower($pedido->cliente->email) == strtolower(Auth::user()->email)) ) ))))
+                            <form action="{{ route('pedidos.destroy', $pedido->id_pedido) }}" method="POST" class="inline" onsubmit="return confirm('¿Está seguro de que desea cancelar este pedido? Esta acción no se puede deshacer.')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
+                                    <i class="fas fa-times mr-2"></i>
+                                    Cancelar Pedido
+                                </button>
+                            </form>
                         @endif
                         
                         @if(Auth::user()->id_rol == 1)
@@ -805,11 +841,30 @@
         // ========== MODAL REPROGRAMAR ENTREGA ==========
         function mostrarModalReprogramar() {
             document.getElementById('modalReprogramar').classList.remove('hidden');
-            // Establecer fecha mínima como mañana
+            // Establecer fecha mínima según rol y fecha actual programada
             const fechaInput = document.getElementById('nueva_fecha_entrega_modal');
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            fechaInput.min = tomorrow.toISOString().split('T')[0];
+            let minDate = new Date();
+            minDate.setDate(minDate.getDate() + 1); // por defecto mañana
+
+            @if(Auth::check() && Auth::user()->id_rol == 3 && $pedido->fecha_entrega_programada)
+                // Para clientes: la nueva fecha debe ser posterior a la fecha programada actualmente
+                const adminDate = new Date("{{ \Carbon\Carbon::parse($pedido->fecha_entrega_programada)->format('Y-m-d') }}");
+                adminDate.setDate(adminDate.getDate() + 1);
+                if (adminDate > minDate) {
+                    minDate = adminDate;
+                }
+            @endif
+
+            fechaInput.min = minDate.toISOString().split('T')[0];
+
+            // Si hay una fecha mínima impuesta por admin, mostrar indicación al usuario
+            @if(Auth::check() && Auth::user()->id_rol == 3 && $pedido->fecha_entrega_programada)
+                const nota = document.getElementById('notaFechaReprogramar');
+                if (nota) {
+                    nota.classList.remove('hidden');
+                    nota.innerText = 'La nueva fecha debe ser posterior a la fecha establecida por el administrador: {{ \Carbon\Carbon::parse($pedido->fecha_entrega_programada)->format('d/m/Y') }}';
+                }
+            @endif
         }
 
         function cerrarModalReprogramar(event) {
@@ -897,7 +952,7 @@
     @endpush
 
     <!-- Modal Reprogramar Entrega -->
-                    @if($pedido->puedeReprogramarEntrega() && (Auth::user()->id_rol == 1 || (Auth::user()->id_rol == 3 && $pedido->id_cliente == Auth::user()->id_usuario)))
+                    @if($pedido->puedeReprogramarEntrega() && (Auth::user()->id_rol == 1 || (Auth::user()->id_rol == 3 && $pedido->cliente && $pedido->cliente->id_usuario == Auth::user()->id_usuario)))
     <div id="modalReprogramar" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
         <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div class="mt-3">
@@ -930,6 +985,7 @@
                                name="nueva_fecha_entrega" 
                                required
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <p id="notaFechaReprogramar" class="text-sm text-gray-500 mt-2 hidden"></p>
                     </div>
                     
                     <!-- Motivo -->

@@ -160,7 +160,7 @@
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     
-                                    @if($pedido->puedeSerEditado())
+                                    @if($pedido->puedeSerEditado() && in_array(Auth::user()->id_rol, [1,2]))
                                         <a href="{{ route('pedidos.edit', $pedido->id_pedido) }}" 
                                            class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors duration-200"
                                            title="Editar">

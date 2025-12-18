@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Pedido;
 use App\Models\Prenda;
 use App\Models\Pago;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
@@ -126,20 +127,53 @@ class WhatsAppService
                 ];
             }
 
-            $mensaje = $this->prepararMensajeConfirmacionPedido($pedido);
-            $telefono = $this->formatearTelefono($pedido->cliente->telefono);
-            
-            $resultado = $this->enviarViaProxy($telefono, $mensaje);
-            
-            if ($resultado['success']) {
-                Log::info("Confirmación de pedido enviada por WhatsApp", [
-                    'pedido_id' => $pedido->id_pedido,
-                    'cliente' => $pedido->cliente->nombre,
-                    'telefono' => $telefono
-                ]);
+            // Preparar mensaje detallado para el cliente (si tiene teléfono)
+            $responses = [];
+
+            if ($pedido->cliente && $pedido->cliente->telefono) {
+                $mensajeCliente = $this->prepararInformeDetallado($pedido, null, '📋 *CONFIRMACIÓN - INFORME DE PEDIDO*');
+                $telefonoCliente = $this->formatearTelefono($pedido->cliente->telefono);
+                $resCliente = $this->enviarViaProxy($telefonoCliente, $mensajeCliente);
+
+                $responses['cliente'] = [
+                    'telefono' => $telefonoCliente,
+                    'response' => $resCliente
+                ];
+
+                if ($resCliente['success']) {
+                    Log::info("Confirmación de pedido (informe detallado) enviada por WhatsApp", [
+                        'pedido_id' => $pedido->id_pedido,
+                        'cliente' => $pedido->cliente->nombre,
+                        'telefono' => $telefonoCliente
+                    ]);
+                    // Marcar que se envió notificación de WhatsApp para este pedido (no crítico)
+                    try { $pedido->update(['notificacion_whatsapp_enviada' => true]); } catch (\Throwable $e) { /* ignorar */ }
+                }
+            } else {
+                $responses['cliente'] = ['telefono' => null, 'response' => ['success' => false, 'message' => 'Cliente sin teléfono']];
             }
 
-            return $resultado;
+            // Enviar copia del informe a todos los administradores con teléfono
+            $admins = User::where('id_rol', 1)->whereNotNull('telefono')->get();
+            $responses['admins'] = [];
+            foreach ($admins as $admin) {
+                if (!$admin->telefono) continue;
+                $telefonoAdmin = $this->formatearTelefono($admin->telefono);
+                $mensajeAdmin = $this->prepararInformeDetallado($pedido, null, '📋 *NUEVO PEDIDO - INFORME (ADMIN)*');
+                $resAdmin = $this->enviarViaProxy($telefonoAdmin, $mensajeAdmin);
+                $responses['admins'][] = ['admin_id' => $admin->id, 'telefono' => $telefonoAdmin, 'response' => $resAdmin];
+
+                if ($resAdmin['success']) {
+                    Log::info('Confirmación enviada a admin por WhatsApp', ['pedido_id' => $pedido->id_pedido, 'admin_id' => $admin->id, 'telefono' => $telefonoAdmin]);
+                }
+            }
+
+            // Consider success when any message was sent successfully
+            $anySuccess = collect($responses)->flatten(1)->filter(function($v) {
+                return is_array($v) && isset($v['response']) ? ($v['response']['success'] ?? false) : (isset($v['response']) ? ($v['response']['success'] ?? false) : false);
+            })->count() > 0;
+
+            return ['success' => $anySuccess, 'responses' => $responses];
 
         } catch (\Exception $e) {
             Log::error("Error enviando confirmación de pedido por WhatsApp", [
@@ -236,26 +270,43 @@ class WhatsAppService
     public function enviarNotificacionPedidoCancelado(Pedido $pedido, string $motivo = null): array
     {
         try {
-            if (!$pedido->cliente || !$pedido->cliente->telefono) {
-                return ['success' => false, 'message' => 'El cliente no tiene teléfono registrado.'];
+            $responses = [];
+
+            // Enviar al cliente si tiene teléfono
+            if ($pedido->cliente && $pedido->cliente->telefono) {
+                $mensaje = $this->prepararInformeDetallado($pedido, $motivo, '⚠️ *PEDIDO CANCELADO - INFORME DETALLADO*');
+                $telefono = $this->formatearTelefono($pedido->cliente->telefono);
+                $resCliente = $this->enviarViaProxy($telefono, $mensaje);
+                $responses['cliente'] = ['telefono' => $telefono, 'response' => $resCliente];
+
+                if ($resCliente['success']) {
+                    Log::info('Notificación de pedido cancelado (informe detallado) enviada', ['pedido_id' => $pedido->id_pedido]);
+                    try { $pedido->update(['notificacion_whatsapp_enviada' => true]); } catch (\Throwable $e) { /* ignorar */ }
+                }
+            } else {
+                $responses['cliente'] = ['telefono' => null, 'response' => ['success' => false, 'message' => 'Cliente sin teléfono']];
             }
 
-            $mensaje = "⚠️ *Pedido cancelado* ⚠️\n\n";
-            $mensaje .= "Hola {$pedido->cliente->nombre},\n\n";
-            $mensaje .= "Lamentamos informarle que su pedido #{$pedido->id_pedido} ha sido cancelado.\n";
-            if ($motivo) $mensaje .= "Motivo: {$motivo}\n\n";
-            $mensaje .= "Si necesitas más información, contáctanos y con gusto te ayudaremos.\n\n";
-            $mensaje .= "---\n*Modas Boom*\n📞 +591 76720864";
+            // Enviar copia del informe a todos los administradores con teléfono
+            $admins = User::where('id_rol', 1)->whereNotNull('telefono')->get();
+            $responses['admins'] = [];
+            foreach ($admins as $admin) {
+                if (!$admin->telefono) continue;
+                $telefonoAdmin = $this->formatearTelefono($admin->telefono);
+                $mensajeAdmin = $this->prepararInformeDetallado($pedido, $motivo, '⚠️ *PEDIDO CANCELADO - INFORME (ADMIN)*');
+                $resAdmin = $this->enviarViaProxy($telefonoAdmin, $mensajeAdmin);
+                $responses['admins'][] = ['admin_id' => $admin->id, 'telefono' => $telefonoAdmin, 'response' => $resAdmin];
 
-            $telefono = $this->formatearTelefono($pedido->cliente->telefono);
-            $resultado = $this->enviarViaProxy($telefono, $mensaje);
-
-            if ($resultado['success']) {
-                Log::info('Notificación de pedido cancelado enviada', ['pedido_id' => $pedido->id_pedido]);
-                try { $pedido->update(['notificacion_whatsapp_enviada' => true]); } catch (\Throwable $e) { /* ignorar */ }
+                if ($resAdmin['success']) {
+                    Log::info('Notificación de cancelación enviada a admin por WhatsApp', ['pedido_id' => $pedido->id_pedido, 'admin_id' => $admin->id, 'telefono' => $telefonoAdmin]);
+                }
             }
 
-            return $resultado;
+            $anySuccess = collect($responses)->flatten(1)->filter(function($v) {
+                return is_array($v) && isset($v['response']) ? ($v['response']['success'] ?? false) : (isset($v['response']) ? ($v['response']['success'] ?? false) : false);
+            })->count() > 0;
+
+            return ['success' => $anySuccess, 'responses' => $responses];
         } catch (\Exception $e) {
             Log::error('Error en enviarNotificacionPedidoCancelado', ['error' => $e->getMessage()]);
             return ['success' => false, 'message' => 'Error interno: ' . $e->getMessage()];
@@ -440,6 +491,77 @@ class WhatsAppService
     }
 
     /**
+     * Preparar informe detallado del pedido (para confirmación y cancelación)
+     */
+    private function prepararInformeDetallado(Pedido $pedido, ?string $motivo = null, string $titulo = '*INFORME DEL PEDIDO*'): string
+    {
+        // Asegurar relaciones necesarias
+        $pedido->loadMissing(['prendas', 'pagos', 'cliente']);
+
+        $mensaje = "{$titulo}\n\n";
+        $mensaje .= "Hola {$pedido->cliente->nombre},\n\n";
+        $mensaje .= "📋 *Pedido #{$pedido->id_pedido}*\n";
+        $mensaje .= "• Fecha: " . $pedido->created_at->setTimezone('America/La_Paz')->format('d/m/Y H:i') . "\n";
+        $mensaje .= "• Estado: {$pedido->estado}\n";
+
+        if ($pedido->fecha_entrega_programada) {
+            $mensaje .= "• Entrega programada: " . $pedido->fecha_entrega_programada->setTimezone('America/La_Paz')->format('d/m/Y') . "\n";
+        }
+
+        $mensaje .= "\n*Productos:*\n";
+        if ($pedido->prendas && $pedido->prendas->count()) {
+            foreach ($pedido->prendas as $prenda) {
+                $cantidad = $prenda->pivot->cantidad ?? 0;
+                $docenasFloat = $cantidad / 12;
+                $precioDocena = $prenda->pivot->precio_unitario ?? 0;
+                $subtotal = $precioDocena * $docenasFloat;
+                $mensaje .= "• {$prenda->nombre} ({$prenda->categoria}) - {$cantidad} unidades - Bs. " . number_format($precioDocena, 2) . " c/docena - Subtotal: Bs. " . number_format($subtotal, 2) . "\n";
+                if (!empty($prenda->pivot->talla)) { $mensaje .= "   - Talla: {$prenda->pivot->talla}\n"; }
+                if (!empty($prenda->pivot->color)) { $mensaje .= "   - Color: {$prenda->pivot->color}\n"; }
+                if (!empty($prenda->pivot->observaciones)) { $mensaje .= "   - Obs: {$prenda->pivot->observaciones}\n"; }
+            }
+        } else {
+            if ($pedido->descripcion) {
+                $mensaje .= "• " . substr($pedido->descripcion, 0, 1000) . "\n";
+            } else {
+                $mensaje .= "• (Sin artículos asociados)\n";
+            }
+        }
+
+        $mensaje .= "\n*Resumen financiero:*\n";
+        $mensaje .= "• Total pedido: Bs. " . number_format($pedido->total, 2) . "\n";
+
+        try {
+            $pagos = $pedido->pagos->where('anulado', 0);
+            $totalPagado = $pagos->sum('monto');
+            $mensaje .= "• Total pagado: Bs. " . number_format($totalPagado, 2) . "\n";
+            $saldo = max(0, $pedido->total - $totalPagado);
+            $mensaje .= "• Saldo pendiente: Bs. " . number_format($saldo, 2) . "\n";
+
+            if ($pagos->count()) {
+                $mensaje .= "\n*Pagos:* \n";
+                foreach ($pagos as $p) {
+                    $mensaje .= "• Bs. " . number_format($p->monto, 2) . " - " . ($p->metodo ?? 'N/A') . " - " . ($p->referencia ?? '') . " - " . ($p->created_at ? $p->created_at->setTimezone('America/La_Paz')->format('d/m/Y') : '') . "\n";
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignorar si falla al acceder a pagos
+        }
+
+        if ($pedido->descripcion) {
+            $mensaje .= "\n📝 *Descripción / Observaciones:*\n" . $pedido->descripcion . "\n\n";
+        }
+
+        if ($motivo) {
+            $mensaje .= "\n⚠️ *Motivo:* {$motivo}\n";
+        }
+
+        $mensaje .= "\n---\n*Modas Boom*\n📞 +591 76720864\n🕒 Horarios: Lun-Sáb 9:00-18:00";
+
+        return $mensaje;
+    }
+
+    /**
      * Enviar notificación genérica por cambio de estado
      */
     public function enviarNotificacionEstado(Pedido $pedido, string $estado, int $porcentaje = null, array $camposCambiados = []): array
@@ -459,15 +581,31 @@ class WhatsAppService
 
             $mensaje .= "\n📋 Detalles: \n";
 
-            // Sólo incluir campos si no se pasó $camposCambiados (compatibilidad) o si están dentro de los campos cambiados
+            // Añadir contexto adicional según los campos cambiados o la información disponible
             if (empty($camposCambiados) || isset($camposCambiados['total'])) {
                 $mensaje .= "• Total: {$pedido->total_formateado}\n";
             }
 
             if (empty($camposCambiados) || isset($camposCambiados['fecha_entrega_programada'])) {
-                // Mostrar la fecha de entrega programada solo cuando tiene sentido
                 if ($pedido->fecha_entrega_programada) {
-                    $mensaje .= "• Fecha de entrega estimada: " . $pedido->fecha_entrega_programada->setTimezone('America/La_Paz')->format('d/m/Y') . "\n";
+                    $mensaje .= "• Fecha estimada de entrega: " . $pedido->fecha_entrega_programada->setTimezone('America/La_Paz')->format('d/m/Y') . "\n";
+                }
+            }
+
+            // Si se asignó un operario, mostrarlo para mayor trazabilidad
+            if (isset($camposCambiados['operario_asignado'])) {
+                $operario = $camposCambiados['operario_asignado']['despues'] ?? null;
+                if ($operario) {
+                    $mensaje .= "• Asignado a: " . $operario . "\n";
+                }
+            }
+
+            // Si hay observaciones o descripciones adicionales, incluir una línea breve
+            if (isset($camposCambiados['observaciones']) || isset($camposCambiados['descripcion'])) {
+                $obs = $camposCambiados['observaciones']['despues'] ?? $camposCambiados['descripcion']['despues'] ?? null;
+                if ($obs) {
+                    $snippet = strlen($obs) > 120 ? substr($obs, 0, 117) . '...' : $obs;
+                    $mensaje .= "• Nota: " . $snippet . "\n";
                 }
             }
 
@@ -537,13 +675,25 @@ class WhatsAppService
             $mensaje .= "Hola {$pedido->cliente->nombre},\n\n";
             $mensaje .= "Se ha registrado una devolución en tu pedido #{$pedido->id_pedido}.\n";
             $mensaje .= "• Prenda: {$prenda->nombre}\n";
-            $mensaje .= "• Cantidad: {$cantidadUnidades} unidades\n";
+            $mensaje .= "• Cantidad devuelta: {$cantidadUnidades} unidades\n";
             if ($motivo) $mensaje .= "• Motivo: {$motivo}\n";
-            $mensaje .= "\n---\n*Modas Boom*\n📞 +591 76720864";
+
+            // Agregar contexto: cuántas unidades totales se han devuelto de esa prenda en este pedido
+            try {
+                $devueltoDocenas = $pedido->devoluciones->where('id_prenda', $prenda->id)->sum('cantidad');
+                $devueltoUnidades = intval($devueltoDocenas * 12);
+                $mensaje .= "• Total devuelto de esta prenda en el pedido: {$devueltoUnidades} unidades ({$devueltoDocenas} docena" . ($devueltoDocenas != 1 ? 's' : '') . ")\n";
+            } catch (\Throwable $e) {
+                // silencioso si falla al acceder a relaciones
+            }
+
+            $mensaje .= "\nSi necesitas reembolso o más información, contáctanos.\n\n";
+            $mensaje .= "---\n*Modas Boom*\n📞 +591 76720864";
 
             $resultado = $this->enviarViaProxy($telefono, $mensaje);
             if ($resultado['success']) {
                 Log::info('Notificación de devolución enviada', ['pedido_id' => $pedido->id_pedido, 'prenda' => $prenda->nombre]);
+                try { $pedido->update(['notificacion_whatsapp_enviada' => true]); } catch (\Throwable $e) { /* ignorar */ }
             }
 
             return $resultado;
